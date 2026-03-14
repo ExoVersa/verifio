@@ -1,26 +1,117 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --color-bg: #F5F4F0;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E0D8;
+  --color-text: #1A1916;
+  --color-muted: #7A786E;
+  --color-accent: #1A3A2A;
+  --color-accent-light: #E8F0EB;
+
+  --color-safe: #1A5C38;
+  --color-safe-bg: #E6F4EC;
+  --color-warn: #7A4A00;
+  --color-warn-bg: #FEF3E0;
+  --color-danger: #8B1A1A;
+  --color-danger-bg: #FDEAEA;
+  --color-neutral: #3A3832;
+  --color-neutral-bg: #F0EFE9;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
 }
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Search input */
+.search-input {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-family: var(--font-body);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(26, 58, 42, 0.08);
+}
+
+.search-input::placeholder {
+  color: var(--color-muted);
+}
+
+/* Score ring animation */
+@keyframes scoreIn {
+  from { stroke-dashoffset: 251; opacity: 0; }
+  to { opacity: 1; }
+}
+
+.score-ring {
+  animation: scoreIn 0.8s ease-out forwards;
+}
+
+/* Card hover */
+.result-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: box-shadow 0.2s;
+}
+
+/* Fade in */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  animation: fadeUp 0.35s ease-out forwards;
+}
+
+.fade-up-delay-1 { animation-delay: 0.05s; opacity: 0; }
+.fade-up-delay-2 { animation-delay: 0.10s; opacity: 0; }
+.fade-up-delay-3 { animation-delay: 0.15s; opacity: 0; }
+.fade-up-delay-4 { animation-delay: 0.20s; opacity: 0; }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.badge-safe { background: var(--color-safe-bg); color: var(--color-safe); }
+.badge-warn { background: var(--color-warn-bg); color: var(--color-warn); }
+.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-neutral { background: var(--color-neutral-bg); color: var(--color-neutral); }
