@@ -10,7 +10,7 @@ async function fetchEntreprise(query: string) {
     const siret = query.replace(/\s/g, '')
     url = `https://recherche-entreprises.api.gouv.fr/search?q=${siret}&page=1&per_page=1`
   } else {
-    url = `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=5&activite_principale=43,42,41`
+    url = `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=5&section_activite_principale=F`
   }
 
   const res = await fetch(url, {
