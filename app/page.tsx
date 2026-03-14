@@ -1,15 +1,39 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, ShieldCheck, AlertTriangle, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, ShieldCheck, AlertTriangle, Info, History, LogOut, LogIn } from 'lucide-react'
+import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
 import ResultCard from '@/components/ResultCard'
 import type { SearchResult } from '@/types'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 export default function Home() {
   const [result, setResult] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const saveSearch = async (data: SearchResult) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('searches').insert({
+      user_id: user.id,
+      siret: data.siret,
+      nom: data.nom,
+      score: data.score,
+      statut: data.statut,
+    })
+  }
 
   const handleSearch = async (query: string) => {
     setLoading(true)
@@ -24,6 +48,7 @@ export default function Home() {
         setError(data.error || 'Aucun résultat trouvé.')
       } else {
         setResult(data)
+        saveSearch(data)
       }
     } catch {
       setError('Erreur réseau. Vérifiez votre connexion.')
@@ -32,21 +57,57 @@ export default function Home() {
     }
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+  }
+
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       {/* Header */}
       <header style={{
-        padding: '20px 24px',
+        padding: '16px 24px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-surface)',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: '10px',
       }}>
-        <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
-        <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-          ArtisanCheck
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
+          <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
+            ArtisanCheck
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {user ? (
+            <>
+              <Link href="/historique" style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
+              }}>
+                <History size={15} />
+                Historique
+              </Link>
+              <button onClick={handleLogout} style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '13px', color: 'var(--color-muted)', fontFamily: 'var(--font-body)', fontWeight: 500,
+              }}>
+                <LogOut size={15} />
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <Link href="/auth" style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
+            }}>
+              <LogIn size={15} />
+              Connexion
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* Hero */}
