@@ -2,6 +2,7 @@
 
 import { CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, ChevronRight } from 'lucide-react'
 import ScoreRing from './ScoreRing'
+import PremiumButton from './PremiumButton'
 import type { SearchResult, Alert, AlertType } from '@/types'
 
 interface Props {
@@ -132,6 +133,14 @@ export default function ResultCard({ result }: Props) {
               Non obligatoire pour tous les travaux, mais requis pour bénéficier des aides de l'État (MaPrimeRénov').
             </p>
           )}
+        </div>
+
+        {/* Premium CTA */}
+        <div style={{ marginTop: '20px' }}>
+          <PremiumButton siret={result.siret} nom={result.nom} />
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-muted)', textAlign: 'center' }}>
+            Assurance décennale · Avis vérifiés · Historique judiciaire
+          </p>
         </div>
 
         {/* Disclaimer */}
