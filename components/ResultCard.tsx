@@ -1,8 +1,8 @@
 'use client'
 
-import { CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, ChevronRight, Users, Scale, Clock, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, ChevronRight, Users, Scale, Clock, Lock } from 'lucide-react'
 import ScoreRing from './ScoreRing'
-import PremiumButton from './PremiumButton'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
 
 interface Props {
@@ -28,19 +28,74 @@ function AlertBadge({ alert }: { alert: Alert }) {
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | number }) {
   if (!value && value !== 0) return null
   return (
-    <div style={{
-      display: 'flex',
-      gap: '10px',
-      alignItems: 'flex-start',
-      padding: '10px 0',
-      borderBottom: '1px solid var(--color-border)',
-    }}>
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
       <div style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '1px' }}>{icon}</div>
       <div>
         <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>{label}</p>
         <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{value}</p>
       </div>
     </div>
+  )
+}
+
+// Bloc flouté avec CTA premium
+function LockedBlock({ label, siret, nom }: { label: string; siret: string; nom: string }) {
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siret, nom }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 14px',
+        borderRadius: '10px',
+        border: '1px dashed var(--color-border)',
+        background: 'var(--color-bg)',
+        cursor: loading ? 'not-allowed' : 'pointer',
+        gap: '10px',
+        textAlign: 'left',
+        opacity: loading ? 0.7 : 1,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Lock size={13} color="var(--color-muted)" />
+        <span style={{ fontSize: '13px', color: 'var(--color-muted)', fontFamily: 'var(--font-body)' }}>
+          {label}
+        </span>
+      </div>
+      <span style={{
+        fontSize: '12px',
+        fontWeight: 600,
+        color: 'var(--color-text)',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '20px',
+        padding: '4px 10px',
+        flexShrink: 0,
+        fontFamily: 'var(--font-body)',
+      }}>
+        {loading ? '…' : '4,90\u00a0€'}
+      </span>
+    </button>
   )
 }
 
@@ -62,23 +117,16 @@ function TimelineItem({ annonce }: { annonce: BodaccAnnonce }) {
   return (
     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-        <div style={{
-          width: '10px', height: '10px', borderRadius: '50%',
-          background: color, marginTop: '4px',
-          boxShadow: isAlert ? `0 0 0 3px color-mix(in srgb, ${color} 20%, transparent)` : 'none',
-        }} />
+        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, marginTop: '4px' }} />
         <div style={{ width: '1px', flex: 1, background: 'var(--color-border)', marginTop: '4px' }} />
       </div>
-      <div style={{ paddingBottom: '16px', flex: 1, minWidth: 0 }}>
+      <div style={{ paddingBottom: '16px', flex: 1 }}>
         <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>
           {annonce.date ? new Date(annonce.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
         </p>
         <p style={{ margin: 0, fontSize: '13px', fontWeight: isAlert ? 600 : 500, color: isAlert ? color : 'var(--color-text)' }}>
           {annonce.famille}
         </p>
-        {annonce.details && (
-          <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>{annonce.details}</p>
-        )}
         {annonce.tribunal && (
           <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>{annonce.tribunal}</p>
         )}
@@ -90,18 +138,21 @@ function TimelineItem({ annonce }: { annonce: BodaccAnnonce }) {
 export default function ResultCard({ result }: Props) {
   const formatDate = (d: string) => {
     if (!d) return undefined
-    try {
-      return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-    } catch { return d }
+    try { return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) }
+    catch { return d }
   }
 
   const statutColor = result.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
   const statutBg = result.statut === 'actif' ? 'var(--color-safe-bg)' : 'var(--color-danger-bg)'
 
+  const nbDirigeants = result.dirigeants.length
+  const nbAnnonces = result.bodacc.annonces.length
+  const premiereAnnonce = result.bodacc.annonces[0]
+
   return (
     <div>
-      {/* Main card */}
       <div className="result-card fade-up">
+
         {/* Header */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' }}>
           <ScoreRing score={result.score} />
@@ -128,10 +179,9 @@ export default function ResultCard({ result }: Props) {
           </div>
         </div>
 
-        {/* Divider */}
         <div style={{ height: '1px', background: 'var(--color-border)', marginBottom: '16px' }} />
 
-        {/* Info grid */}
+        {/* Infos de base — GRATUITES */}
         <div>
           <InfoRow icon={<Hash size={15} />} label="SIRET" value={result.siret} />
           <InfoRow icon={<Building2 size={15} />} label="Forme juridique" value={result.formeJuridique} />
@@ -140,12 +190,26 @@ export default function ResultCard({ result }: Props) {
           {result.capitalSocial !== undefined && (
             <InfoRow icon={<Building2 size={15} />} label="Capital social" value={`${result.capitalSocial.toLocaleString('fr-FR')} €`} />
           )}
-          {result.effectif && (
-            <InfoRow icon={<Users size={15} />} label="Effectif" value={result.effectif} />
-          )}
         </div>
 
-        {/* RGE Section */}
+        {/* Effectif — VERROUILLÉ */}
+        {result.effectif && (
+          <div style={{ padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <Users size={15} color="var(--color-muted)" style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '4px' }}>Effectif</p>
+                <LockedBlock
+                  label={result.effectif}
+                  siret={result.siret}
+                  nom={result.nom}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RGE — GRATUIT */}
         <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: result.rge.certifie ? 'var(--color-safe-bg)' : 'var(--color-neutral-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: result.rge.certifie ? '10px' : '0' }}>
             <Leaf size={17} color={result.rge.certifie ? 'var(--color-safe)' : 'var(--color-muted)'} />
@@ -167,99 +231,60 @@ export default function ResultCard({ result }: Props) {
           )}
         </div>
 
-        {/* ─── SECTION : Santé financière & historique légal ─── */}
-        <div style={{
-          marginTop: '20px',
-          border: '1px solid var(--color-border)',
-          borderRadius: '14px',
-          overflow: 'hidden',
-        }}>
-          {/* Titre section */}
-          <div style={{
-            padding: '14px 16px',
-            background: 'var(--color-bg)',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
+        {/* ─── SECTION PREMIUM : Santé financière & historique légal ─── */}
+        <div style={{ marginTop: '20px', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Scale size={16} color="var(--color-accent)" />
             <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>
               Santé financière &amp; historique légal
             </span>
           </div>
 
-          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-            {/* Procédure collective */}
+            {/* Procédure collective — alerte affichée si détectée */}
             {result.bodacc.procedureCollective && (
-              <div style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: 'var(--color-danger-bg)',
-                border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-                display: 'flex',
-                gap: '10px',
-                alignItems: 'flex-start',
-              }}>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-danger)' }}>
-                    Procédure collective détectée
-                  </p>
-                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-danger)' }}>
-                    {result.bodacc.typeProcedure || 'Redressement / Liquidation / Sauvegarde'}
-                  </p>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-danger)' }}>Procédure collective détectée</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>Détails disponibles dans le rapport complet</p>
                 </div>
               </div>
             )}
 
-            {/* Dirigeants */}
-            {result.dirigeants.length > 0 && (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                  <Users size={14} color="var(--color-muted)" />
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Dirigeants
-                  </p>
-                </div>
+            {/* Dirigeants — VERROUILLÉS */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                <Users size={14} color="var(--color-muted)" />
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Dirigeants
+                </p>
+              </div>
+              {nbDirigeants === 0 ? (
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucun dirigeant trouvé</p>
+              ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {result.dirigeants.map((d, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      background: 'var(--color-bg)',
-                      borderRadius: '8px',
-                      gap: '12px',
-                    }}>
-                      <div>
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>
-                          {d.prenoms ? `${d.prenoms} ${d.nom}` : d.nom}
-                        </p>
-                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>{d.qualite}</p>
-                      </div>
-                      {d.anneeNaissance && (
-                        <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)', flexShrink: 0 }}>
-                          né en {d.anneeNaissance}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {result.bodacc.changementDirigeantRecent && (
-                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--color-warn-bg, #fffbeb)', borderRadius: '8px' }}>
-                    <AlertCircle size={13} color="var(--color-warn)" />
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-warn)' }}>
-                      Changement de dirigeant détecté dans les 6 derniers mois
+                  {/* Premier dirigeant : prénom/nom masqué */}
+                  <div style={{ padding: '8px 12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-muted)', filter: 'blur(4px)', userSelect: 'none' }}>
+                      {'●●●●● ●●●●●●●●●'}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>
+                      {result.dirigeants[0].qualite}
                     </p>
                   </div>
-                )}
-              </div>
-            )}
+                  {/* Reste verrouillé */}
+                  <LockedBlock
+                    label={nbDirigeants > 1 ? `${nbDirigeants - 1} autre${nbDirigeants > 2 ? 's' : ''} dirigeant${nbDirigeants > 2 ? 's' : ''} — identités complètes` : 'Identité complète des dirigeants'}
+                    siret={result.siret}
+                    nom={result.nom}
+                  />
+                </div>
+              )}
+            </div>
 
-            {/* Timeline BODACC */}
+            {/* Annonces BODACC — première visible, reste verrouillé */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                 <Clock size={14} color="var(--color-muted)" />
@@ -267,41 +292,59 @@ export default function ResultCard({ result }: Props) {
                   Annonces légales BODACC
                 </p>
               </div>
-              {result.bodacc.annonces.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>
-                  Aucune annonce trouvée
-                </p>
+
+              {nbAnnonces === 0 ? (
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucune annonce trouvée</p>
               ) : (
                 <div>
-                  {result.bodacc.annonces.slice(0, 8).map((a, i) => (
-                    <TimelineItem key={a.id || i} annonce={a} />
-                  ))}
+                  {/* Première annonce visible */}
+                  {premiereAnnonce && <TimelineItem annonce={premiereAnnonce} />}
+
+                  {/* Reste verrouillé */}
+                  {nbAnnonces > 1 && (
+                    <LockedBlock
+                      label={`${nbAnnonces - 1} autre${nbAnnonces > 2 ? 's' : ''} annonce${nbAnnonces > 2 ? 's' : ''} légale${nbAnnonces > 2 ? 's' : ''} trouvée${nbAnnonces > 2 ? 's' : ''}`}
+                      siret={result.siret}
+                      nom={result.nom}
+                    />
+                  )}
                 </div>
               )}
             </div>
 
           </div>
         </div>
-        {/* ─── FIN SECTION ─── */}
 
-        {/* Premium CTA */}
+        {/* CTA principal */}
         <div style={{ marginTop: '20px' }}>
-          <PremiumButton siret={result.siret} nom={result.nom} />
+          <button
+            onClick={async () => {
+              const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ siret: result.siret, nom: result.nom }),
+              })
+              const data = await res.json()
+              if (data.url) window.location.href = data.url
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              width: '100%', padding: '14px 20px', borderRadius: '12px', border: 'none',
+              background: 'var(--color-text)', color: 'var(--color-bg)',
+              fontSize: '15px', fontWeight: 600, cursor: 'pointer',
+              letterSpacing: '-0.01em', fontFamily: 'var(--font-body)',
+            }}
+          >
+            <Lock size={16} />
+            Rapport complet — 4,90\u00a0€
+          </button>
           <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-muted)', textAlign: 'center' }}>
-            Assurance décennale · Avis vérifiés · Historique judiciaire
+            Dirigeants · Assurance décennale · Toutes les annonces BODACC
           </p>
         </div>
 
         {/* Disclaimer */}
-        <p style={{
-          margin: '16px 0 0',
-          fontSize: '11px',
-          color: 'var(--color-muted)',
-          lineHeight: 1.6,
-          padding: '12px',
-          background: 'var(--color-bg)',
-          borderRadius: '8px',
-        }}>
+        <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
           Données issues de l'INSEE (Sirene), de l'ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l'assurance décennale en demandant l'attestation directement à l'artisan. ArtisanCheck n'est pas responsable des décisions prises sur la base de ces données.
         </p>
       </div>
@@ -314,15 +357,8 @@ export default function ResultCard({ result }: Props) {
           </p>
           {result.autresResultats.map((r) => (
             <div key={r.siren} style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '10px',
-              padding: '12px 16px',
-              marginBottom: '8px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
+              background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px',
+              padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
             }}>
               <div>
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{r.nom}</p>
