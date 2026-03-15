@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import {
   CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash,
-  Leaf, ChevronRight, Users, Scale, Clock, Lock, Sparkles, Award, Briefcase,
-  ClipboardList, ArrowLeftRight,
+  Leaf, ChevronRight, Users, Scale, Clock, Sparkles, Award, Briefcase,
+  ClipboardList, ArrowLeftRight, Download,
 } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
@@ -63,29 +63,6 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   )
 }
 
-function LockedBlock({ label, siret, nom }: { label: string; siret: string; nom: string }) {
-  const [loading, setLoading] = useState(false)
-  const handleClick = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ siret, nom }) })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-    } catch { setLoading(false) }
-  }
-  return (
-    <button onClick={handleClick} disabled={loading} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', border: '1px dashed var(--color-border)', background: 'var(--color-bg)', cursor: loading ? 'not-allowed' : 'pointer', gap: '10px', textAlign: 'left', opacity: loading ? 0.7 : 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Lock size={13} color="var(--color-muted)" />
-        <span style={{ fontSize: '13px', color: 'var(--color-muted)', fontFamily: 'var(--font-body)' }}>{label}</span>
-      </div>
-      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '4px 10px', flexShrink: 0, fontFamily: 'var(--font-body)' }}>
-        {loading ? '…' : '4,90\u00a0€'}
-      </span>
-    </button>
-  )
-}
-
 const FAMILLE_COLORS: Record<string, string> = {
   'Créations': 'var(--color-safe)', 'Immatriculations': 'var(--color-safe)',
   'Modifications diverses': '#6366f1', 'Procédures collectives': 'var(--color-danger)',
@@ -93,14 +70,14 @@ const FAMILLE_COLORS: Record<string, string> = {
   'Radiations': 'var(--color-muted)', 'Ventes et cessions': '#f59e0b', 'Dépôts des comptes': 'var(--color-muted)',
 }
 
-function TimelineItem({ annonce }: { annonce: BodaccAnnonce }) {
+function TimelineItem({ annonce, last }: { annonce: BodaccAnnonce; last: boolean }) {
   const color = FAMILLE_COLORS[annonce.famille] || 'var(--color-muted)'
   const isAlert = annonce.famille.toLowerCase().includes('procédure')
   return (
     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
         <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, marginTop: '4px' }} />
-        <div style={{ width: '1px', flex: 1, background: 'var(--color-border)', marginTop: '4px' }} />
+        {!last && <div style={{ width: '1px', flex: 1, background: 'var(--color-border)', marginTop: '4px' }} />}
       </div>
       <div style={{ paddingBottom: '16px', flex: 1 }}>
         <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>
@@ -108,6 +85,7 @@ function TimelineItem({ annonce }: { annonce: BodaccAnnonce }) {
         </p>
         <p style={{ margin: 0, fontSize: '13px', fontWeight: isAlert ? 600 : 500, color: isAlert ? color : 'var(--color-text)' }}>{annonce.famille}</p>
         {annonce.tribunal && <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>{annonce.tribunal}</p>}
+        {annonce.details && <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>{annonce.details}</p>}
       </div>
     </div>
   )
@@ -141,9 +119,7 @@ export default function ResultCard({ result }: Props) {
   const statutColor = result.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
   const statutBg = result.statut === 'actif' ? 'var(--color-safe-bg)' : 'var(--color-danger-bg)'
   const maturite = computeScoreMaturite(result.dateCreation, result.rge.certifie, !!result.conventionCollective)
-  const nbDirigeants = result.dirigeants.length
   const nbAnnonces = result.bodacc.annonces.length
-  const premiereAnnonce = result.bodacc.annonces[0]
 
   const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
   const mapsUrl = result.adresse
@@ -151,9 +127,6 @@ export default function ResultCard({ result }: Props) {
       ? `https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(result.adresse)}&key=${mapsKey}`
       : `https://www.google.com/maps?q=${encodeURIComponent(result.adresse)}&output=embed`
     : null
-
-  const freeChecklist = enrich.aiChecklist ? enrich.aiChecklist.slice(0, 3) : []
-  const lockedCount = enrich.aiChecklist ? Math.max(0, enrich.aiChecklist.length - 3) : 0
 
   return (
     <div>
@@ -186,7 +159,7 @@ export default function ResultCard({ result }: Props) {
           </div>
         </div>
 
-        {/* RÉSUMÉ IA COURT (gratuit) */}
+        {/* RÉSUMÉ IA */}
         {(enrich.loading || enrich.aiSummary) && (
           <div style={{ margin: '0 0 20px', padding: '14px 16px', borderRadius: '12px', background: 'linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%)', border: '1px solid #bbf7d0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
@@ -214,7 +187,9 @@ export default function ResultCard({ result }: Props) {
           {result.capitalSocial !== undefined && (
             <InfoRow icon={<Building2 size={15} />} label="Capital social" value={`${result.capitalSocial.toLocaleString('fr-FR')} €`} />
           )}
-          {/* Convention collective */}
+          {result.effectif && (
+            <InfoRow icon={<Users size={15} />} label="Effectif" value={result.effectif} />
+          )}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
             <Briefcase size={15} color="var(--color-muted)" style={{ flexShrink: 0, marginTop: 1 }} />
             <div style={{ flex: 1 }}>
@@ -226,7 +201,7 @@ export default function ResultCard({ result }: Props) {
           </div>
         </div>
 
-        {/* CARTE GOOGLE MAPS */}
+        {/* CARTE MAPS */}
         {mapsUrl && (
           <div style={{ marginTop: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -259,19 +234,6 @@ export default function ResultCard({ result }: Props) {
           </div>
         )}
 
-        {/* EFFECTIF (verrouillé) */}
-        {result.effectif && (
-          <div style={{ marginTop: '16px', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <Users size={15} color="var(--color-muted)" style={{ flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '4px' }}>Effectif</p>
-                <LockedBlock label={result.effectif} siret={result.siret} nom={result.nom} />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* RGE */}
         <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: result.rge.certifie ? 'var(--color-safe-bg)' : 'var(--color-neutral-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: result.rge.certifie ? '10px' : '0' }}>
@@ -288,7 +250,7 @@ export default function ResultCard({ result }: Props) {
           {!result.rge.certifie && <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>Non obligatoire pour tous les travaux, mais requis pour bénéficier des aides de l'État (MaPrimeRénov').</p>}
         </div>
 
-        {/* CHECKLIST LÉGALE (3 gratuits + verrouillé) */}
+        {/* CHECKLIST LÉGALE — COMPLÈTE */}
         {(enrich.loading || (enrich.aiChecklist && enrich.aiChecklist.length > 0)) && (
           <div style={{ marginTop: '20px', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -307,97 +269,93 @@ export default function ResultCard({ result }: Props) {
                   </div>
                 ))
               ) : (
-                <>
-                  {freeChecklist.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '1px' }}>
-                        <CheckCircle2 size={12} color="#7c3aed" />
-                      </div>
-                      <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.55 }}>{item}</p>
+                enrich.aiChecklist!.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '1px' }}>
+                      <CheckCircle2 size={12} color="#7c3aed" />
                     </div>
-                  ))}
-                  {lockedCount > 0 && (
-                    <LockedBlock
-                      label={`${lockedCount} document${lockedCount > 1 ? 's' : ''} supplémentaire${lockedCount > 1 ? 's' : ''} spécifique${lockedCount > 1 ? 's' : ''} au métier`}
-                      siret={result.siret} nom={result.nom}
-                    />
-                  )}
-                </>
+                    <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.55 }}>{item}</p>
+                  </div>
+                ))
               )}
             </div>
           </div>
         )}
 
-        {/* SECTION PREMIUM */}
+        {/* SANTÉ FINANCIÈRE & HISTORIQUE */}
         <div style={{ marginTop: '20px', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Scale size={16} color="var(--color-accent)" />
             <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>Santé financière &amp; historique légal</span>
           </div>
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* Procédure collective */}
             {result.bodacc.procedureCollective && (
               <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-danger)' }}>Procédure collective détectée</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>Détails disponibles dans le rapport complet</p>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-danger)' }}>Procédure collective : {result.bodacc.typeProcedure || 'détectée'}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>Voir le détail dans les annonces BODACC ci-dessous.</p>
                 </div>
               </div>
             )}
-            {/* Dirigeants */}
+
+            {/* Dirigeants — COMPLETS */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <Users size={14} color="var(--color-muted)" />
                 <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dirigeants</p>
               </div>
-              {nbDirigeants === 0 ? (
+              {result.dirigeants.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucun dirigeant trouvé</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ padding: '8px 12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
-                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-muted)', filter: 'blur(4px)', userSelect: 'none' }}>{'●●●●● ●●●●●●●●●'}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>{result.dirigeants[0].qualite}</p>
-                  </div>
-                  <LockedBlock
-                    label={nbDirigeants > 1 ? `${nbDirigeants - 1} autre${nbDirigeants > 2 ? 's' : ''} dirigeant${nbDirigeants > 2 ? 's' : ''} — identités complètes` : 'Identité complète des dirigeants'}
-                    siret={result.siret} nom={result.nom}
-                  />
+                  {result.dirigeants.map((d, i) => (
+                    <div key={i} style={{ padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                        {[d.prenoms, d.nom].filter(Boolean).join(' ')}
+                      </p>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>
+                        {d.qualite}{d.anneeNaissance ? ` · né en ${d.anneeNaissance}` : ''}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-            {/* BODACC */}
+
+            {/* BODACC — TOUTES LES ANNONCES */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                 <Clock size={14} color="var(--color-muted)" />
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annonces légales BODACC</p>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Annonces légales BODACC {nbAnnonces > 0 && `(${nbAnnonces})`}
+                </p>
               </div>
               {nbAnnonces === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucune annonce trouvée</p>
               ) : (
                 <div>
-                  {premiereAnnonce && <TimelineItem annonce={premiereAnnonce} />}
-                  {nbAnnonces > 1 && (
-                    <LockedBlock
-                      label={`${nbAnnonces - 1} autre${nbAnnonces > 2 ? 's' : ''} annonce${nbAnnonces > 2 ? 's' : ''} légale${nbAnnonces > 2 ? 's' : ''} trouvée${nbAnnonces > 2 ? 's' : ''}`}
-                      siret={result.siret} nom={result.nom}
-                    />
-                  )}
+                  {result.bodacc.annonces.map((annonce, i) => (
+                    <TimelineItem key={i} annonce={annonce} last={i === nbAnnonces - 1} />
+                  ))}
                 </div>
               )}
             </div>
+
           </div>
         </div>
 
-        {/* CTA */}
+        {/* BOUTON TÉLÉCHARGER PDF */}
         <div style={{ marginTop: '20px' }}>
-          <button onClick={async () => { const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ siret: result.siret, nom: result.nom }) }); const data = await res.json(); if (data.url) window.location.href = data.url }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: 'none', background: 'var(--color-text)', color: 'var(--color-bg)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'var(--font-body)' }}>
-            <Lock size={16} />
-            Rapport complet — 4,90&nbsp;€
+          <button
+            onClick={() => window.print()}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'var(--font-body)' }}
+          >
+            <Download size={16} />
+            Télécharger le rapport PDF
           </button>
-          <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-muted)', textAlign: 'center' }}>
-            Dirigeants · Checklist complète · Toutes les annonces BODACC · Analyse IA approfondie
-          </p>
         </div>
 
         {/* DISCLAIMER */}
