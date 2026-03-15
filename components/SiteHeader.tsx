@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
-  ClipboardCheck, User, LogOut, Menu, X, ShieldCheck,
+  ClipboardCheck, User, LogOut, Menu, X, ShieldCheck, Scale,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -53,6 +53,12 @@ const OUTILS_ITEMS: NavItem[] = [
     icon: <ClipboardCheck size={15} />,
     label: 'Guide chantier',
     desc: 'Checklist de suivi en 4 phases',
+  },
+  {
+    href: '/assistant-juridique',
+    icon: <Scale size={15} />,
+    label: 'Assistant juridique',
+    desc: 'Droits et recours en cas de litige',
   },
 ]
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
-  Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight, ClipboardCheck,
+  Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight, ClipboardCheck, MessageSquare,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -421,6 +421,53 @@ export default function Home() {
                 Simuler mon prix de travaux
                 <ChevronRight size={16} />
               </Link>
+            </div>
+          </section>
+
+          {/* ── ASSISTANT JURIDIQUE ── */}
+          <section style={{ padding: '80px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center' }}>
+                Nouveau — IA Juridique
+              </p>
+              <h2 className="font-display" style={{ margin: '0 0 12px', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
+                Que faire en cas de litige ?
+              </h2>
+              <p style={{ margin: '0 0 40px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                Notre assistant juridique vous explique vos droits et recours en français simple — gratuitement.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '32px' }}>
+                {[
+                  { href: '/assistant-juridique/artisan-disparu', icon: '🚨', label: 'Artisan disparu avec l\'acompte', desc: 'Mise en demeure, Signal Conso, tribunal' },
+                  { href: '/assistant-juridique/travaux-mal-faits', icon: '🔨', label: 'Travaux mal faits', desc: 'Garantie décennale, recours amiables' },
+                  { href: '/assistant-juridique/chantier-non-termine', icon: '🏗️', label: 'Chantier non terminé', desc: 'Abandonné, délai dépassé, recours' },
+                ].map(({ href, icon, label, desc }) => (
+                  <Link key={href} href={href} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '12px',
+                    padding: '16px', borderRadius: '14px', textDecoration: 'none',
+                    background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                    transition: 'border-color 0.15s',
+                  }}>
+                    <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
+                    <div>
+                      <p style={{ margin: '0 0 3px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.3 }}>{label}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.4 }}>{desc}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <Link href="/assistant-juridique" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '13px 24px', borderRadius: '10px',
+                  background: '#7c3aed', color: '#fff',
+                  fontSize: '14px', fontWeight: 700, textDecoration: 'none', letterSpacing: '-0.01em',
+                }}>
+                  <MessageSquare size={16} />
+                  Poser ma question juridique
+                  <ChevronRight size={15} />
+                </Link>
+              </div>
             </div>
           </section>
 
