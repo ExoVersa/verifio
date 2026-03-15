@@ -336,7 +336,7 @@ export default function ResultCard({ result }: Props) {
             }}
           >
             <Lock size={16} />
-            Rapport complet — 4,90\u00a0€
+            Rapport complet — 4,90&nbsp;€
           </button>
           <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-muted)', textAlign: 'center' }}>
             Dirigeants · Assurance décennale · Toutes les annonces BODACC
