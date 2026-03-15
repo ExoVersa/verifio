@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import type { DevisAnalysis, SearchResult } from '@/types'
 import DevisAnalysisCard from '@/components/DevisAnalysisCard'
+import SiteHeader from '@/components/SiteHeader'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 Mo
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
@@ -151,26 +152,7 @@ export default function AnalyserDevisPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
 
       {/* HEADER */}
-      <header style={{
-        padding: '16px 24px', borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-surface)', display: 'flex', alignItems: 'center',
-        gap: '10px', position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
-          <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-            ArtisanCheck
-          </span>
-        </Link>
-        <span style={{ fontSize: '13px', color: 'var(--color-muted)', marginLeft: '4px' }}>/ Analyser un devis</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {!user && (
-            <Link href="/auth" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500 }}>
-              <LogIn size={15} />Connexion
-            </Link>
-          )}
-        </div>
-      </header>
+      <SiteHeader />
 
       <section style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 80px' }}>
 

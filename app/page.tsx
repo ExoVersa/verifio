@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
 import ResultCard from '@/components/ResultCard'
+import SiteHeader from '@/components/SiteHeader'
 import type { SearchResult } from '@/types'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -63,83 +64,7 @@ export default function Home() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
 
       {/* ── HEADER ── */}
-      <header style={{
-        padding: '16px 24px',
-        borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-surface)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <button onClick={() => { setResult(null); setError(null) }} style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-        }}>
-          <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
-          <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-            ArtisanCheck
-          </span>
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link href="/simulateur-prix" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
-          }}>
-            <Calculator size={15} />
-            Simulateur de prix
-          </Link>
-          <Link href="/comparer" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
-          }}>
-            <ArrowLeftRight size={15} />
-            Comparer
-          </Link>
-          <Link href="/guide-chantier" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
-          }}>
-            <ClipboardCheck size={15} />
-            Guide chantier
-          </Link>
-          <Link href="/analyser-devis" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            fontSize: '13px', color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600,
-            background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
-            padding: '6px 12px', borderRadius: '8px',
-            border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
-          }}>
-            <FileSearch size={15} />
-            Analyser un devis
-          </Link>
-          {user ? (
-            <>
-              <Link href="/historique" style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
-              }}>
-                <History size={15} />
-                Historique
-              </Link>
-              <button onClick={() => supabase.auth.signOut()} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '13px', color: 'var(--color-muted)', fontFamily: 'var(--font-body)', fontWeight: 500,
-              }}>
-                <LogOut size={15} />
-                Déconnexion
-              </button>
-            </>
-          ) : (
-            <Link href="/auth" style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
-            }}>
-              <LogIn size={15} />
-              Connexion
-            </Link>
-          )}
-        </div>
-      </header>
+      <SiteHeader onLogoClick={() => { setResult(null); setError(null) }} />
 
       {/* ── HERO ── */}
       <section style={{
