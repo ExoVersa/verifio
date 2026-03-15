@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
-  ClipboardCheck, User, LogOut, Menu, X, ShieldCheck, Scale,
+  ClipboardCheck, User, LogOut, Menu, X, ShieldCheck, Scale, MapPin,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -22,9 +22,15 @@ interface NavItem {
 
 const VERIFIER_ITEMS: NavItem[] = [
   {
+    href: '/trouver-artisan',
+    icon: <MapPin size={15} />,
+    label: 'Trouver un artisan',
+    desc: 'Artisans certifiés RGE près de chez vous',
+  },
+  {
     href: '/',
     icon: <Search size={15} />,
-    label: 'Rechercher un artisan',
+    label: 'Vérifier un artisan',
     desc: 'Vérifiez SIRET, certifications et alertes légales',
   },
   {

@@ -5,6 +5,7 @@ import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
   Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight, ClipboardCheck, MessageSquare,
+  MapPin,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -13,6 +14,96 @@ import SiteHeader from '@/components/SiteHeader'
 import type { SearchResult } from '@/types'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+
+const MINI_WORK_TYPES = [
+  { value: 'isolation', label: 'Isolation' },
+  { value: 'toiture', label: 'Toiture' },
+  { value: 'plomberie', label: 'Plomberie' },
+  { value: 'electricite', label: 'Électricité' },
+  { value: 'chauffage', label: 'Chauffage' },
+  { value: 'pac', label: 'Pompe à chaleur' },
+  { value: 'photovoltaique', label: 'Panneaux solaires' },
+  { value: 'fenetres', label: 'Fenêtres' },
+  { value: 'salle-de-bain', label: 'Salle de bain' },
+  { value: 'cuisine', label: 'Cuisine' },
+  { value: 'carrelage', label: 'Carrelage' },
+  { value: 'peinture', label: 'Peinture' },
+  { value: 'maconnerie', label: 'Maçonnerie' },
+  { value: 'extension', label: 'Extension' },
+]
+
+function FindArtisanMiniForm() {
+  const [type, setType] = useState('')
+  const [ville, setVille] = useState('')
+
+  const handleGo = () => {
+    if (!type || !ville) return
+    window.location.href = `/trouver-artisan?type=${encodeURIComponent(type)}&ville=${encodeURIComponent(ville)}`
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', flex: '1', minWidth: '160px', maxWidth: '220px' }}>
+        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+          Type de travaux
+        </label>
+        <div style={{ position: 'relative' }}>
+          <select
+            value={type}
+            onChange={e => setType(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 28px 10px 12px',
+              borderRadius: '10px', border: '1px solid var(--color-border)',
+              background: 'var(--color-bg)', color: 'var(--color-text)',
+              fontSize: '14px', fontFamily: 'var(--font-body)', appearance: 'none', cursor: 'pointer', outline: 'none',
+            }}
+          >
+            <option value="">Choisir...</option>
+            {MINI_WORK_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <ChevronRight size={13} color="var(--color-muted)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
+        </div>
+      </div>
+      <div style={{ flex: '1', minWidth: '160px', maxWidth: '220px' }}>
+        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+          Votre ville
+        </label>
+        <div style={{ position: 'relative' }}>
+          <MapPin size={14} color="var(--color-muted)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={ville}
+            onChange={e => setVille(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleGo()}
+            placeholder="Paris, Lyon…"
+            style={{
+              width: '100%', padding: '10px 12px 10px 30px',
+              borderRadius: '10px', border: '1px solid var(--color-border)',
+              background: 'var(--color-bg)', color: 'var(--color-text)',
+              fontSize: '14px', fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+      </div>
+      <button
+        onClick={handleGo}
+        disabled={!type || !ville}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '10px 20px', borderRadius: '10px', border: 'none',
+          background: (type && ville) ? 'var(--color-accent)' : 'var(--color-border)',
+          color: '#fff', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-body)',
+          cursor: (type && ville) ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', height: '42px',
+        }}
+      >
+        <Search size={15} />
+        Trouver
+      </button>
+    </div>
+  )
+}
 
 export default function Home() {
   const [result, setResult] = useState<SearchResult | null>(null)
@@ -468,6 +559,22 @@ export default function Home() {
                   <ChevronRight size={15} />
                 </Link>
               </div>
+            </div>
+          </section>
+
+          {/* ── TROUVER UN ARTISAN ── */}
+          <section style={{ padding: '80px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center' }}>
+                Annuaire certifié
+              </p>
+              <h2 className="font-display" style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
+                Trouver un artisan certifié RGE
+              </h2>
+              <p style={{ margin: '0 0 36px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                Artisans vérifiés avec score de confiance, près de chez vous.
+              </p>
+              <FindArtisanMiniForm />
             </div>
           </section>
 
