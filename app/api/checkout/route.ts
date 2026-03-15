@@ -12,13 +12,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'SIRET manquant' }, { status: 400 })
   }
 
-  // Priorité : variable explicite > URL Vercel auto > hôte de la requête > localhost
-  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+  // Priorité : variable explicite > hôte de la requête (fiable en prod) > localhost
+  // Note : VERCEL_URL est volontairement exclu — c'est une URL par déploiement qui change à chaque push
   const requestHost = req.headers.get('host')
   const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
-    vercelUrl ||
     (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
 
   const session = await stripe.checkout.sessions.create({
