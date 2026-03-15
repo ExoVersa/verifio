@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
-  Star, ChevronRight, Quote, FileSearch,
+  Star, ChevronRight, Quote, FileSearch, Calculator,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -80,6 +80,13 @@ export default function Home() {
           </span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/simulateur-prix" style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
+          }}>
+            <Calculator size={15} />
+            Simulateur de prix
+          </Link>
           <Link href="/analyser-devis" style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             fontSize: '13px', color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600,
@@ -430,6 +437,51 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* ── SIMULATEUR DE PRIX ── */}
+          <section style={{ padding: '80px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Nouveau — Simulateur IA
+              </p>
+              <h2 className="font-display" style={{ margin: '0 0 16px', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                Mon devis est-il au bon prix ?
+              </h2>
+              <p style={{ margin: '0 0 40px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                Entrez le type de travaux, la surface et votre région. Notre IA vous donne la fourchette de prix du marché et compare votre devis.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginBottom: '36px' }}>
+                {[
+                  { label: 'Isolation', href: '/simulateur-prix/isolation' },
+                  { label: 'Toiture', href: '/simulateur-prix/toiture' },
+                  { label: 'Plomberie', href: '/simulateur-prix/plomberie' },
+                  { label: 'Électricité', href: '/simulateur-prix/electricite' },
+                  { label: 'Salle de bain', href: '/simulateur-prix/salle-de-bain' },
+                  { label: 'Cuisine', href: '/simulateur-prix/cuisine' },
+                ].map(({ label, href }) => (
+                  <Link key={label} href={href} style={{
+                    padding: '10px 12px', borderRadius: '10px',
+                    border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                    fontSize: '13px', fontWeight: 600, color: 'var(--color-text)', textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  }}>
+                    <Calculator size={14} color="var(--color-accent)" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+              <Link href="/simulateur-prix" style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '14px 28px', borderRadius: '12px',
+                background: 'var(--color-text)', color: 'var(--color-bg)',
+                fontSize: '15px', fontWeight: 700, textDecoration: 'none',
+              }}>
+                <Calculator size={18} />
+                Simuler mon prix de travaux
+                <ChevronRight size={16} />
+              </Link>
             </div>
           </section>
 
