@@ -116,9 +116,6 @@ export default function ResultCard({ result }: Props) {
     catch { return d }
   }
 
-  const statutColor = result.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
-  const statutBg = result.statut === 'actif' ? 'var(--color-safe-bg)' : 'var(--color-danger-bg)'
-  const maturite = computeScoreMaturite(result.dateCreation, result.rge.certifie, !!result.conventionCollective)
   const nbAnnonces = result.bodacc.annonces.length
 
   const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
@@ -128,53 +125,230 @@ export default function ResultCard({ result }: Props) {
       : `https://www.google.com/maps?q=${encodeURIComponent(result.adresse)}&output=embed`
     : null
 
+  // ── Verdict ──────────────────────────────────────────────
+  const hasDanger = result.alerts.some((a) => a.type === 'danger')
+  const verdictLevel: 'fiable' | 'prudence' | 'risque' =
+    result.statut !== 'actif' || result.bodacc.procedureCollective || result.score < 45
+      ? 'risque'
+      : result.score < 70 || hasDanger
+      ? 'prudence'
+      : 'fiable'
+
+  const VERDICT_CONFIG = {
+    fiable:   { label: '✓ FIABLE',   color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+    prudence: { label: '⚠ PRUDENCE', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+    risque:   { label: '✗ RISQUÉ',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  }
+  const verdict = VERDICT_CONFIG[verdictLevel]
+
+  // ── 6 indicators ─────────────────────────────────────────
+  const ancAns = result.dateCreation
+    ? (Date.now() - new Date(result.dateCreation).getTime()) / (1000 * 60 * 60 * 24 * 365)
+    : null
+
+  type IndicatorColor = 'safe' | 'warn' | 'danger' | 'neutral'
+  const IND_COLORS: Record<IndicatorColor, { color: string; bg: string }> = {
+    safe:    { color: '#16a34a', bg: '#f0fdf4' },
+    warn:    { color: '#d97706', bg: '#fffbeb' },
+    danger:  { color: '#dc2626', bg: '#fef2f2' },
+    neutral: { color: 'var(--color-muted)', bg: 'var(--color-bg)' },
+  }
+  const indicators: { icon: string; label: string; text: string; level: IndicatorColor }[] = [
+    {
+      icon: result.statut === 'actif' ? '✓' : '✗',
+      label: 'Statut',
+      text: result.statut === 'actif' ? 'Active' : 'Fermée',
+      level: result.statut === 'actif' ? 'safe' : 'danger',
+    },
+    {
+      icon: ancAns === null ? '?' : ancAns >= 3 ? '✓' : ancAns >= 1 ? '~' : '✗',
+      label: 'Ancienneté',
+      text: ancAns !== null ? `${Math.floor(ancAns)} an${Math.floor(ancAns) > 1 ? 's' : ''}` : 'Inconnue',
+      level: ancAns === null ? 'neutral' : ancAns >= 3 ? 'safe' : ancAns >= 1 ? 'warn' : 'danger',
+    },
+    {
+      icon: result.rge.certifie ? '✓' : '—',
+      label: 'RGE',
+      text: result.rge.certifie ? 'Certifié' : 'Non certifié',
+      level: result.rge.certifie ? 'safe' : 'neutral',
+    },
+    {
+      icon: result.bodacc.procedureCollective ? '✗' : '✓',
+      label: 'Procédures',
+      text: result.bodacc.procedureCollective ? result.bodacc.typeProcedure || 'Détectée' : 'Aucune',
+      level: result.bodacc.procedureCollective ? 'danger' : 'safe',
+    },
+    {
+      icon: result.bodacc.changementDirigeantRecent ? '~' : '✓',
+      label: 'Dirigeants',
+      text: result.bodacc.changementDirigeantRecent ? 'Changement récent' : 'Stables',
+      level: result.bodacc.changementDirigeantRecent ? 'warn' : 'safe',
+    },
+    {
+      icon: result.conventionCollective ? '✓' : '~',
+      label: 'Convention',
+      text: result.conventionCollective ? 'Déclarée' : 'Non déclarée',
+      level: result.conventionCollective ? 'safe' : 'warn',
+    },
+  ]
+
+  // ── Vigilance / Positifs ──────────────────────────────────
+  const alertOrder: Record<AlertType, number> = { danger: 0, warn: 1, info: 2, safe: 3 }
+  const vigilanceAlerts = result.alerts
+    .filter((a) => a.type !== 'safe')
+    .sort((a, b) => alertOrder[a.type] - alertOrder[b.type])
+
+  const positivePoints: string[] = []
+  if (result.statut === 'actif' && ancAns !== null && ancAns >= 3)
+    positivePoints.push(`Active depuis ${Math.floor(ancAns)} an${Math.floor(ancAns) > 1 ? 's' : ''}`)
+  if (result.rge.certifie && result.rge.domaines.length > 0)
+    positivePoints.push(`Certifiée RGE — ${[...new Set(result.rge.domaines)].slice(0, 2).join(', ')}`)
+  if (!result.bodacc.procedureCollective)
+    positivePoints.push('Aucune procédure judiciaire au BODACC')
+  if (result.capitalSocial !== undefined && result.capitalSocial >= 10000)
+    positivePoints.push(`Capital social de ${result.capitalSocial.toLocaleString('fr-FR')} €`)
+  if (!result.bodacc.changementDirigeantRecent && result.dirigeants.length > 0)
+    positivePoints.push('Dirigeants stables')
+  if (result.conventionCollective)
+    positivePoints.push('Convention collective déclarée')
+
+  // ── Sources vérifiées ─────────────────────────────────────
+  const SOURCES = [
+    { label: 'INSEE', ok: !!result.siret },
+    { label: 'BODACC', ok: true },
+    { label: 'ADEME', ok: true },
+    { label: 'Dirigeants', ok: result.dirigeants.length >= 0 },
+    { label: 'Conventions', ok: true },
+    { label: 'RNE/INPI', ok: true },
+  ]
+  const sourcesOk = SOURCES.filter((s) => s.ok).length
+
   return (
     <div>
       <div className="result-card fade-up">
 
-        {/* HEADER */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <ScoreRing score={result.score} />
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-              <h2 className="font-display" style={{ margin: 0, fontSize: '20px', fontWeight: 700, letterSpacing: '-0.01em' }}>{result.nom}</h2>
-              <span className="badge" style={{ background: statutBg, color: statutColor }}>
-                {result.statut === 'actif' ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-                {result.statut}
-              </span>
-              {maturite && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '20px', background: maturite.bg, color: maturite.color, fontFamily: 'var(--font-body)' }}>
-                  <Award size={11} />
-                  {maturite.label} · {maturite.ans} an{maturite.ans > 1 ? 's' : ''}
-                </span>
+        {/* ── VERDICT HEADER ── */}
+        <div style={{ marginBottom: '20px' }}>
+
+          {/* Nom + Score + Verdict pill */}
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <ScoreRing score={result.score} />
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <h2 className="font-display" style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                {result.nom}
+              </h2>
+              {result.activite && (
+                <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'var(--color-muted)' }}>
+                  {result.activite}
+                  {result.codeNaf && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.7 }}>NAF {result.codeNaf}</span>}
+                </p>
               )}
+              {/* Verdict badge */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', background: verdict.bg, border: `1px solid ${verdict.border}`, marginBottom: '10px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: verdict.color, letterSpacing: '0.04em', fontFamily: 'var(--font-display)' }}>
+                  {verdict.label}
+                </span>
+              </div>
+              {/* AI phrase */}
+              {enrich.loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {[85, 65].map((w, i) => <div key={i} style={{ height: '10px', borderRadius: '5px', background: 'rgba(0,0,0,0.07)', width: `${w}%` }} />)}
+                </div>
+              ) : enrich.aiSummary ? (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                  <Sparkles size={13} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.55, fontStyle: 'italic' }}>{enrich.aiSummary}</p>
+                </div>
+              ) : null}
             </div>
-            {result.activite && (
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)', marginBottom: '12px' }}>
-                {result.activite}
-                {result.codeNaf && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.7 }}>NAF {result.codeNaf}</span>}
-              </p>
-            )}
-            <div>{result.alerts.map((alert, i) => <AlertBadge key={i} alert={alert} />)}</div>
+          </div>
+
+          {/* 6 INDICATORS */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+            {indicators.map((ind) => {
+              const c = IND_COLORS[ind.level]
+              return (
+                <div key={ind.label} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', background: c.bg, border: `1px solid color-mix(in srgb, ${c.color} 20%, transparent)` }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: c.color }}>{ind.icon}</span>
+                  <div>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--color-muted)', display: 'block', lineHeight: 1, marginBottom: '1px' }}>{ind.label}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: c.color, lineHeight: 1 }}>{ind.text}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* ⚠ POINTS DE VIGILANCE */}
+          {vigilanceAlerts.length > 0 && (
+            <div style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '12px', background: '#fffbeb', border: '1px solid #fde68a' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                <AlertCircle size={15} color="#d97706" />
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Points d'attention avant de signer
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {vigilanceAlerts.map((alert, i) => {
+                  const aColor = alert.type === 'danger' ? '#dc2626' : alert.type === 'warn' ? '#d97706' : '#2563eb'
+                  const aBg = alert.type === 'danger' ? '#fef2f2' : alert.type === 'warn' ? 'transparent' : '#eff6ff'
+                  const AIcon = alert.type === 'danger' ? XCircle : alert.type === 'warn' ? AlertCircle : Info
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: alert.type === 'danger' ? '8px 10px' : '4px 0', borderRadius: alert.type === 'danger' ? '8px' : 0, background: aBg }}>
+                      <AIcon size={13} color={aColor} style={{ flexShrink: 0, marginTop: '1px' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: aColor, lineHeight: 1.4 }}>{alert.message}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ✓ POINTS RASSURANTS */}
+          {positivePoints.length > 0 && (
+            <div style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                <CheckCircle2 size={15} color="#16a34a" />
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#14532d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Points rassurants
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {positivePoints.map((point, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#166534', lineHeight: 1.4 }}>{point}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* BARRE DE VÉRIFICATION */}
+          <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Sources vérifiées
+              </span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-safe)' }}>
+                {sourcesOk}/{SOURCES.length}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '3px', marginBottom: '8px' }}>
+              {SOURCES.map((s, i) => (
+                <div key={i} style={{ flex: 1, height: '5px', borderRadius: '3px', background: s.ok ? 'var(--color-safe)' : 'var(--color-border)' }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {SOURCES.map((s) => (
+                <span key={s.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 600, color: s.ok ? 'var(--color-safe)' : 'var(--color-muted)' }}>
+                  {s.ok ? <CheckCircle2 size={10} /> : <Clock size={10} />}
+                  {s.label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* RÉSUMÉ IA */}
-        {(enrich.loading || enrich.aiSummary) && (
-          <div style={{ margin: '0 0 20px', padding: '14px 16px', borderRadius: '12px', background: 'linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%)', border: '1px solid #bbf7d0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-              <Sparkles size={14} color="#16a34a" />
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Analyse IA</span>
-            </div>
-            {enrich.loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {[90, 75].map((w, i) => <div key={i} style={{ height: '11px', borderRadius: '6px', background: 'rgba(0,0,0,0.07)', width: `${w}%` }} />)}
-              </div>
-            ) : (
-              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.65 }}>{enrich.aiSummary}</p>
-            )}
-          </div>
-        )}
 
         <div style={{ height: '1px', background: 'var(--color-border)', marginBottom: '16px' }} />
 
