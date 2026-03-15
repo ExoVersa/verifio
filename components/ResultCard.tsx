@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash,
   Leaf, ChevronRight, Users, Scale, Clock, Sparkles, Award, Briefcase,
-  ClipboardList, ArrowLeftRight, Download, GitCompare,
+  ClipboardList, ArrowLeftRight, Download, GitCompare, ClipboardCheck,
 } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
@@ -349,6 +349,13 @@ export default function ResultCard({ result }: Props) {
 
         {/* BOUTONS ACTIONS */}
         <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <a
+            href={`/guide-chantier?artisan=${encodeURIComponent(result.nom)}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, #16a34a 30%, transparent)', background: 'color-mix(in srgb, #16a34a 8%, transparent)', color: '#16a34a', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+          >
+            <ClipboardCheck size={16} />
+            Démarrer le suivi de chantier
+          </a>
           <a
             href={`/comparer?q=${encodeURIComponent(result.siret)}`}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', color: 'var(--color-accent)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}

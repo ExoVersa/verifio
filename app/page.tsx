@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
-  Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight,
+  Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight, ClipboardCheck,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -93,6 +93,13 @@ export default function Home() {
           }}>
             <ArrowLeftRight size={15} />
             Comparer
+          </Link>
+          <Link href="/guide-chantier" style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
+          }}>
+            <ClipboardCheck size={15} />
+            Guide chantier
           </Link>
           <Link href="/analyser-devis" style={{
             display: 'flex', alignItems: 'center', gap: '6px',
