@@ -226,6 +226,32 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
 
   const { score, alerts } = calculateScore({ ...e, ...siege }, rgeData, bodacc)
 
+  // Convention collective
+  const cc: string | undefined =
+    e.conventions_collectives?.[0]?.libelle ||
+    siege.conventions_collectives?.[0]?.libelle ||
+    undefined
+
+  // Code NAF brut
+  const nafCode: string = siege.activite_principale || e.activite_principale || ''
+
+  // Alerte convention collective manquante pour le bâtiment
+  const isBatiment = /^(41|42|43)/.test(nafCode)
+  if (isBatiment && !cc) {
+    alerts.push({ type: 'warn', message: 'Aucune convention collective déclarée (secteur bâtiment)' })
+  }
+
+  // Détection cession/succession via BODACC (Ventes et cessions)
+  const threeYearsAgo = new Date()
+  threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
+  const cessionDetectee = bodacc.annonces.some((a) => a.famille === 'Ventes et cessions')
+  const cessionRecente = bodacc.annonces.some(
+    (a) => a.famille === 'Ventes et cessions' && a.date && new Date(a.date) > threeYearsAgo
+  )
+  if (cessionRecente) {
+    alerts.push({ type: 'warn', message: 'Transfert de fonds de commerce détecté (< 3 ans)' })
+  }
+
   return {
     siret: siret || '',
     siren,
@@ -236,6 +262,8 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
     adresse: [siege.numero_voie, siege.type_voie, siege.libelle_voie, siege.code_postal, siege.libelle_commune]
       .filter(Boolean).join(' '),
     activite: siege.libelle_activite_principale || e.libelle_activite_principale || '',
+    codeNaf: nafCode,
+    conventionCollective: cc,
     capitalSocial: e.capital_social,
     effectif: TRANCHES[siege.tranche_effectif_salarie || e.tranche_effectif_salarie] || undefined,
     score,
@@ -247,6 +275,7 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
     },
     dirigeants: parseDirigeants(e.dirigeants || []),
     bodacc,
+    successionInfo: { cessionDetectee, cessionRecente },
     autresResultats: results.slice(1, 4).map((r: any) => ({
       siren: r.siren,
       nom: r.nom_complet || r.nom_raison_sociale,

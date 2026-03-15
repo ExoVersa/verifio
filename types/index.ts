@@ -35,6 +35,11 @@ export interface BodaccInfo {
   changementDirigeantRecent: boolean
 }
 
+export interface SuccessionInfo {
+  cessionDetectee: boolean
+  cessionRecente: boolean // < 3 ans
+}
+
 export interface SearchResult {
   siret: string
   siren: string
@@ -44,6 +49,8 @@ export interface SearchResult {
   dateCreation: string
   adresse: string
   activite: string
+  codeNaf?: string
+  conventionCollective?: string
   capitalSocial?: number
   effectif?: string
   score: number
@@ -51,6 +58,7 @@ export interface SearchResult {
   rge: RGEInfo
   dirigeants: Dirigeant[]
   bodacc: BodaccInfo
+  successionInfo?: SuccessionInfo
   autresResultats: Array<{
     siren: string
     nom: string
