@@ -2,21 +2,51 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const TYPE_TO_DOMAINE: Record<string, string> = {
-  'isolation': 'Isolation thermique',
-  'toiture': 'Isolation thermique',
-  'plomberie': 'Plomberie chauffage',
-  'electricite': 'Électricité',
-  'carrelage': '',
-  'peinture': '',
-  'maconnerie': '',
-  'chauffage': 'Plomberie chauffage',
-  'fenetres': 'Menuiseries',
-  'salle-de-bain': 'Plomberie chauffage',
-  'cuisine': '',
-  'extension': '',
-  'photovoltaique': 'Photovoltaïque',
-  'pac': 'Pompe à chaleur',
+// Real ADEME domaine values (verified directly from the API)
+const TYPE_TO_DOMAINES: Record<string, string[]> = {
+  'isolation': [
+    'Isolation par l\'intérieur des murs ou rampants de toitures ou plafonds',
+    'Isolation des combles perdus',
+    'Isolation des murs par l\'extérieur',
+    'Isolation des planchers bas',
+  ],
+  'toiture': [
+    'Isolation des combles perdus',
+    'Isolation par l\'intérieur des murs ou rampants de toitures ou plafonds',
+  ],
+  'chauffage': [
+    'Chaudière condensation ou micro-cogénération gaz ou fioul',
+    'Chaudière bois',
+    'Radiateurs électriques, dont régulation.',
+    'Chauffe-Eau Thermodynamique',
+  ],
+  'pac': [
+    'Pompe à chaleur : chauffage',
+  ],
+  'photovoltaique': [
+    'Panneaux solaires photovoltaïques',
+  ],
+  'fenetres': [
+    'Fenêtres, volets, portes donnant sur l\'extérieur',
+    'Fenêtres de toit',
+  ],
+  'plomberie': [
+    'Chauffe-Eau Thermodynamique',
+    'Chauffage et/ou eau chaude solaire',
+  ],
+  'salle-de-bain': [
+    'Chauffe-Eau Thermodynamique',
+  ],
+  'electricite': [
+    'Radiateurs électriques, dont régulation.',
+    'Panneaux solaires photovoltaïques',
+  ],
+  // No RGE data for: carrelage, peinture, maconnerie, cuisine, extension
+  'carrelage': [],
+  'peinture': [],
+  'maconnerie': [],
+  'cuisine': [],
+  'extension': [],
 }
 
 const TYPE_TO_NAF: Record<string, string[]> = {
@@ -58,9 +88,7 @@ async function getCommunes(lat: string, lon: string, rayonKm: number): Promise<s
     const data = await res.json()
     const cps: string[] = []
     for (const commune of data) {
-      if (commune.codesPostaux) {
-        cps.push(...commune.codesPostaux)
-      }
+      if (commune.codesPostaux) cps.push(...commune.codesPostaux)
     }
     return [...new Set(cps)].slice(0, 20)
   } catch {
@@ -68,38 +96,47 @@ async function getCommunes(lat: string, lon: string, rayonKm: number): Promise<s
   }
 }
 
-async function searchAdemeRge(codePostal: string, domaine: string): Promise<ArtisanResult[]> {
-  const domaineFilter = domaine ? ` AND domaine:"${domaine}"` : ''
-  const url = `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?qs=code_postal_entreprise:"${codePostal}"${domaineFilter}&size=20&select=siret,nom_entreprise,adresse_entreprise,code_postal_entreprise,commune_entreprise,domaine,qualif_reconue`
+async function searchAdemeRge(codePostal: string, domaines: string[]): Promise<ArtisanResult[]> {
+  // Build the qs filter: code_postal + optional domaine OR clause
+  let qs = `code_postal:"${codePostal}"`
+  if (domaines.length > 0) {
+    const domaineClause = domaines.map(d => `domaine:"${d}"`).join(' OR ')
+    qs += ` AND (${domaineClause})`
+  }
+
+  const url = `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?qs=${encodeURIComponent(qs)}&size=25&select=siret,nom_entreprise,adresse,code_postal,commune,domaine,nom_qualification,latitude,longitude`
+
   try {
     const res = await fetch(url, { next: { revalidate: 3600 } })
     if (!res.ok) return []
     const data = await res.json()
     if (!data.results || !Array.isArray(data.results)) return []
 
-    // Group by SIRET
+    // Group by SIRET — one company can have multiple certifications
     const bySiret = new Map<string, ArtisanResult>()
     for (const r of data.results) {
-      const siret = r.siret || ''
+      const siret = (r.siret || '').replace(/\s/g, '')
       if (!siret) continue
       if (bySiret.has(siret)) {
         const existing = bySiret.get(siret)!
         if (r.domaine && !existing.domaines.includes(r.domaine)) {
           existing.domaines.push(r.domaine)
         }
-        if (r.qualif_reconue && !existing.qualifications.includes(r.qualif_reconue)) {
-          existing.qualifications.push(r.qualif_reconue)
+        if (r.nom_qualification && !existing.qualifications.includes(r.nom_qualification)) {
+          existing.qualifications.push(r.nom_qualification)
         }
       } else {
         bySiret.set(siret, {
           siret,
           nom: r.nom_entreprise || 'Nom inconnu',
-          adresse: r.adresse_entreprise || '',
-          codePostal: r.code_postal_entreprise || codePostal,
-          ville: r.commune_entreprise || '',
+          adresse: r.adresse || '',
+          codePostal: r.code_postal || codePostal,
+          ville: r.commune || '',
           rge: true,
           domaines: r.domaine ? [r.domaine] : [],
-          qualifications: r.qualif_reconue ? [r.qualif_reconue] : [],
+          qualifications: r.nom_qualification ? [r.nom_qualification] : [],
+          lat: r.latitude ? parseFloat(r.latitude) : undefined,
+          lon: r.longitude ? parseFloat(r.longitude) : undefined,
         })
       }
     }
@@ -111,8 +148,6 @@ async function searchAdemeRge(codePostal: string, domaine: string): Promise<Arti
 
 async function searchEntreprises(codePostal: string, nafCodes: string[]): Promise<ArtisanResult[]> {
   if (!nafCodes.length) return []
-  const results: ArtisanResult[] = []
-  // Try first NAF code only to avoid too many requests
   const naf = nafCodes[0]
   const url = `https://recherche-entreprises.api.gouv.fr/search?code_postal=${codePostal}&activite_principale=${naf}&etat_administratif=A&per_page=10`
   try {
@@ -120,9 +155,9 @@ async function searchEntreprises(codePostal: string, nafCodes: string[]): Promis
     if (!res.ok) return []
     const data = await res.json()
     if (!data.results) return []
-    for (const r of data.results) {
+    return data.results.map((r: any) => {
       const siege = r.siege || {}
-      results.push({
+      return {
         siret: siege.siret || r.siren || '',
         nom: r.nom_complet || r.nom_raison_sociale || 'Nom inconnu',
         adresse: siege.adresse || '',
@@ -133,12 +168,11 @@ async function searchEntreprises(codePostal: string, nafCodes: string[]): Promis
         qualifications: [],
         lat: siege.latitude ? parseFloat(siege.latitude) : undefined,
         lon: siege.longitude ? parseFloat(siege.longitude) : undefined,
-      })
-    }
+      }
+    })
   } catch {
-    // ignore
+    return []
   }
-  return results
 }
 
 export async function GET(req: NextRequest) {
@@ -154,47 +188,50 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
   }
 
-  const domaine = TYPE_TO_DOMAINE[type] || ''
+  const domaines = TYPE_TO_DOMAINES[type] || []
   const nafCodes = TYPE_TO_NAF[type] || []
+  const hasRgeData = domaines.length > 0
 
   // Get list of postal codes within radius
   let codesPostaux: string[] = [codePostal]
   if (lat && lon) {
     const nearby = await getCommunes(lat, lon, rayon)
     if (nearby.length > 0) {
-      codesPostaux = [...new Set([codePostal, ...nearby])].slice(0, 15)
+      codesPostaux = [...new Set([codePostal, ...nearby])].slice(0, 12)
     }
   }
 
-  // Search ADEME RGE for all postal codes
-  const rgePromises = domaine
-    ? codesPostaux.slice(0, 8).map((cp) => searchAdemeRge(cp, domaine))
-    : []
-  const rgeResultsNested = await Promise.all(rgePromises)
-  const rgeResults = rgeResultsNested.flat()
-
-  // Deduplicate by SIRET
+  // Search ADEME RGE across all postal codes
+  const rgeResults: ArtisanResult[] = []
   const seen = new Set<string>()
-  const dedupedRge: ArtisanResult[] = []
-  for (const r of rgeResults) {
-    if (r.siret && !seen.has(r.siret)) {
-      seen.add(r.siret)
-      dedupedRge.push(r)
+
+  if (hasRgeData) {
+    const rgePromises = codesPostaux.slice(0, 8).map((cp) => searchAdemeRge(cp, domaines))
+    const nested = await Promise.all(rgePromises)
+    for (const batch of nested) {
+      for (const r of batch) {
+        if (r.siret && !seen.has(r.siret)) {
+          seen.add(r.siret)
+          rgeResults.push(r)
+        }
+      }
     }
   }
 
-  let results = dedupedRge
+  let results: ArtisanResult[] = [...rgeResults]
 
-  // If not rgeOnly and we have few results, add fallback entreprises
+  // Fallback: search Recherche Entreprises if few/no RGE results
   if (!rgeOnly && results.length < 5 && nafCodes.length > 0) {
-    const fallbackResults = await searchEntreprises(codePostal, nafCodes)
-    for (const r of fallbackResults) {
+    const fallback = await searchEntreprises(codePostal, nafCodes)
+    for (const r of fallback) {
       if (r.siret && !seen.has(r.siret)) {
         seen.add(r.siret)
         results.push(r)
       }
     }
-  } else if (rgeOnly) {
+  }
+
+  if (rgeOnly) {
     results = results.filter((r) => r.rge)
   }
 
@@ -202,6 +239,6 @@ export async function GET(req: NextRequest) {
     results: results.slice(0, 30),
     total: results.length,
     codesPostaux,
-    rgeCount: dedupedRge.length,
+    rgeCount: rgeResults.length,
   })
 }

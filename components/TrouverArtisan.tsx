@@ -119,10 +119,17 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
 
   const handleVilleChange = (val: string) => {
     setVille(val)
-    setCodePostal('')
     setLat('')
     setLon('')
-    fetchCommunes(val)
+    // If user typed a postal code directly (5 digits), use it immediately
+    if (/^\d{5}$/.test(val.trim())) {
+      setCodePostal(val.trim())
+      setCommuneSuggestions([])
+      setShowSuggestions(false)
+    } else {
+      setCodePostal('')
+      fetchCommunes(val)
+    }
   }
 
   const selectCommune = (commune: Commune) => {
@@ -142,35 +149,39 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
   }
 
   const loadScores = async (artisans: ArtisanResult[]) => {
-    const withSirets = artisans.filter(a => a.siret && a.siret.length >= 9)
     // Mark all as loading
-    setResults(withSirets.map(a => ({ ...a, scoreLoading: true })))
+    const withLoading = artisans.map(a =>
+      a.siret && a.siret.length >= 9 ? { ...a, scoreLoading: true } : a
+    )
+    setResults(withLoading)
 
     // Load in batches of 3
     const batchSize = 3
-    const withScores = [...withSirets]
-    for (let i = 0; i < withScores.length; i += batchSize) {
-      const batch = withScores.slice(i, i + batchSize)
+    const working = [...withLoading]
+    for (let i = 0; i < working.length; i += batchSize) {
+      const batch = working.slice(i, i + batchSize)
       await Promise.all(batch.map(async (artisan, idx) => {
+        if (!artisan.siret || artisan.siret.length < 9) return
         try {
           const res = await fetch(`/api/search?q=${artisan.siret}`)
           if (res.ok) {
             const data = await res.json()
-            const score = data.result?.score ?? data.score ?? null
-            withScores[i + idx] = { ...withScores[i + idx], score, scoreLoading: false }
+            const score = data.score ?? data.result?.score ?? null
+            working[i + idx] = { ...working[i + idx], score, scoreLoading: false }
           } else {
-            withScores[i + idx] = { ...withScores[i + idx], scoreLoading: false }
+            working[i + idx] = { ...working[i + idx], scoreLoading: false }
           }
         } catch {
-          withScores[i + idx] = { ...withScores[i + idx], scoreLoading: false }
+          working[i + idx] = { ...working[i + idx], scoreLoading: false }
         }
       }))
-      setResults([...withScores])
+      setResults([...working])
     }
   }
 
-  const handleSearch = async () => {
-    if (!type || !codePostal) return
+  const handleSearch = async (cpOverride?: string) => {
+    const cp = cpOverride || codePostal
+    if (!type || !cp) return
     setLoading(true)
     setError(null)
     setSearched(true)
@@ -179,7 +190,7 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
     try {
       const params = new URLSearchParams({
         type,
-        codePostal,
+        codePostal: cp,
         rayon: String(rayon),
         rgeOnly: rgeOnly ? '1' : '0',
       })
@@ -204,19 +215,32 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!codePostal && ville) {
-      // Try to find commune
-      fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(ville)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
-        .then(r => r.json())
-        .then((data: Commune[]) => {
-          if (data[0]) {
-            setCodePostal(data[0].codesPostaux?.[0] || data[0].code)
-            handleSearch()
-          }
-        })
-        .catch(() => {})
+      // Auto-resolve commune name → code postal before searching
+      try {
+        const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(ville)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
+        const data: Commune[] = await res.json()
+        if (data[0]) {
+          const cp = data[0].codesPostaux?.[0] || data[0].code
+          setCodePostal(cp)
+          setVille(data[0].nom)
+          // Fetch coordinates too
+          fetch(`https://geo.api.gouv.fr/communes/${data[0].code}?fields=centre`)
+            .then(r => r.json())
+            .then(d => {
+              if (d.centre?.coordinates) {
+                setLon(String(d.centre.coordinates[0]))
+                setLat(String(d.centre.coordinates[1]))
+              }
+            })
+            .catch(() => {})
+          handleSearch(cp)
+        }
+      } catch {
+        // ignore, handleSearch will show error
+      }
       return
     }
     handleSearch()
