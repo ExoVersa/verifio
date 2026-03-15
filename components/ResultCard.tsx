@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash,
   Leaf, ChevronRight, Users, Scale, Clock, Sparkles, Award, Briefcase,
-  ClipboardList, ArrowLeftRight, Download,
+  ClipboardList, ArrowLeftRight, Download, GitCompare,
 } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
@@ -347,8 +347,15 @@ export default function ResultCard({ result }: Props) {
           </div>
         </div>
 
-        {/* BOUTON TÉLÉCHARGER PDF */}
-        <div style={{ marginTop: '20px' }}>
+        {/* BOUTONS ACTIONS */}
+        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <a
+            href={`/comparer?q=${encodeURIComponent(result.siret)}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', color: 'var(--color-accent)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+          >
+            <GitCompare size={16} />
+            Comparer avec un autre artisan
+          </a>
           <button
             onClick={() => window.print()}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'var(--font-body)' }}

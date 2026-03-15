@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
-  Star, ChevronRight, Quote, FileSearch, Calculator,
+  Star, ChevronRight, Quote, FileSearch, Calculator, ArrowLeftRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -86,6 +86,13 @@ export default function Home() {
           }}>
             <Calculator size={15} />
             Simulateur de prix
+          </Link>
+          <Link href="/comparer" style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', fontWeight: 500,
+          }}>
+            <ArrowLeftRight size={15} />
+            Comparer
           </Link>
           <Link href="/analyser-devis" style={{
             display: 'flex', alignItems: 'center', gap: '6px',
