@@ -40,6 +40,29 @@ export interface SuccessionInfo {
   cessionRecente: boolean // < 3 ans
 }
 
+export interface DevisMentionLegale {
+  label: string
+  present: boolean
+  detail: string
+}
+
+export interface DevisAlerte {
+  type: 'danger' | 'warn' | 'info'
+  message: string
+}
+
+export interface DevisAnalysis {
+  score: number
+  verdict: 'conforme' | 'vigilance' | 'suspect'
+  siret_trouve: string | null
+  mentions_legales: DevisMentionLegale[]
+  alertes: DevisAlerte[]
+  recommandations: string[]
+  prix_coherents: boolean | null
+  commentaire_prix: string | null
+  resume: string
+}
+
 export interface SearchResult {
   siret: string
   siren: string

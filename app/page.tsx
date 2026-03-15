@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Search, ShieldCheck, AlertTriangle, History, LogOut, LogIn,
   CheckCircle2, Leaf, Scale, Clock, Users, TrendingDown, Lock,
-  Star, ChevronRight, Quote,
+  Star, ChevronRight, Quote, FileSearch,
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
@@ -80,6 +80,16 @@ export default function Home() {
           </span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/analyser-devis" style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600,
+            background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+            padding: '6px 12px', borderRadius: '8px',
+            border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+          }}>
+            <FileSearch size={15} />
+            Analyser un devis
+          </Link>
           {user ? (
             <>
               <Link href="/historique" style={{
@@ -334,6 +344,91 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── ANALYSER UN DEVIS ── */}
+          <section style={{ padding: '80px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
+                <div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    fontSize: '12px', fontWeight: 600, color: 'var(--color-accent)',
+                    background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+                    padding: '5px 14px', borderRadius: '20px', marginBottom: '20px',
+                    border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+                  }}>
+                    <FileSearch size={13} />
+                    Nouveau — Analyse IA
+                  </div>
+                  <h2 className="font-display" style={{ margin: '0 0 16px', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                    Votre devis est-il<br />
+                    <span style={{ color: 'var(--color-accent)' }}>vraiment conforme ?</span>
+                  </h2>
+                  <p style={{ margin: '0 0 28px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
+                    Déposez votre devis (PDF ou photo) et notre IA analyse en 30 secondes les 9 mentions légales obligatoires, les incohérences de prix et les signaux d'alerte.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+                    {[
+                      '9 mentions légales vérifiées (SIRET, décennale, TVA…)',
+                      'Alertes sur les clauses abusives',
+                      'Cohérence des prix détectée par IA',
+                      '1ère analyse gratuite, sans abonnement',
+                    ].map(item => (
+                      <div key={item} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                        <CheckCircle2 size={16} color="var(--color-safe)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span style={{ fontSize: '14px', lineHeight: 1.5 }}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/analyser-devis" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '14px 24px', borderRadius: '12px',
+                    background: 'var(--color-accent)', color: 'white',
+                    fontSize: '15px', fontWeight: 700, textDecoration: 'none',
+                  }}>
+                    <FileSearch size={18} />
+                    Analyser mon devis gratuitement
+                    <ChevronRight size={16} />
+                  </Link>
+                </div>
+                <div style={{
+                  background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                  borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                    <div style={{
+                      width: '44px', height: '44px', borderRadius: '50%',
+                      background: 'var(--color-safe)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontSize: '16px', fontWeight: 800,
+                    }}>72</div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>Devis — Points de vigilance</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Rénovation cuisine • 4 200 €</p>
+                    </div>
+                  </div>
+                  {[
+                    { label: 'Numéro SIRET', ok: true },
+                    { label: 'Assurance décennale', ok: false },
+                    { label: 'TVA intracommunautaire', ok: true },
+                    { label: 'Délai de rétractation 14j', ok: false },
+                    { label: 'Acompte ≤ 30%', ok: true },
+                    { label: 'Description des travaux', ok: true },
+                  ].map(({ label, ok }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderBottom: '1px solid var(--color-border)' }}>
+                      {ok
+                        ? <CheckCircle2 size={14} color="var(--color-safe)" />
+                        : <AlertTriangle size={14} color="var(--color-danger)" />
+                      }
+                      <span style={{ fontSize: '12px', color: ok ? 'var(--color-text)' : 'var(--color-danger)', fontWeight: ok ? 400 : 600 }}>{label}</span>
+                    </div>
+                  ))}
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-muted)', fontStyle: 'italic' }}>
+                    ⚠️ 2 mentions manquantes — vérifiez avant de signer
+                  </p>
+                </div>
               </div>
             </div>
           </section>
