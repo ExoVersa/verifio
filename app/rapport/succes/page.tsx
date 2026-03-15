@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, Sparkles, ArrowLeft } from 'lucide-react'
-import Anthropic from '@anthropic-ai/sdk'
 import { fetchCompany } from '@/lib/fetchCompany'
 import ScoreRing from '@/components/ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
+
+export const dynamic = 'force-dynamic'
 
 const alertIcons: Record<AlertType, React.ReactNode> = {
   safe: <CheckCircle2 size={15} />,
@@ -33,6 +34,7 @@ function formatDate(d: string) {
 async function getAISummary(result: SearchResult): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY) return ''
   try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const prompt = `Tu es un expert en vérification d'entreprises du bâtiment français. Rédige une synthèse concise (3-4 phrases max) en français pour aider un particulier à décider s'il peut faire confiance à cet artisan.
 
