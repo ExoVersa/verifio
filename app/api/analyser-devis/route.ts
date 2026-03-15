@@ -120,6 +120,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Service IA non configuré' }, { status: 503 })
   }
 
+  // ── Appel Claude
+  let rawText = ''
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -147,34 +149,44 @@ export async function POST(req: NextRequest) {
       }],
     })
 
-    const rawText = message.content[0].type === 'text' ? message.content[0].text : ''
-    const jsonText = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
-    const analysis = JSON.parse(jsonText)
-
-    // Croiser avec la fiche entreprise si SIRET trouvé
-    let company = null
-    if (analysis.siret_trouve) {
-      try {
-        const requestHost = req.headers.get('host')
-        const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
-        const searchRes = await fetch(`${baseUrl}/api/search?q=${encodeURIComponent(analysis.siret_trouve)}`)
-        if (searchRes.ok) company = await searchRes.json()
-      } catch { /* ignore */ }
-    }
-
-    // Enregistrer en base
-    await supabase.from('devis_analyses').insert({
-      user_id: user.id,
-      paid: !hasFreeQuota,
-      stripe_session_id: sessionId || null,
-      verdict: analysis.verdict,
-      score: analysis.score,
-    })
-
-    return NextResponse.json({ analysis, company })
+    rawText = message.content[0].type === 'text' ? message.content[0].text : ''
+    console.log('[analyser-devis] Claude raw response (first 300):', rawText.slice(0, 300))
   } catch (err: any) {
-    console.error('analyser-devis error:', err)
-    return NextResponse.json({ error: 'Erreur lors de l\'analyse. Vérifiez le format du fichier.' }, { status: 500 })
+    console.error('[analyser-devis] Erreur appel Claude:', err?.message || err)
+    return NextResponse.json({ error: `Erreur IA : ${err?.message || 'Appel Claude échoué'}` }, { status: 500 })
   }
+
+  // ── Parse JSON
+  let analysis: any
+  try {
+    const jsonText = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
+    analysis = JSON.parse(jsonText)
+  } catch (err: any) {
+    console.error('[analyser-devis] Erreur JSON.parse. Réponse brute:', rawText)
+    return NextResponse.json({ error: `Réponse IA invalide. Réessayez ou changez de fichier.` }, { status: 500 })
+  }
+
+  // ── Croiser avec la fiche entreprise si SIRET trouvé
+  let company = null
+  if (analysis.siret_trouve) {
+    try {
+      const requestHost = req.headers.get('host')
+      const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
+      const searchRes = await fetch(`${baseUrl}/api/search?q=${encodeURIComponent(analysis.siret_trouve)}`)
+      if (searchRes.ok) company = await searchRes.json()
+    } catch { /* ignore */ }
+  }
+
+  // ── Enregistrer en base (erreur silencieuse si table absente)
+  const { error: insertError } = await supabase.from('devis_analyses').insert({
+    user_id: user.id,
+    paid: !hasFreeQuota,
+    stripe_session_id: sessionId || null,
+    verdict: analysis.verdict,
+    score: analysis.score,
+  })
+  if (insertError) console.warn('[analyser-devis] Insert Supabase échoué (table absente ?):', insertError.message)
+
+  return NextResponse.json({ analysis, company })
 }
