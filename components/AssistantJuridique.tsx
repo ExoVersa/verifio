@@ -143,7 +143,7 @@ export default function AssistantJuridique({ initialQuestion }: { initialQuestio
         <h1 className="font-display" style={{ margin: '0 0 8px', fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
           Assistant juridique chantier
         </h1>
-        <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto' }}>
+        <p style={{ margin: '0 auto', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6, maxWidth: '520px' }}>
           Décrivez votre problème, je vous explique vos droits et recours en français simple.
         </p>
       </div>
