@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Stripe from 'stripe'
 
 export const dynamic = 'force-dynamic'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover',
-})
 
 const SYSTEM_PROMPT = `Tu es un expert juridique français spécialisé dans les contrats de travaux. Analyse ce devis et retourne UNIQUEMENT un JSON valide sans markdown ni backticks :
 {
@@ -71,6 +66,9 @@ export async function POST(req: NextRequest) {
   const hasFreeQuota = !existingAnalyses || existingAnalyses.length === 0
 
   // Vérifier le paiement Stripe si sessionId fourni
+  const { default: Stripe } = await import('stripe')
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
+
   let isPaidAnalysis = false
   if (sessionId && !hasFreeQuota) {
     try {
