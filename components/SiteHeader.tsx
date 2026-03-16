@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
-  ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin,
+  ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin, HardHat,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -109,6 +109,7 @@ function DropdownPanel({ items, onClose }: { items: NavItem[]; onClose: () => vo
 
 export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [chantiersEnCours, setChantiersEnCours] = useState(0)
   const [verifierOpen, setVerifierOpen] = useState(false)
   const [outilsOpen, setOutilsOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -116,12 +117,25 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      if (data.user) loadChantiersCount()
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) loadChantiersCount()
+      else setChantiersEnCours(0)
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  async function loadChantiersCount() {
+    const { count } = await supabase
+      .from('chantiers')
+      .select('*', { count: 'exact', head: true })
+      .eq('statut', 'en_cours')
+    setChantiersEnCours(count ?? 0)
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -261,6 +275,31 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <a
+                href="/mes-chantiers"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '13px', fontWeight: 600, color: 'var(--color-text)',
+                  textDecoration: 'none', padding: '7px 12px', borderRadius: '8px',
+                  background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                  position: 'relative',
+                }}
+              >
+                <HardHat size={14} />
+                Mes chantiers
+                {chantiersEnCours > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-4px', right: '-4px',
+                    width: '16px', height: '16px', borderRadius: '50%',
+                    background: 'var(--color-accent)', color: '#fff',
+                    fontSize: '10px', fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1,
+                  }}>
+                    {chantiersEnCours > 9 ? '9+' : chantiersEnCours}
+                  </span>
+                )}
+              </a>
+              <a
                 href="/historique"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
@@ -366,6 +405,27 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           ))}
 
           <div style={{ height: '1px', background: 'var(--color-border)', margin: '8px 0' }} />
+
+          {user && (
+            <a
+              href="/mes-chantiers"
+              onClick={closeAll}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', marginBottom: '4px' }}
+            >
+              <div style={{ width: '30px', height: '30px', borderRadius: '7px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent)', flexShrink: 0, position: 'relative' }}>
+                <HardHat size={15} />
+                {chantiersEnCours > 0 && (
+                  <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '14px', height: '14px', borderRadius: '50%', background: 'var(--color-accent)', color: '#fff', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {chantiersEnCours > 9 ? '9+' : chantiersEnCours}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>Mes chantiers</p>
+                <p style={{ margin: '1px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>Suivez vos travaux et paiements</p>
+              </div>
+            </a>
+          )}
 
           {user ? (
             <div style={{ display: 'flex', gap: '8px' }}>

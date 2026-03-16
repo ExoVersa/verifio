@@ -351,6 +351,13 @@ export default function GuideChantier({ initialArtisan }: { initialArtisan?: str
 
       {/* ACTIONS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+        <a
+          href={initialArtisan ? `/nouveau-chantier?nom=${encodeURIComponent(initialArtisan)}` : '/mes-chantiers'}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px 20px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}
+        >
+          <ClipboardCheck size={16} />
+          Suivre mon chantier
+        </a>
         <button
           onClick={handleShare}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', color: 'var(--color-accent)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'opacity 0.2s' }}

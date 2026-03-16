@@ -632,11 +632,11 @@ export default function ResultCard({ result, onSelect }: Props) {
         {/* BOUTONS ACTIONS */}
         <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <a
-            href={`/guide-chantier?artisan=${encodeURIComponent(result.nom)}`}
+            href={`/nouveau-chantier?nom=${encodeURIComponent(result.nom)}&siret=${encodeURIComponent(result.siret || '')}&type=${encodeURIComponent(result.activite || '')}`}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }}
           >
             <ClipboardCheck size={16} />
-            Démarrer le suivi de chantier
+            Créer un chantier avec cet artisan
           </a>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <a
