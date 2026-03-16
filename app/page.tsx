@@ -317,7 +317,7 @@ export default function Home() {
         {result && !loading && (
           <section style={{ maxWidth: '680px', margin: '0 auto', padding: '28px 24px 80px' }}>
             <div className="fade-up">
-              <ResultCard result={result} />
+              <ResultCard result={result} onSelect={handleSearch} />
             </div>
           </section>
         )}

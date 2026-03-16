@@ -11,6 +11,7 @@ import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
 
 interface Props {
   result: SearchResult
+  onSelect?: (siren: string) => void
 }
 
 interface EnrichState {
@@ -157,7 +158,7 @@ function SectionHeader({ icon, title, badge }: { icon: React.ReactNode; title: s
 }
 
 // ── Main component ────────────────────────────────────────────────
-export default function ResultCard({ result }: Props) {
+export default function ResultCard({ result, onSelect }: Props) {
   const [enrich, setEnrich] = useState<EnrichState>({ loading: false })
   const [mapLoaded, setMapLoaded] = useState(false)
 
@@ -666,16 +667,21 @@ export default function ResultCard({ result }: Props) {
         <div className="fade-up fade-up-delay-1" style={{ marginTop: '12px' }}>
           <p style={{ fontSize: '12px', color: 'var(--color-muted)', marginBottom: '8px', paddingLeft: '4px' }}>Autres résultats similaires</p>
           {result.autresResultats.map((r) => (
-            <div key={r.siren} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} className="card-hover">
+            <button
+              key={r.siren}
+              onClick={() => onSelect?.(r.siren)}
+              style={{ width: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: onSelect ? 'pointer' : 'default', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+              className="card-hover"
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <CompanyAvatar nom={r.nom} size={36} />
                 <div>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{r.nom}</p>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>{r.nom}</p>
                   <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>{r.adresse}</p>
                 </div>
               </div>
               <ChevronRight size={16} color="var(--color-muted)" />
-            </div>
+            </button>
           ))}
         </div>
       )}
