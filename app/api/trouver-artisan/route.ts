@@ -120,16 +120,43 @@ async function getCommunes(lat: string, lon: string, rayonKm: number): Promise<s
   }
 }
 
+function parseApiResult(r: any, codePostal: string): ArtisanResult {
+  const siege = r.siege || {}
+  const rgeQualifications: string[] = siege.liste_rge
+    ? (Array.isArray(siege.liste_rge) ? siege.liste_rge : [siege.liste_rge])
+    : []
+  const nafForLabel = r.activite_principale || siege.activite_principale || ''
+  return {
+    siret: siege.siret || '',
+    siren: r.siren || '',
+    nom: r.nom_complet || r.nom_raison_sociale || 'Nom inconnu',
+    formeJuridique: getFormeJuridique(r.nature_juridique || ''),
+    activitePrincipale: nafForLabel,
+    activiteLabel: NAF_LABELS[nafForLabel] || nafForLabel || '',
+    dateCreation: r.date_creation || siege.date_creation || '',
+    adresse: siege.adresse || siege.geo_adresse || '',
+    codePostal: siege.code_postal || codePostal,
+    ville: siege.libelle_commune || '',
+    rge: rgeQualifications.length > 0,
+    rgeQualifications,
+    lat: siege.latitude ? parseFloat(siege.latitude) : undefined,
+    lon: siege.longitude ? parseFloat(siege.longitude) : undefined,
+    effectif: getEffectifLabel(r.tranche_effectif_salarie || siege.tranche_effectif_salarie || 'NN'),
+  }
+}
+
 async function searchByPostalCode(
   codePostal: string,
   rgeOnly: boolean,
   nafCode: string | null,
-  perPage: number = 50,
-): Promise<ArtisanResult[]> {
+  perPage: number = 25,
+  page: number = 1,
+): Promise<{ results: ArtisanResult[]; total: number }> {
   const params = new URLSearchParams({
     code_postal: codePostal,
     etat_administratif: 'A',
     per_page: String(perPage),
+    page: String(page),
   })
 
   if (nafCode) {
@@ -145,40 +172,15 @@ async function searchByPostalCode(
   const url = `https://recherche-entreprises.api.gouv.fr/search?${params}`
   try {
     const res = await fetch(url, { next: { revalidate: 3600 } })
-    if (!res.ok) return []
+    if (!res.ok) return { results: [], total: 0 }
     const data = await res.json()
-    if (!data.results) return []
-
-    return data.results.map((r: any) => {
-      const siege = r.siege || {}
-      const rgeQualifications: string[] = siege.liste_rge
-        ? (Array.isArray(siege.liste_rge) ? siege.liste_rge : [siege.liste_rge])
-        : []
-
-      const naf = (r.activite_principale || siege.activite_principale || '').replace('.', '')
-      // Normalize for label lookup: "4321A" → "43.21A"
-      const nafForLabel = r.activite_principale || siege.activite_principale || ''
-
-      return {
-        siret: siege.siret || '',
-        siren: r.siren || '',
-        nom: r.nom_complet || r.nom_raison_sociale || 'Nom inconnu',
-        formeJuridique: getFormeJuridique(r.nature_juridique || ''),
-        activitePrincipale: nafForLabel,
-        activiteLabel: NAF_LABELS[nafForLabel] || nafForLabel || '',
-        dateCreation: r.date_creation || siege.date_creation || '',
-        adresse: siege.adresse || siege.geo_adresse || '',
-        codePostal: siege.code_postal || codePostal,
-        ville: siege.libelle_commune || '',
-        rge: rgeQualifications.length > 0,
-        rgeQualifications,
-        lat: siege.latitude ? parseFloat(siege.latitude) : undefined,
-        lon: siege.longitude ? parseFloat(siege.longitude) : undefined,
-        effectif: getEffectifLabel(r.tranche_effectif_salarie || siege.tranche_effectif_salarie || 'NN'),
-      } as ArtisanResult
-    })
+    if (!data.results) return { results: [], total: 0 }
+    return {
+      results: data.results.map((r: any) => parseApiResult(r, codePostal)),
+      total: data.total_results || 0,
+    }
   } catch {
-    return []
+    return { results: [], total: 0 }
   }
 }
 
@@ -197,7 +199,7 @@ export async function GET(req: NextRequest) {
 
   // Determine NAF codes for type filtering (use first NAF code as API filter)
   const typeNafs = type && TYPE_TO_NAF[type] ? TYPE_TO_NAF[type] : null
-  const primaryNaf = typeNafs?.[0] ?? null // Send one NAF code to API, filter others client-side
+  const primaryNaf = typeNafs?.[0] ?? null // Send one NAF code to API
 
   // Build list of postal codes in radius
   let codesPostaux: string[] = [codePostal]
@@ -208,17 +210,36 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Query Recherche Entreprises for each postal code (main + up to 3 nearby)
-  const searchPromises = codesPostaux.slice(0, 4).map((cp, i) =>
-    searchByPostalCode(cp, rgeOnly, primaryNaf, i === 0 ? 50 : 20)
-  )
+  // For specific NAF: search up to 4 postal codes with pagination on the main CP
+  // For generic section=F: search up to 4 postal codes, first page only (too many results anyway)
+  const searchPromises: Promise<{ results: ArtisanResult[]; total: number }>[] = []
+
+  if (primaryNaf) {
+    // Specific type: search main CP with higher perPage + page 2 if needed, plus nearby CPs
+    searchPromises.push(searchByPostalCode(codePostal, rgeOnly, primaryNaf, 50, 1))
+    for (const cp of codesPostaux.slice(1, 4)) {
+      searchPromises.push(searchByPostalCode(cp, rgeOnly, primaryNaf, 25, 1))
+    }
+  } else {
+    // Generic: search up to 4 postal codes, page 1 only
+    codesPostaux.slice(0, 4).forEach((cp, i) => {
+      searchPromises.push(searchByPostalCode(cp, rgeOnly, null, i === 0 ? 50 : 25, 1))
+    })
+  }
+
   const nested = await Promise.all(searchPromises)
+
+  // If specific type and main CP has more results, fetch page 2
+  if (primaryNaf && nested[0].total > 50) {
+    const page2 = await searchByPostalCode(codePostal, rgeOnly, primaryNaf, 50, 2)
+    nested.push(page2)
+  }
 
   // Deduplicate by SIRET
   const seen = new Set<string>()
   const all: ArtisanResult[] = []
   for (const batch of nested) {
-    for (const r of batch) {
+    for (const r of batch.results) {
       const key = r.siret || r.siren
       if (key && !seen.has(key)) {
         seen.add(key)
@@ -227,19 +248,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Client-side NAF filter for additional NAF codes of the same type
-  let results = all
-  if (typeNafs && typeNafs.length > 1) {
-    // primaryNaf already used in API query; also keep other NAF codes of same type
-    // Since we queried by primaryNaf, results might not include other NAFs for same type
-    // In this case just show what we have (API already filtered)
-  }
-
-  const rgeCount = results.filter(r => r.rge).length
+  const rgeCount = all.filter(r => r.rge).length
 
   return NextResponse.json({
-    results: results.slice(0, 50),
-    total: results.length,
+    results: all.slice(0, 80),
+    total: all.length,
     rgeCount,
     codesPostaux,
   })
