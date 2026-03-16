@@ -198,6 +198,7 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
   const [type, setType] = useState(initialType)
   const [ville, setVille] = useState(initialVille)
   const [codePostal, setCodePostal] = useState(initialCodePostal)
+  const [codeCommune, setCodeCommune] = useState('') // INSEE code (e.g. "37018"), resolved from commune name
   const [lat, setLat] = useState('')
   const [lon, setLon] = useState('')
   const [rayon, setRayon] = useState(20)
@@ -216,8 +217,40 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
   const suggestionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (initialType && initialCodePostal) {
+    if (initialCodePostal) {
+      // CP already resolved (SSG slug pages or ?cp= param) — resolve INSEE code server-side
       handleSearch(initialCodePostal)
+    } else if (initialVille) {
+      // Resolve ville name → INSEE code + postal code then search
+      const isCP = /^\d{5}$/.test(initialVille.trim())
+      if (isCP) {
+        setCodePostal(initialVille.trim())
+        handleSearch(initialVille.trim())
+      } else {
+        fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(initialVille)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
+          .then(r => r.json())
+          .then((data: Commune[]) => {
+            if (data[0]) {
+              const cp = data[0].codesPostaux?.[0] || ''
+              const cc = data[0].code // INSEE code (e.g. "37018")
+              setCodePostal(cp)
+              setCodeCommune(cc)
+              setVille(data[0].nom)
+              // Get coordinates too
+              fetch(`https://geo.api.gouv.fr/communes/${cc}?fields=centre`)
+                .then(r => r.json())
+                .then(d => {
+                  if (d.centre?.coordinates) {
+                    setLon(String(d.centre.coordinates[0]))
+                    setLat(String(d.centre.coordinates[1]))
+                  }
+                })
+                .catch(() => {})
+              handleSearch(cp, cc) // pass both CP and INSEE code
+            }
+          })
+          .catch(() => {})
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -247,6 +280,7 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
     setVille(val)
     setLat('')
     setLon('')
+    setCodeCommune('') // Reset INSEE code when user starts typing
     if (/^\d{5}$/.test(val.trim())) {
       setCodePostal(val.trim())
       setCommuneSuggestions([])
@@ -258,9 +292,10 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
   }
 
   const selectCommune = (commune: Commune) => {
-    const cp = commune.codesPostaux?.[0] || commune.code
+    const cp = commune.codesPostaux?.[0] || ''
     setVille(commune.nom)
     setCodePostal(cp)
+    setCodeCommune(commune.code) // Store INSEE code
     setShowSuggestions(false)
     fetch(`https://geo.api.gouv.fr/communes/${commune.code}?fields=centre`)
       .then(r => r.json())
@@ -311,9 +346,10 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
     setResults([...working])
   }
 
-  const handleSearch = async (cpOverride?: string) => {
+  const handleSearch = async (cpOverride?: string, communeOverride?: string) => {
     const cp = cpOverride || codePostal
-    if (!cp) return
+    const cc = communeOverride || codeCommune
+    if (!cp && !cc) return
     setLoading(true)
     setError(null)
     setSearched(true)
@@ -323,10 +359,11 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
 
     try {
       const params = new URLSearchParams({
-        codePostal: cp,
         rayon: String(rayon),
         rgeOnly: rgeOnly ? '1' : '0',
       })
+      if (cp) params.set('codePostal', cp)
+      if (cc) params.set('codeCommune', cc) // INSEE code — preferred
       if (type) params.set('type', type)
       if (lat) params.set('lat', lat)
       if (lon) params.set('lon', lon)
@@ -352,15 +389,20 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!codePostal && ville) {
+    if (!codeCommune || !codePostal) {
+      // Resolve city name → INSEE code + postal code
+      const query = ville.trim()
+      if (!query) return
       try {
-        const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(ville)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
+        const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
         const data: Commune[] = await res.json()
         if (data[0]) {
-          const cp = data[0].codesPostaux?.[0] || data[0].code
+          const cp = data[0].codesPostaux?.[0] || ''
+          const cc = data[0].code // INSEE code
           setCodePostal(cp)
+          setCodeCommune(cc)
           setVille(data[0].nom)
-          fetch(`https://geo.api.gouv.fr/communes/${data[0].code}?fields=centre`)
+          fetch(`https://geo.api.gouv.fr/communes/${cc}?fields=centre`)
             .then(r => r.json())
             .then(d => {
               if (d.centre?.coordinates) {
@@ -369,7 +411,7 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
               }
             })
             .catch(() => {})
-          handleSearch(cp)
+          handleSearch(cp, cc)
         }
       } catch { /* ignore */ }
       return
