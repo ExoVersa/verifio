@@ -6,9 +6,10 @@ import { Search, Loader2 } from 'lucide-react'
 interface Props {
   onSearch: (query: string) => void
   loading: boolean
+  dark?: boolean
 }
 
-export default function SearchBar({ onSearch, loading }: Props) {
+export default function SearchBar({ onSearch, loading, dark }: Props) {
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -23,13 +24,21 @@ export default function SearchBar({ onSearch, loading }: Props) {
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <Search
           size={20}
-          color="var(--color-muted)"
+          color={dark ? 'rgba(255,255,255,0.5)' : 'var(--color-muted)'}
           style={{ position: 'absolute', left: '18px', flexShrink: 0, pointerEvents: 'none' }}
         />
         <input
           ref={inputRef}
           className="search-input"
-          style={{ paddingLeft: '50px', paddingRight: '130px' }}
+          style={{
+            paddingLeft: '50px',
+            paddingRight: '130px',
+            ...(dark ? {
+              background: 'rgba(255,255,255,0.12)',
+              border: '1.5px solid rgba(255,255,255,0.25)',
+              color: '#fff',
+            } : {}),
+          }}
           type="text"
           placeholder="Nom d'artisan, entreprise ou SIRET…"
           value={value}
@@ -46,12 +55,12 @@ export default function SearchBar({ onSearch, loading }: Props) {
             position: 'absolute',
             right: '8px',
             padding: '8px 18px',
-            background: 'var(--color-accent)',
-            color: '#fff',
+            background: dark ? '#fff' : 'var(--color-accent)',
+            color: dark ? 'var(--color-accent)' : '#fff',
             border: 'none',
             borderRadius: '8px',
             fontSize: '14px',
-            fontWeight: 500,
+            fontWeight: 600,
             fontFamily: 'var(--font-body)',
             cursor: loading || value.trim().length < 2 ? 'not-allowed' : 'pointer',
             opacity: loading || value.trim().length < 2 ? 0.5 : 1,

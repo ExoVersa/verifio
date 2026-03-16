@@ -26,6 +26,51 @@ const alertIcons: Record<AlertType, React.ReactNode> = {
   info: <Info size={15} />,
 }
 
+// ── Company initials circle (Qonto-style) ────────────────────────
+const INITIALS_PALETTES = [
+  { bg: '#dbeafe', color: '#1d4ed8' },
+  { bg: '#d1fae5', color: '#065f46' },
+  { bg: '#fce7f3', color: '#be185d' },
+  { bg: '#ede9fe', color: '#5b21b6' },
+  { bg: '#fef3c7', color: '#92400e' },
+  { bg: '#ffedd5', color: '#9a3412' },
+  { bg: '#e0f2fe', color: '#0c4a6e' },
+  { bg: '#f0fdf4', color: '#14532d' },
+]
+
+function getInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
+}
+
+function getPalette(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff
+  return INITIALS_PALETTES[Math.abs(hash) % INITIALS_PALETTES.length]
+}
+
+function CompanyAvatar({ nom, size = 52 }: { nom: string; size?: number }) {
+  const initials = getInitials(nom)
+  const palette = getPalette(nom)
+  const radius = size <= 40 ? '10px' : '14px'
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      background: palette.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: `1.5px solid color-mix(in srgb, ${palette.color} 25%, transparent)`,
+    }}>
+      <span style={{
+        fontSize: size <= 40 ? '13px' : '17px', fontWeight: 700,
+        color: palette.color, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
+      }}>
+        {initials}
+      </span>
+    </div>
+  )
+}
+
+// ── Misc helpers ─────────────────────────────────────────────────
 function computeScoreMaturite(dateCreation: string, rge: boolean, hasCC: boolean) {
   if (!dateCreation) return null
   const ans = (Date.now() - new Date(dateCreation).getTime()) / (1000 * 60 * 60 * 24 * 365)
@@ -39,15 +84,6 @@ function computeScoreMaturite(dateCreation: string, rge: boolean, hasCC: boolean
     return { label: 'Établie', bg: 'var(--color-safe-bg)', color: 'var(--color-safe)', ans: Math.floor(ans) }
   }
   return { label: 'Expérimentée', bg: '#d1fae5', color: '#065f46', ans: Math.floor(ans) }
-}
-
-function AlertBadge({ alert }: { alert: Alert }) {
-  return (
-    <div className={`badge badge-${alert.type}`} style={{ marginBottom: '6px', width: '100%', justifyContent: 'flex-start' }}>
-      {alertIcons[alert.type]}
-      <span>{alert.message}</span>
-    </div>
-  )
 }
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | number }) {
@@ -91,6 +127,36 @@ function TimelineItem({ annonce, last }: { annonce: BodaccAnnonce; last: boolean
   )
 }
 
+// ── Section wrapper ───────────────────────────────────────────────
+function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      marginTop: '16px', border: '1px solid var(--color-border)',
+      borderRadius: '14px', overflow: 'hidden',
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function SectionHeader({ icon, title, badge }: { icon: React.ReactNode; title: string; badge?: React.ReactNode }) {
+  return (
+    <div style={{
+      padding: '12px 16px', background: 'var(--color-bg)',
+      borderBottom: '1px solid var(--color-border)',
+      display: 'flex', alignItems: 'center', gap: '8px',
+    }}>
+      <div style={{ color: 'var(--color-muted)' }}>{icon}</div>
+      <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', color: 'var(--color-muted)', flex: 1 }}>
+        {title}
+      </span>
+      {badge}
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────
 export default function ResultCard({ result }: Props) {
   const [enrich, setEnrich] = useState<EnrichState>({ loading: false })
   const [mapLoaded, setMapLoaded] = useState(false)
@@ -135,9 +201,9 @@ export default function ResultCard({ result }: Props) {
       : 'fiable'
 
   const VERDICT_CONFIG = {
-    fiable:   { label: '✓ FIABLE',   color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-    prudence: { label: '⚠ PRUDENCE', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-    risque:   { label: '✗ RISQUÉ',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    fiable:   { label: 'FIABLE',   icon: '✓', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+    prudence: { label: 'PRUDENCE', icon: '⚠', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+    risque:   { label: 'RISQUÉ',   icon: '✗', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   }
   const verdict = VERDICT_CONFIG[verdictLevel]
 
@@ -227,52 +293,71 @@ export default function ResultCard({ result }: Props) {
     <div>
       <div className="result-card fade-up">
 
-        {/* ── VERDICT HEADER ── */}
+        {/* ── COMPANY HEADER ──────────────────────────────── */}
         <div style={{ marginBottom: '20px' }}>
 
-          {/* Nom + Score + Verdict pill */}
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <ScoreRing score={result.score} />
-            <div style={{ flex: 1, minWidth: '200px' }}>
-              <h2 className="font-display" style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+          {/* Row 1: Avatar + Name + Verdict */}
+          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <CompanyAvatar nom={result.nom} size={52} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 className="font-display" style={{ margin: '0 0 3px', fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, wordBreak: 'break-word' }}>
                 {result.nom}
               </h2>
-              {result.activite && (
-                <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'var(--color-muted)' }}>
-                  {result.activite}
-                  {result.codeNaf && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.7 }}>NAF {result.codeNaf}</span>}
-                </p>
-              )}
-              {/* Verdict badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', background: verdict.bg, border: `1px solid ${verdict.border}`, marginBottom: '10px' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: verdict.color, letterSpacing: '0.04em', fontFamily: 'var(--font-display)' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.4 }}>
+                {result.activite}
+                {result.codeNaf && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.6 }}>NAF {result.codeNaf}</span>}
+                {result.formeJuridique && (
+                  <span style={{ marginLeft: '6px', fontSize: '11px', fontWeight: 600, padding: '1px 7px', borderRadius: '20px', background: 'var(--color-neutral-bg)', color: 'var(--color-neutral)' }}>
+                    {result.formeJuridique}
+                  </span>
+                )}
+              </p>
+              {/* Verdict pill */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '5px 12px', borderRadius: '20px',
+                background: verdict.bg, border: `1px solid ${verdict.border}`,
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: verdict.color }}>{verdict.icon}</span>
+                <span className="font-display" style={{ fontSize: '13px', fontWeight: 800, color: verdict.color, letterSpacing: '0.05em' }}>
                   {verdict.label}
                 </span>
               </div>
-              {/* AI phrase */}
-              {enrich.loading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {[85, 65].map((w, i) => <div key={i} style={{ height: '10px', borderRadius: '5px', background: 'rgba(0,0,0,0.07)', width: `${w}%` }} />)}
-                </div>
-              ) : enrich.aiSummary ? (
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-                  <Sparkles size={13} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.55, fontStyle: 'italic' }}>{enrich.aiSummary}</p>
-                </div>
-              ) : null}
+            </div>
+            {/* Score ring — right side */}
+            <div style={{ flexShrink: 0 }}>
+              <ScoreRing score={result.score} />
             </div>
           </div>
 
+          {/* AI phrase */}
+          {enrich.loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+              {[80, 60].map((w, i) => (
+                <div key={i} style={{ height: '10px', borderRadius: '5px', background: 'rgba(0,0,0,0.06)', width: `${w}%` }} />
+              ))}
+            </div>
+          ) : enrich.aiSummary ? (
+            <div style={{ display: 'flex', gap: '7px', alignItems: 'flex-start', marginBottom: '14px', padding: '10px 12px', borderRadius: '10px', background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
+              <Sparkles size={13} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text)', lineHeight: 1.55, fontStyle: 'italic', opacity: 0.8 }}>{enrich.aiSummary}</p>
+            </div>
+          ) : null}
+
           {/* 6 INDICATORS */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '16px' }}>
             {indicators.map((ind) => {
               const c = IND_COLORS[ind.level]
               return (
-                <div key={ind.label} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', background: c.bg, border: `1px solid color-mix(in srgb, ${c.color} 20%, transparent)` }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: c.color }}>{ind.icon}</span>
-                  <div>
-                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--color-muted)', display: 'block', lineHeight: 1, marginBottom: '1px' }}>{ind.label}</span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: c.color, lineHeight: 1 }}>{ind.text}</span>
+                <div key={ind.label} style={{
+                  display: 'flex', alignItems: 'center', gap: '7px',
+                  padding: '8px 10px', borderRadius: '10px',
+                  background: c.bg, border: `1px solid color-mix(in srgb, ${c.color} 20%, transparent)`,
+                }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: c.color, lineHeight: 1, flexShrink: 0 }}>{ind.icon}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--color-muted)', display: 'block', lineHeight: 1, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ind.label}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: c.color, lineHeight: 1, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ind.text}</span>
                   </div>
                 </div>
               )
@@ -281,10 +366,10 @@ export default function ResultCard({ result }: Props) {
 
           {/* ⚠ POINTS DE VIGILANCE */}
           {vigilanceAlerts.length > 0 && (
-            <div style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '12px', background: '#fffbeb', border: '1px solid #fde68a' }}>
+            <div style={{ marginBottom: '10px', padding: '14px 16px', borderRadius: '12px', background: '#fffbeb', border: '1px solid #fde68a' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
-                <AlertCircle size={15} color="#d97706" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <AlertCircle size={14} color="#d97706" />
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Points d'attention avant de signer
                 </span>
               </div>
@@ -306,17 +391,17 @@ export default function ResultCard({ result }: Props) {
 
           {/* ✓ POINTS RASSURANTS */}
           {positivePoints.length > 0 && (
-            <div style={{ marginBottom: '12px', padding: '14px 16px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <div style={{ marginBottom: '10px', padding: '14px 16px', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
-                <CheckCircle2 size={15} color="#16a34a" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#14532d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <CheckCircle2 size={14} color="#16a34a" />
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#14532d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Points rassurants
                 </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {positivePoints.map((point, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <CheckCircle2 size={12} color="#16a34a" style={{ flexShrink: 0, marginTop: '2px' }} />
                     <span style={{ fontSize: '13px', fontWeight: 500, color: '#166534', lineHeight: 1.4 }}>{point}</span>
                   </div>
                 ))}
@@ -336,7 +421,7 @@ export default function ResultCard({ result }: Props) {
             </div>
             <div style={{ display: 'flex', gap: '3px', marginBottom: '8px' }}>
               {SOURCES.map((s, i) => (
-                <div key={i} style={{ flex: 1, height: '5px', borderRadius: '3px', background: s.ok ? 'var(--color-safe)' : 'var(--color-border)' }} />
+                <div key={i} style={{ flex: 1, height: '4px', borderRadius: '3px', background: s.ok ? 'var(--color-safe)' : 'var(--color-border)' }} />
               ))}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -353,44 +438,53 @@ export default function ResultCard({ result }: Props) {
         <div style={{ height: '1px', background: 'var(--color-border)', marginBottom: '16px' }} />
 
         {/* INFOS DE BASE */}
-        <div>
-          <InfoRow icon={<Hash size={15} />} label="SIRET" value={result.siret} />
-          <InfoRow icon={<Building2 size={15} />} label="Forme juridique" value={result.formeJuridique} />
-          <InfoRow icon={<Calendar size={15} />} label="Date de création" value={formatDate(result.dateCreation)} />
-          <InfoRow icon={<MapPin size={15} />} label="Adresse du siège" value={result.adresse} />
-          {result.capitalSocial !== undefined && (
-            <InfoRow icon={<Building2 size={15} />} label="Capital social" value={`${result.capitalSocial.toLocaleString('fr-FR')} €`} />
-          )}
-          {result.effectif && (
-            <InfoRow icon={<Users size={15} />} label="Effectif" value={result.effectif} />
-          )}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
-            <Briefcase size={15} color="var(--color-muted)" style={{ flexShrink: 0, marginTop: 1 }} />
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>Convention collective</p>
-              {result.conventionCollective
-                ? <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{result.conventionCollective}</p>
-                : <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Non déclarée</p>}
+        <Section>
+          <SectionHeader icon={<Building2 size={14} />} title="Identité légale" />
+          <div style={{ padding: '4px 16px 8px' }}>
+            <InfoRow icon={<Hash size={15} />} label="SIRET" value={result.siret} />
+            <InfoRow icon={<Building2 size={15} />} label="Forme juridique" value={result.formeJuridique} />
+            <InfoRow icon={<Calendar size={15} />} label="Date de création" value={formatDate(result.dateCreation)} />
+            <InfoRow icon={<MapPin size={15} />} label="Adresse du siège" value={result.adresse} />
+            {result.capitalSocial !== undefined && (
+              <InfoRow icon={<Building2 size={15} />} label="Capital social" value={`${result.capitalSocial.toLocaleString('fr-FR')} €`} />
+            )}
+            {result.effectif && (
+              <InfoRow icon={<Users size={15} />} label="Effectif" value={result.effectif} />
+            )}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0' }}>
+              <Briefcase size={15} color="var(--color-muted)" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>Convention collective</p>
+                {result.conventionCollective
+                  ? <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{result.conventionCollective}</p>
+                  : <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Non déclarée</p>}
+              </div>
             </div>
           </div>
-        </div>
+        </Section>
 
         {/* CARTE MAPS */}
         {mapsUrl && (
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <MapPin size={13} color="var(--color-muted)" />
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Localisation</span>
-              {mapLoaded && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--color-safe)', fontWeight: 600 }}>
-                  <CheckCircle2 size={11} />Adresse vérifiée
+          <Section>
+            <SectionHeader
+              icon={<MapPin size={14} />}
+              title="Localisation"
+              badge={mapLoaded ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--color-safe)', fontWeight: 600 }}>
+                  <CheckCircle2 size={10} />Adresse vérifiée
                 </span>
-              )}
+              ) : undefined}
+            />
+            <div style={{ height: '200px' }}>
+              <iframe
+                src={mapsUrl} width="100%" height="200"
+                style={{ border: 0, display: 'block' }} loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                onLoad={() => setMapLoaded(true)}
+                title={`Localisation : ${result.adresse}`}
+              />
             </div>
-            <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)', height: '200px' }}>
-              <iframe src={mapsUrl} width="100%" height="200" style={{ border: 0, display: 'block' }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" onLoad={() => setMapLoaded(true)} title={`Localisation : ${result.adresse}`} />
-            </div>
-          </div>
+          </Section>
         )}
 
         {/* ALERTE CESSION */}
@@ -409,32 +503,44 @@ export default function ResultCard({ result }: Props) {
         )}
 
         {/* RGE */}
-        <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: result.rge.certifie ? 'var(--color-safe-bg)' : 'var(--color-neutral-bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: result.rge.certifie ? '10px' : '0' }}>
-            <Leaf size={17} color={result.rge.certifie ? 'var(--color-safe)' : 'var(--color-muted)'} />
-            <span style={{ fontWeight: 600, fontSize: '14px', color: result.rge.certifie ? 'var(--color-safe)' : 'var(--color-muted)' }}>
-              {result.rge.certifie ? 'Certifié RGE (Reconnu Garant de l\'Environnement)' : 'Pas de certification RGE trouvée'}
-            </span>
-          </div>
-          {result.rge.certifie && result.rge.domaines.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {[...new Set(result.rge.domaines)].slice(0, 6).map((d, i) => <span key={i} className="badge badge-safe" style={{ fontSize: '11px' }}>{d}</span>)}
-            </div>
-          )}
-          {!result.rge.certifie && <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>Non obligatoire pour tous les travaux, mais requis pour bénéficier des aides de l'État (MaPrimeRénov').</p>}
-        </div>
-
-        {/* CHECKLIST LÉGALE — COMPLÈTE */}
-        {(enrich.loading || (enrich.aiChecklist && enrich.aiChecklist.length > 0)) && (
-          <div style={{ marginTop: '20px', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ClipboardList size={16} color="#7c3aed" />
-              <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>Avant de signer — documents à demander</span>
-              <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', background: '#f3f0ff', color: '#7c3aed' }}>
-                IA · NAF {result.codeNaf || '—'}
+        <Section style={{ background: result.rge.certifie ? 'var(--color-safe-bg)' : undefined }}>
+          <SectionHeader
+            icon={<Leaf size={14} color={result.rge.certifie ? 'var(--color-safe)' : 'var(--color-muted)'} />}
+            title="Certification RGE"
+            badge={result.rge.certifie ? (
+              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: 'var(--color-safe-bg)', color: 'var(--color-safe)', border: '1px solid var(--color-safe-border)' }}>
+                Certifié ✓
               </span>
-            </div>
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            ) : undefined}
+          />
+          <div style={{ padding: '12px 16px' }}>
+            {result.rge.certifie && result.rge.domaines.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {[...new Set(result.rge.domaines)].slice(0, 6).map((d, i) => (
+                  <span key={i} className="badge badge-safe" style={{ fontSize: '11px' }}>{d}</span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
+                Non certifié RGE. Non obligatoire pour tous les travaux, mais requis pour les aides de l'État (MaPrimeRénov').
+              </p>
+            )}
+          </div>
+        </Section>
+
+        {/* CHECKLIST LÉGALE — IA */}
+        {(enrich.loading || (enrich.aiChecklist && enrich.aiChecklist.length > 0)) && (
+          <Section>
+            <SectionHeader
+              icon={<ClipboardList size={14} color="#7c3aed" />}
+              title="Avant de signer — documents à demander"
+              badge={
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: '#f3f0ff', color: '#7c3aed' }}>
+                  IA · NAF {result.codeNaf || '—'}
+                </span>
+              }
+            />
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {enrich.loading ? (
                 [1, 2, 3].map((i) => (
                   <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -446,27 +552,24 @@ export default function ResultCard({ result }: Props) {
                 enrich.aiChecklist!.map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: '#f3f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '1px' }}>
-                      <CheckCircle2 size={12} color="#7c3aed" />
+                      <CheckCircle2 size={11} color="#7c3aed" />
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.55 }}>{item}</p>
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </Section>
         )}
 
         {/* SANTÉ FINANCIÈRE & HISTORIQUE */}
-        <div style={{ marginTop: '20px', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Scale size={16} color="var(--color-accent)" />
-            <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>Santé financière &amp; historique légal</span>
-          </div>
-          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <Section>
+          <SectionHeader icon={<Scale size={14} color="var(--color-accent)" />} title="Santé financière &amp; historique légal" />
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Procédure collective */}
             {result.bodacc.procedureCollective && (
-              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-danger)' }}>Procédure collective : {result.bodacc.typeProcedure || 'détectée'}</p>
@@ -475,35 +578,39 @@ export default function ResultCard({ result }: Props) {
               </div>
             )}
 
-            {/* Dirigeants — COMPLETS */}
+            {/* Dirigeants */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                <Users size={14} color="var(--color-muted)" />
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dirigeants</p>
+                <Users size={13} color="var(--color-muted)" />
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dirigeants</p>
               </div>
               {result.dirigeants.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucun dirigeant trouvé</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {result.dirigeants.map((d, i) => (
-                    <div key={i} style={{ padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
-                        {[d.prenoms, d.nom].filter(Boolean).join(' ')}
-                      </p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>
-                        {d.qualite}{d.anneeNaissance ? ` · né en ${d.anneeNaissance}` : ''}
-                      </p>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {result.dirigeants.map((d, i) => {
+                    const fullName = [d.prenoms, d.nom].filter(Boolean).join(' ')
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+                        <CompanyAvatar nom={fullName || '?'} size={34} />
+                        <div>
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>{fullName}</p>
+                          <p style={{ margin: '1px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>
+                            {d.qualite}{d.anneeNaissance ? ` · né en ${d.anneeNaissance}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
 
-            {/* BODACC — TOUTES LES ANNONCES */}
+            {/* BODACC timeline */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                <Clock size={14} color="var(--color-muted)" />
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Clock size={13} color="var(--color-muted)" />
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Annonces légales BODACC {nbAnnonces > 0 && `(${nbAnnonces})`}
                 </p>
               </div>
@@ -519,31 +626,33 @@ export default function ResultCard({ result }: Props) {
             </div>
 
           </div>
-        </div>
+        </Section>
 
         {/* BOUTONS ACTIONS */}
-        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <a
             href={`/guide-chantier?artisan=${encodeURIComponent(result.nom)}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, #16a34a 30%, transparent)', background: 'color-mix(in srgb, #16a34a 8%, transparent)', color: '#16a34a', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }}
           >
             <ClipboardCheck size={16} />
             Démarrer le suivi de chantier
           </a>
-          <a
-            href={`/comparer?q=${encodeURIComponent(result.siret)}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', color: 'var(--color-accent)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
-          >
-            <GitCompare size={16} />
-            Comparer avec un autre artisan
-          </a>
-          <button
-            onClick={() => window.print()}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'var(--font-body)' }}
-          >
-            <Download size={16} />
-            Télécharger le rapport PDF
-          </button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <a
+              href={`/comparer?q=${encodeURIComponent(result.siret)}`}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+            >
+              <GitCompare size={14} />
+              Comparer
+            </a>
+            <button
+              onClick={() => window.print()}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+            >
+              <Download size={14} />
+              PDF
+            </button>
+          </div>
         </div>
 
         {/* DISCLAIMER */}
@@ -557,10 +666,13 @@ export default function ResultCard({ result }: Props) {
         <div className="fade-up fade-up-delay-1" style={{ marginTop: '12px' }}>
           <p style={{ fontSize: '12px', color: 'var(--color-muted)', marginBottom: '8px', paddingLeft: '4px' }}>Autres résultats similaires</p>
           {result.autresResultats.map((r) => (
-            <div key={r.siren} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{r.nom}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>{r.adresse}</p>
+            <div key={r.siren} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} className="card-hover">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CompanyAvatar nom={r.nom} size={36} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>{r.nom}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>{r.adresse}</p>
+                </div>
               </div>
               <ChevronRight size={16} color="var(--color-muted)" />
             </div>

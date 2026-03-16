@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
-  ClipboardCheck, User, LogOut, Menu, X, ShieldCheck, Scale, MapPin,
+  ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -112,6 +112,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const [verifierOpen, setVerifierOpen] = useState(false)
   const [outilsOpen, setOutilsOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -120,6 +121,12 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       setUser(session?.user ?? null)
     })
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
@@ -152,8 +159,18 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
 
   const logoContent = (
     <>
-      <ShieldCheck size={20} color="var(--color-accent)" strokeWidth={2} />
-      <span className="font-display" style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-accent)' }}>
+      {/* Shield SVG logo */}
+      <svg width="24" height="26" viewBox="0 0 24 26" fill="none" aria-hidden="true">
+        <path
+          d="M12 1L2 5.5V12c0 5.25 4.3 10.15 10 11.5C17.7 22.15 22 17.25 22 12V5.5L12 1Z"
+          fill="var(--color-accent)"
+        />
+        <path
+          d="M8 13l2.5 2.5L16 10"
+          stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        />
+      </svg>
+      <span className="font-display" style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-accent)', letterSpacing: '-0.02em' }}>
         Verifio
       </span>
     </>
@@ -162,12 +179,14 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   return (
     <header
       ref={headerRef}
+      className={scrolled ? 'header-scrolled' : ''}
       style={{
         padding: '0 24px', height: '56px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-surface)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
+        transition: 'box-shadow 0.2s',
       }}
     >
       {/* ── LEFT: Logo ── */}
