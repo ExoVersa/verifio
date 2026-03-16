@@ -71,6 +71,23 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
+// ─── Signed URLs helper (private Storage buckets) ────────────────────────────
+async function resolveSignedUrls<T extends { url: string }>(
+  bucket: string,
+  items: T[],
+  expiresIn = 3600,
+): Promise<T[]> {
+  if (items.length === 0) return items
+  const { data } = await supabase.storage
+    .from(bucket)
+    .createSignedUrls(items.map(i => i.url), expiresIn)
+  if (!data) return items
+  return items.map((item, idx) => ({
+    ...item,
+    url: data[idx]?.signedUrl ?? item.url,
+  }))
+}
+
 // ─── Shared input style ───────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
   width: '100%', padding: '10px 13px', border: '1.5px solid var(--color-border)',
@@ -398,8 +415,8 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
       const path = `${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const { error: upErr } = await supabase.storage.from('chantier-photos').upload(path, file)
       if (!upErr) {
-        const { data: { publicUrl } } = supabase.storage.from('chantier-photos').getPublicUrl(path)
-        await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: publicUrl, legende: legende || null, phase: selectedPhase })
+        // Stocker le chemin (path) — l'URL signée est générée au chargement
+        await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: path, legende: legende || null, phase: selectedPhase })
       }
     }
     setUploading(false)
@@ -508,12 +525,12 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
     const path = `${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
     if (!upErr) {
-      const { data: { publicUrl } } = supabase.storage.from('chantier-documents').getPublicUrl(path)
+      // Stocker le chemin (path) — l'URL signée est générée au chargement
       await supabase.from('chantier_documents').insert({
         chantier_id: chantier.id,
         nom: docNom || file.name,
         type: docType,
-        url: publicUrl,
+        url: path,
         taille: file.size,
       })
     }
@@ -629,8 +646,13 @@ export default function ChantierDetailPage({ params }: { params: Promise<{ id: s
     setChantier(c)
     setEvenements(ev || [])
     setPaiements(pa || [])
-    setPhotos(ph || [])
-    setDocuments(do_ || [])
+    // Résoudre les URLs signées pour les buckets privés
+    const [photosResolved, docsResolved] = await Promise.all([
+      resolveSignedUrls('chantier-photos', ph || []),
+      resolveSignedUrls('chantier-documents', do_ || []),
+    ])
+    setPhotos(photosResolved)
+    setDocuments(docsResolved)
     setLoading(false)
   }
 
