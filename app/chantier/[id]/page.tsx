@@ -564,7 +564,6 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
       nom: docNom || file.name,
       type: docType,
       url: path,
-      ...(file.size ? { taille: file.size } : {}),
     })
     if (insertErr) {
       setUploadError(`Erreur base de données : ${insertErr.message}`)
