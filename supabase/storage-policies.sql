@@ -58,3 +58,32 @@ CREATE POLICY "delete documents"
     bucket_id = 'chantier-documents'
     AND auth.role() = 'authenticated'
   );
+
+-- ── tables RLS : chantier_photos ─────────────────────────────
+-- (à exécuter si RLS est activé sur ces tables)
+
+CREATE POLICY "insert chantier_photos"
+  ON chantier_photos FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "select chantier_photos"
+  ON chantier_photos FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "delete chantier_photos"
+  ON chantier_photos FOR DELETE
+  USING (auth.role() = 'authenticated');
+
+-- ── tables RLS : chantier_documents ──────────────────────────
+
+CREATE POLICY "insert chantier_documents"
+  ON chantier_documents FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "select chantier_documents"
+  ON chantier_documents FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "delete chantier_documents"
+  ON chantier_documents FOR DELETE
+  USING (auth.role() = 'authenticated');
