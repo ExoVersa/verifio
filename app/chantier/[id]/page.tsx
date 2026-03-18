@@ -559,12 +559,10 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
       setUploading(false)
       return
     }
-    const { error: insertErr } = await supabase.from('chantier_documents').insert({
-      chantier_id: chantier.id,
-      nom: docNom || file.name,
-      type: docType,
-      url: path,
-    })
+    const insertPayload = { chantier_id: chantier.id, nom: docNom || file.name, type: docType, url: path }
+    console.log('[DOCS] insert payload:', insertPayload)
+    const { data: insertData, error: insertErr } = await supabase.from('chantier_documents').insert(insertPayload).select()
+    console.log('[DOCS] insert result — data:', insertData, 'error:', insertErr)
     if (insertErr) {
       setUploadError(`Erreur base de données : ${insertErr.message}`)
       setUploading(false)
@@ -690,10 +688,12 @@ export default function ChantierDetailPage({ params }: { params: Promise<{ id: s
     setEvenements(ev || [])
     setPaiements(pa || [])
     // Résoudre les URLs signées pour les buckets privés
+    console.log('[DOCS] fetched from DB:', do_)
     const [photosResolved, docsResolved] = await Promise.all([
       resolveSignedUrls('chantier-photos', ph || []),
       resolveSignedUrls('chantier-documents', do_ || []),
     ])
+    console.log('[DOCS] signed URLs resolved:', docsResolved)
     setPhotos(photosResolved)
     setDocuments(docsResolved)
     setLoading(false)
