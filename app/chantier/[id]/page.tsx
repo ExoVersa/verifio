@@ -399,6 +399,7 @@ function PaiementsTab({
 function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos: ChantierPhoto[]; onRefresh: () => void }) {
   const [phase, setPhase] = useState<PhotoPhase | 'toutes'>('toutes')
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [legende, setLegende] = useState('')
   const [selectedPhase, setSelectedPhase] = useState<PhotoPhase>('pendant')
@@ -410,14 +411,25 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return
     setUploading(true)
+    setUploadError(null)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setUploadError('Vous devez être connecté pour uploader des fichiers.')
+      setUploading(false)
+      return
+    }
+
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()
-      const path = `${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      // Chemin : {user_id}/{chantier_id}/{timestamp}.{ext} — requis par les policies RLS Storage
+      const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const { error: upErr } = await supabase.storage.from('chantier-photos').upload(path, file)
-      if (!upErr) {
-        // Stocker le chemin (path) — l'URL signée est générée au chargement
-        await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: path, legende: legende || null, phase: selectedPhase })
+      if (upErr) {
+        setUploadError(`Erreur upload : ${upErr.message}`)
+        continue
       }
+      await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: path, legende: legende || null, phase: selectedPhase })
     }
     setUploading(false)
     setLegende('')
@@ -473,6 +485,13 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
         <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleUpload(e.target.files)} />
       </div>
 
+      {uploadError && (
+        <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+          <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+          {uploadError}
+        </div>
+      )}
+
       {/* Grid */}
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '32px', color: 'var(--color-muted)', fontSize: '14px' }}>
@@ -514,6 +533,7 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
 // ─── DOCUMENTS TAB ───────────────────────────────────────────────────────────
 function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; documents: ChantierDocument[]; onRefresh: () => void }) {
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [docType, setDocType] = useState<DocumentType>('devis')
   const [docNom, setDocNom] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -521,19 +541,31 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
   async function handleUpload(file: File | null) {
     if (!file) return
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
-    if (!upErr) {
-      // Stocker le chemin (path) — l'URL signée est générée au chargement
-      await supabase.from('chantier_documents').insert({
-        chantier_id: chantier.id,
-        nom: docNom || file.name,
-        type: docType,
-        url: path,
-        taille: file.size,
-      })
+    setUploadError(null)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setUploadError('Vous devez être connecté pour uploader des fichiers.')
+      setUploading(false)
+      return
     }
+
+    const ext = file.name.split('.').pop()
+    // Chemin : {user_id}/{chantier_id}/{timestamp}.{ext} — requis par les policies RLS Storage
+    const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
+    if (upErr) {
+      setUploadError(`Erreur upload : ${upErr.message}`)
+      setUploading(false)
+      return
+    }
+    await supabase.from('chantier_documents').insert({
+      chantier_id: chantier.id,
+      nom: docNom || file.name,
+      type: docType,
+      url: path,
+      taille: file.size,
+    })
     setUploading(false)
     setDocNom('')
     onRefresh()
@@ -579,6 +611,13 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
         </button>
         <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} onChange={e => handleUpload(e.target.files?.[0] || null)} />
       </div>
+
+      {uploadError && (
+        <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+          <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+          {uploadError}
+        </div>
+      )}
 
       {documents.length === 0 && (
         <div style={{ textAlign: 'center', padding: '32px', color: 'var(--color-muted)', fontSize: '14px', background: 'var(--color-surface)', borderRadius: '14px', border: '1px solid var(--color-border)' }}>
