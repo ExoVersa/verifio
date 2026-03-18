@@ -1,59 +1,60 @@
 -- ============================================================
 -- Policies Supabase Storage — Carnet de chantier
--- À exécuter dans Supabase → SQL Editor
+-- À exécuter dans Supabase → SQL Editor → Run
 -- ============================================================
--- Structure des chemins : {user_id}/{chantier_id}/{filename}
--- La policy vérifie (storage.foldername(name))[1] = auth.uid()
--- ============================================================
+
+-- ── S'assurer que les buckets existent ───────────────────────
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('chantier-photos', 'chantier-photos', false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('chantier-documents', 'chantier-documents', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- ── bucket : chantier-photos ─────────────────────────────────
 
-CREATE POLICY "photos: upload (authenticated)"
+CREATE POLICY "upload photos"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'chantier-photos'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
-CREATE POLICY "photos: read own"
+CREATE POLICY "read photos"
   ON storage.objects FOR SELECT
   USING (
     bucket_id = 'chantier-photos'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
-CREATE POLICY "photos: delete own"
+CREATE POLICY "delete photos"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'chantier-photos'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
 -- ── bucket : chantier-documents ──────────────────────────────
 
-CREATE POLICY "documents: upload (authenticated)"
+CREATE POLICY "upload documents"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'chantier-documents'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
-CREATE POLICY "documents: read own"
+CREATE POLICY "read documents"
   ON storage.objects FOR SELECT
   USING (
     bucket_id = 'chantier-documents'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
-CREATE POLICY "documents: delete own"
+CREATE POLICY "delete documents"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'chantier-documents'
     AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
   );
