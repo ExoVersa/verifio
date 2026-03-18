@@ -555,17 +555,22 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
     const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
     if (upErr) {
-      setUploadError(`Erreur upload : ${upErr.message}`)
+      setUploadError(`Erreur storage : ${upErr.message}`)
       setUploading(false)
       return
     }
-    await supabase.from('chantier_documents').insert({
+    const { error: insertErr } = await supabase.from('chantier_documents').insert({
       chantier_id: chantier.id,
       nom: docNom || file.name,
       type: docType,
       url: path,
-      taille: file.size,
+      ...(file.size ? { taille: file.size } : {}),
     })
+    if (insertErr) {
+      setUploadError(`Erreur base de données : ${insertErr.message}`)
+      setUploading(false)
+      return
+    }
     setUploading(false)
     setDocNom('')
     onRefresh()
