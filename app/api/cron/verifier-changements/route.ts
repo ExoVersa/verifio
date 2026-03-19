@@ -54,7 +54,7 @@ async function sendAlertEmail(opts: {
   const ficheLink = `${BASE_URL}/artisan/${opts.siret}`
 
   await resend.emails.send({
-    from: 'Verifio <alertes@verifio.fr>',
+    from: 'Verifio <onboarding@resend.dev>',
     to: opts.email,
     subject: `⚠️ Alerte : ${opts.nom} a changé de statut`,
     html: `

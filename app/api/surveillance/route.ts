@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const ficheLink = `${BASE_URL}/artisan/${siret}`
 
     await resend.emails.send({
-      from: 'Verifio <alertes@verifio.fr>',
+      from: 'Verifio <onboarding@resend.dev>',
       to: email,
       subject: `✓ Alerte activée pour ${nom || siret}`,
       html: `
