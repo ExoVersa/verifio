@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Search, ShieldCheck, AlertTriangle, CheckCircle2, Leaf, Scale, Clock, Users,
   TrendingDown, Lock, Star, ChevronRight, Quote, FileSearch, Calculator,
@@ -8,11 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
-import ResultCard from '@/components/ResultCard'
 import SiteHeader from '@/components/SiteHeader'
-import type { SearchResult, SearchCandidate } from '@/types'
-import { supabase } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
 
 /* ── Hero SVG Illustration ─────────────────────────────── */
 function HeroIllustration() {
@@ -164,159 +161,12 @@ function FindArtisanMiniForm() {
    MAIN PAGE
 ══════════════════════════════════════════════════════════ */
 export default function Home() {
-  const [result, setResult] = useState<SearchResult | null>(null)
-  const [candidates, setCandidates] = useState<SearchCandidate[]>([])
-  const [showCandidates, setShowCandidates] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [loadingFiche, setLoadingFiche] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [lastQuery, setLastQuery] = useState('')
-  const [selectedSiret, setSelectedSiret] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
-  // Filtres
-  const [filterStatut, setFilterStatut] = useState<'tous' | 'actif' | 'fermé'>('tous')
-  const [filterForme, setFilterForme] = useState('tous')
-  const [filterAnciennete, setFilterAnciennete] = useState('tous')
-  const [filterDept, setFilterDept] = useState('')
-  const [sortBy, setSortBy] = useState<'pertinence' | 'anciennete'>('pertinence')
-  const [user, setUser] = useState<User | null>(null)
-  const resultsRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const loading = false
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // Scroll infini : observe le sentinel en bas de la liste
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loadingMore || loading) return
-    setLoadingMore(true)
-    const nextPage = currentPage + 1
-    try {
-      const res = await fetch(`/api/search-list?q=${encodeURIComponent(lastQuery)}&page=${nextPage}`)
-      const data = await res.json()
-      if (!data.error && data.candidates) {
-        setCandidates(prev => [...prev, ...data.candidates])
-        setCurrentPage(nextPage)
-        setHasMore(data.hasMore)
-      }
-    } catch { /* silent */ }
-    finally { setLoadingMore(false) }
-  }, [hasMore, loadingMore, loading, currentPage, lastQuery])
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel || !showCandidates) return
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) loadMore()
-    }, { threshold: 0.1 })
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [showCandidates, loadMore])
-
-  // Filtres appliqués côté client
-  const filteredCandidates = useMemo(() => {
-    let list = candidates
-    if (filterStatut !== 'tous') list = list.filter(c => c.statut === filterStatut)
-    if (filterForme !== 'tous') list = list.filter(c => c.formeJuridique === filterForme)
-    if (filterDept.trim()) list = list.filter(c => c.codePostal.startsWith(filterDept.trim()))
-    if (filterAnciennete !== 'tous') {
-      const now = Date.now()
-      list = list.filter(c => {
-        if (!c.dateCreation) return false
-        const years = (now - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-        if (filterAnciennete === '1') return years >= 1
-        if (filterAnciennete === '3') return years >= 3
-        if (filterAnciennete === '10') return years >= 10
-        return true
-      })
-    }
-    if (sortBy === 'anciennete') {
-      list = [...list].sort((a, b) => {
-        if (!a.dateCreation) return 1
-        if (!b.dateCreation) return -1
-        return new Date(a.dateCreation).getTime() - new Date(b.dateCreation).getTime()
-      })
-    }
-    return list
-  }, [candidates, filterStatut, filterForme, filterDept, filterAnciennete, sortBy])
-
-  // Formes juridiques présentes dans les candidats
-  const formesPresentes = useMemo(() => {
-    const set = new Set(candidates.map(c => c.formeJuridique).filter(Boolean))
-    return Array.from(set)
-  }, [candidates])
-
-  const saveSearch = async (data: SearchResult) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('searches').insert({ user_id: user.id, siret: data.siret, nom: data.nom, score: data.score, statut: data.statut })
+  const handleSearch = (query: string) => {
+    router.push(`/recherche?q=${encodeURIComponent(query)}`)
   }
-
-  const loadFiche = async (siret: string) => {
-    setLoadingFiche(true)
-    setError(null)
-    setResult(null)
-    setSelectedSiret(siret)
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(siret)}`)
-      const data = await res.json()
-      if (!res.ok || data.error) setError(data.error || 'Erreur lors du chargement.')
-      else { setResult(data); setShowCandidates(false); saveSearch(data) }
-    } catch { setError('Erreur réseau. Vérifiez votre connexion.') }
-    finally { setLoadingFiche(false) }
-  }
-
-  const handleSearch = async (query: string) => {
-    setLoading(true)
-    setError(null)
-    setResult(null)
-    setCandidates([])
-    setShowCandidates(false)
-    setLastQuery(query)
-    setCurrentPage(1)
-    setHasMore(false)
-    setTotalCount(0)
-    setFilterStatut('tous')
-    setFilterForme('tous')
-    setFilterAnciennete('tous')
-    setFilterDept('')
-    setSortBy('pertinence')
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-    try {
-      const res = await fetch(`/api/search-list?q=${encodeURIComponent(query)}&page=1`)
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setError(data.error || 'Aucun résultat trouvé.')
-      } else if (data.isExact) {
-        await loadFiche(data.siret)
-      } else {
-        setCandidates(data.candidates || [])
-        setShowCandidates(true)
-        setHasMore(data.hasMore ?? false)
-        setTotalCount(data.total ?? 0)
-      }
-    } catch { setError('Erreur réseau. Vérifiez votre connexion.') }
-    finally { setLoading(false) }
-  }
-
-  const handleBackToList = () => {
-    setResult(null)
-    setError(null)
-    setSelectedSiret(null)
-    setShowCandidates(true)
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-  }
-
-  const showLanding = !result && !loading && !loadingFiche && !error && !showCandidates
 
   useSectionObserver()
 
@@ -324,19 +174,13 @@ export default function Home() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
 
       {/* ── HEADER ── */}
-      <SiteHeader onLogoClick={() => { setResult(null); setError(null) }} />
+      <SiteHeader />
 
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section style={{
-        background: showLanding ? 'var(--color-bg)' : 'var(--color-bg)',
-        padding: showLanding ? '0' : '40px 24px 24px',
-        transition: 'padding 0.3s',
-        borderBottom: showLanding ? 'none' : 'none',
-      }}>
-        {showLanding ? (
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+      <section style={{ background: 'var(--color-bg)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
             {/* Hero 2-column */}
             <div style={{
               display: 'grid',
@@ -375,7 +219,7 @@ export default function Home() {
                     { label: '⚡ Électricité', q: 'electricien' },
                     { label: '🧱 Maçonnerie', q: 'maçonnerie' },
                     { label: '🌿 Certifié RGE', q: 'RGE isolation' },
-                    { label: '✅ Actif uniquement', q: lastQuery || 'artisan', statut: 'actif' },
+                    { label: '✅ Actif uniquement', q: 'artisan actif', statut: 'actif' },
                   ].map(({ label, q }) => (
                     <button key={label} onClick={() => handleSearch(q)}
                       style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}
@@ -408,197 +252,14 @@ export default function Home() {
               </div>
             </div>
           </div>
-        ) : (
-          /* Compact search when result/list showing */
-          <div style={{ maxWidth: '680px', margin: '0 auto', padding: '40px 24px 24px' }}>
-            <SearchBar onSearch={handleSearch} loading={loading || loadingFiche} />
-          </div>
-        )}
       </section>
 
-      {/* ── RESULTS ZONE ── */}
-      <div ref={resultsRef}>
-        {error && (
-          <section style={{ maxWidth: '680px', margin: '0 auto', padding: '20px 24px' }}>
-            <div className="fade-up" style={{ padding: '16px', background: 'var(--color-danger-bg)', borderRadius: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start', border: '1px solid var(--color-danger-border)' }}>
-              <AlertTriangle size={18} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-danger)' }}>{error}</p>
-            </div>
-          </section>
-        )}
-
-        {/* ── Recherche en cours (liste) ── */}
-        {loading && (
-          <section style={{ maxWidth: '680px', margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--color-accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(27,67,50,0.15)' }}>
-                <Search size={22} color="var(--color-accent)" style={{ animation: 'spin 1.5s linear infinite' }} />
-              </div>
-              <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' }}>Recherche en cours…</p>
-            </div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </section>
-        )}
-
-        {/* ── Liste des candidats ── */}
-        {showCandidates && !loading && !loadingFiche && candidates.length > 0 && (
-          <section style={{ maxWidth: '760px', margin: '0 auto', padding: '8px 24px 32px' }}>
-
-            {/* Compteur + tri */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
-                <strong style={{ color: 'var(--color-text)' }}>{totalCount.toLocaleString('fr-FR')}</strong> entreprise{totalCount > 1 ? 's' : ''} trouvée{totalCount > 1 ? 's' : ''} pour <strong style={{ color: 'var(--color-text)' }}>« {lastQuery} »</strong>
-                {filteredCandidates.length < candidates.length && (
-                  <span style={{ color: 'var(--color-accent)' }}> — {filteredCandidates.length} après filtres</span>
-                )}
-              </p>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {(['pertinence', 'anciennete'] as const).map(s => (
-                  <button key={s} onClick={() => setSortBy(s)}
-                    style={{ padding: '5px 12px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', ...(sortBy === s ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'var(--color-surface)', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }) }}
-                  >{s === 'pertinence' ? 'Pertinence' : 'Ancienneté'}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Barre de filtres */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px', padding: '12px 14px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px' }}>
-              {/* Statut */}
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {(['tous', 'actif', 'fermé'] as const).map(s => (
-                  <button key={s} onClick={() => setFilterStatut(s)}
-                    style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', ...(filterStatut === s ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }) }}
-                  >{s === 'tous' ? 'Tous statuts' : s === 'actif' ? '🟢 Actif' : '🔴 Fermé'}</button>
-                ))}
-              </div>
-              {/* Forme juridique */}
-              <select value={filterForme} onChange={e => setFilterForme(e.target.value)}
-                style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--color-border)', background: filterForme !== 'tous' ? 'var(--color-accent-light)' : 'transparent', color: filterForme !== 'tous' ? 'var(--color-accent)' : 'var(--color-muted)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none' }}>
-                <option value="tous">Forme jur.</option>
-                {formesPresentes.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
-              {/* Ancienneté */}
-              <select value={filterAnciennete} onChange={e => setFilterAnciennete(e.target.value)}
-                style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--color-border)', background: filterAnciennete !== 'tous' ? 'var(--color-accent-light)' : 'transparent', color: filterAnciennete !== 'tous' ? 'var(--color-accent)' : 'var(--color-muted)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none' }}>
-                <option value="tous">Ancienneté</option>
-                <option value="1">+1 an</option>
-                <option value="3">+3 ans</option>
-                <option value="10">+10 ans</option>
-              </select>
-              {/* Département */}
-              <input type="text" placeholder="Dép. (ex: 75)" value={filterDept} onChange={e => setFilterDept(e.target.value)} maxLength={3}
-                style={{ padding: '4px 10px', borderRadius: '20px', border: `1px solid ${filterDept ? 'var(--color-accent)' : 'var(--color-border)'}`, background: filterDept ? 'var(--color-accent-light)' : 'transparent', color: filterDept ? 'var(--color-accent)' : 'var(--color-muted)', fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-body)', outline: 'none', width: '90px' }} />
-              {/* Reset */}
-              {(filterStatut !== 'tous' || filterForme !== 'tous' || filterAnciennete !== 'tous' || filterDept) && (
-                <button onClick={() => { setFilterStatut('tous'); setFilterForme('tous'); setFilterAnciennete('tous'); setFilterDept('') }}
-                  style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                  ✕ Réinitialiser
-                </button>
-              )}
-            </div>
-
-            {/* Liste */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', overflow: 'hidden' }}>
-              {filteredCandidates.length === 0 ? (
-                <p style={{ padding: '24px', textAlign: 'center', color: 'var(--color-muted)', fontSize: '13px', margin: 0 }}>
-                  Aucun résultat avec ces filtres.
-                </p>
-              ) : filteredCandidates.map((c, i) => (
-                <button
-                  key={c.siret}
-                  onClick={() => loadFiche(c.siret)}
-                  style={{
-                    width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px',
-                    padding: '14px 20px', background: selectedSiret === c.siret ? 'var(--color-accent-light)' : 'transparent',
-                    border: 'none', borderBottom: i < filteredCandidates.length - 1 ? '1px solid var(--color-border)' : 'none',
-                    cursor: 'pointer', transition: 'background 0.15s', fontFamily: 'var(--font-body)',
-                  }}
-                  onMouseEnter={e => { if (selectedSiret !== c.siret) (e.currentTarget as HTMLElement).style.background = 'var(--color-bg)' }}
-                  onMouseLeave={e => { if (selectedSiret !== c.siret) (e.currentTarget as HTMLElement).style.background = selectedSiret === c.siret ? 'var(--color-accent-light)' : 'transparent' }}
-                >
-                  <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: c.statut === 'actif' ? '#22c55e' : '#ef4444', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text)' }}>{c.nom}</span>
-                      <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', borderRadius: '20px', background: c.statut === 'actif' ? '#dcfce7' : '#fee2e2', color: c.statut === 'actif' ? '#166534' : '#991b1b' }}>
-                        {c.statut === 'actif' ? 'Actif' : 'Fermé'}
-                      </span>
-                      {c.formeJuridique && <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>{c.formeJuridique}</span>}
-                      {c.dateCreation && <span style={{ fontSize: '10px', color: 'var(--color-muted)' }}>· depuis {new Date(c.dateCreation).getFullYear()}</span>}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-muted)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {(c.ville || c.codePostal) && <span>📍 {c.codePostal} {c.ville}</span>}
-                      {c.activite && <span>· {c.activite}</span>}
-                    </div>
-                  </div>
-                  <ChevronRight size={15} color="var(--color-muted)" style={{ flexShrink: 0 }} />
-                </button>
-              ))}
-            </div>
-
-            {/* Sentinel scroll infini */}
-            <div ref={sentinelRef} style={{ height: '1px' }} />
-            {loadingMore && (
-              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-muted)', fontSize: '13px' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <Search size={14} style={{ animation: 'spin 1.5s linear infinite' }} />
-                  Chargement…
-                </div>
-              </div>
-            )}
-            {!hasMore && candidates.length > 0 && (
-              <p style={{ textAlign: 'center', padding: '12px', color: 'var(--color-muted)', fontSize: '12px', margin: 0 }}>
-                {candidates.length} entreprise{candidates.length > 1 ? 's' : ''} affichée{candidates.length > 1 ? 's' : ''}
-              </p>
-            )}
-          </section>
-        )}
-
-        {/* ── Chargement fiche complète ── */}
-        {loadingFiche && (
-          <section style={{ maxWidth: '680px', margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--color-accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(27,67,50,0.15)' }}>
-                <ShieldCheck size={28} color="var(--color-accent)" style={{ animation: 'spin 2s linear infinite' }} />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>Vérification en cours…</p>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>Interrogation de 6 sources officielles</p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '320px' }}>
-                {['INSEE', 'ADEME', 'BODACC', 'INPI', 'RNE', 'Score'].map((src, i) => (
-                  <span key={src} style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', animation: `fadeUp 0.3s ease-out ${i * 0.1}s forwards`, opacity: 0 }}>{src}</span>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {result && !loadingFiche && (
-          <section style={{ maxWidth: '680px', margin: '0 auto', padding: '16px 24px 80px' }}>
-            {/* Bouton retour à la liste */}
-            {candidates.length > 0 && (
-              <button
-                onClick={handleBackToList}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '16px', padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-muted)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-text)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-muted)'}
-              >
-                ← Modifier la recherche
-              </button>
-            )}
-            <div className="fade-up">
-              <ResultCard result={result} onSelect={handleSearch} />
-            </div>
-          </section>
-        )}
-      </div>
 
       {/* ══════════════════════════════════════════
           LANDING SECTIONS
       ══════════════════════════════════════════ */}
-      {showLanding && (
-        <>
+      <>
+
 
           {/* ── ANIMATED STATISTICS ── */}
           <section style={{ padding: '72px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
@@ -950,8 +611,8 @@ export default function Home() {
             </div>
           </footer>
 
-        </>
-      )}
+      </>
+
 
       {/* ── MOBILE BOTTOM NAV ── */}
       <nav className="mobile-bottom-nav">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, AlertCircle, CheckCircle2, Clock, Plus, Calendar,
   MapPin, ExternalLink, MessageSquare, Phone, Wrench, FileText,
@@ -722,13 +722,24 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
 export default function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [chantier, setChantier] = useState<Chantier | null>(null)
   const [evenements, setEvenements] = useState<ChantierEvenement[]>([])
   const [paiements, setPaiements] = useState<ChantierPaiement[]>([])
   const [photos, setPhotos] = useState<ChantierPhoto[]>([])
   const [documents, setDocuments] = useState<ChantierDocument[]>([])
-  const [tab, setTab] = useState<'journal' | 'paiements' | 'photos' | 'documents'>('journal')
+
+  const validTabs = ['journal', 'paiements', 'photos', 'documents'] as const
+  type TabKey = typeof validTabs[number]
+  const tabParam = searchParams.get('tab') as TabKey | null
+  const [tab, setTabState] = useState<TabKey>(validTabs.includes(tabParam as TabKey) ? (tabParam as TabKey) : 'journal')
+
+  const setTab = (t: TabKey) => {
+    setTabState(t)
+    router.replace(`/chantier/${id}?tab=${t}`, { scroll: false })
+  }
+
   const [loading, setLoading] = useState(true)
   const [savingStatut, setSavingStatut] = useState(false)
 

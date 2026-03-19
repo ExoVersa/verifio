@@ -7,10 +7,11 @@ interface Props {
   onSearch: (query: string) => void
   loading: boolean
   dark?: boolean
+  initialValue?: string
 }
 
-export default function SearchBar({ onSearch, loading, dark }: Props) {
-  const [value, setValue] = useState('')
+export default function SearchBar({ onSearch, loading, dark, initialValue }: Props) {
+  const [value, setValue] = useState(initialValue || '')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
