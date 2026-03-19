@@ -69,10 +69,12 @@ export interface SearchCandidate {
   nom: string
   statut: 'actif' | 'fermé'
   formeJuridique: string
+  formeJuridiqueCode: string
   ville: string
   codePostal: string
   codeNaf: string
   activite: string
+  dateCreation?: string
 }
 
 export interface SearchResult {
