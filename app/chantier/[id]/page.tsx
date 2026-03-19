@@ -400,10 +400,21 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
   const [phase, setPhase] = useState<PhotoPhase | 'toutes'>('toutes')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<ChantierPhoto | null>(null)
   const [legende, setLegende] = useState('')
   const [selectedPhase, setSelectedPhase] = useState<PhotoPhase>('pendant')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleDelete(photo: ChantierPhoto) {
+    if (!confirm('Supprimer cette photo ?')) return
+    setDeletingId(photo.id)
+    await supabase.storage.from('chantier-photos').remove([photo.url])
+    await supabase.from('chantier_photos').delete().eq('id', photo.id)
+    setDeletingId(null)
+    if (lightbox?.id === photo.id) setLightbox(null)
+    onRefresh()
+  }
 
   const filtered = phase === 'toutes' ? photos : photos.filter(p => p.phase === phase)
   const phaseLabels: Record<PhotoPhase, string> = { avant: 'Avant travaux', pendant: 'Pendant', apres: 'Après travaux' }
@@ -500,9 +511,9 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
           {filtered.map(ph => (
-            <div key={ph.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', aspectRatio: '1' }} onClick={() => setLightbox(ph.url)}>
+            <div key={ph.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', aspectRatio: '1' }} onClick={() => setLightbox(ph)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ph.url} alt={ph.legende || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <img src={ph.url} alt={ph.legende || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: deletingId === ph.id ? 0.4 : 1 }} />
               {ph.legende && (
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.6))', padding: '16px 8px 6px', fontSize: '11px', color: '#fff', fontWeight: 500 }}>
                   {ph.legende}
@@ -511,6 +522,13 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
               <div style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff' }}>
                 {ph.phase.toUpperCase()}
               </div>
+              <button
+                onClick={e => { e.stopPropagation(); handleDelete(ph) }}
+                disabled={deletingId === ph.id}
+                style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(220,38,38,0.85)', border: 'none', borderRadius: '6px', width: '26px', height: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
           ))}
         </div>
@@ -520,9 +538,13 @@ function PhotosTab({ chantier, photos, onRefresh }: { chantier: Chantier; photos
       {lightbox && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setLightbox(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
+          <img src={lightbox.url} alt={lightbox.legende || ''} style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
           <button onClick={() => setLightbox(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <X size={20} />
+          </button>
+          <button onClick={e => { e.stopPropagation(); handleDelete(lightbox) }} style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(220,38,38,0.85)', border: 'none', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', fontSize: '13px', fontWeight: 600 }}>
+            <Trash2 size={14} />
+            Supprimer
           </button>
         </div>
       )}
@@ -536,7 +558,17 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [docType, setDocType] = useState<DocumentType>('devis')
   const [docNom, setDocNom] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleDelete(doc: ChantierDocument) {
+    if (!confirm(`Supprimer "${doc.nom}" ?`)) return
+    setDeletingId(doc.id)
+    await supabase.storage.from('chantier-documents').remove([doc.url])
+    await supabase.from('chantier_documents').delete().eq('id', doc.id)
+    setDeletingId(null)
+    onRefresh()
+  }
 
   async function handleUpload(file: File | null) {
     if (!file) return
@@ -643,10 +675,19 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
                   </p>
                 </div>
               </div>
-              <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', textDecoration: 'none', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>
-                <Download size={13} />
-                Ouvrir
-              </a>
+              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', textDecoration: 'none', fontSize: '12px', fontWeight: 600 }}>
+                  <Download size={13} />
+                  Ouvrir
+                </a>
+                <button
+                  onClick={() => handleDelete(doc)}
+                  disabled={deletingId === doc.id}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '34px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', opacity: deletingId === doc.id ? 0.5 : 1 }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
