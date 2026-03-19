@@ -63,6 +63,18 @@ export interface DevisAnalysis {
   resume: string
 }
 
+export interface SearchCandidate {
+  siret: string
+  siren: string
+  nom: string
+  statut: 'actif' | 'fermé'
+  formeJuridique: string
+  ville: string
+  codePostal: string
+  codeNaf: string
+  activite: string
+}
+
 export interface SearchResult {
   siret: string
   siren: string
