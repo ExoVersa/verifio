@@ -559,6 +559,7 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
   const [docType, setDocType] = useState<DocumentType>('devis')
   const [docNom, setDocNom] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [filterType, setFilterType] = useState<DocumentType | 'tous'>('tous')
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleDelete(doc: ChantierDocument) {
@@ -618,8 +619,29 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
   }
 
+  const filtered = filterType === 'tous' ? documents : documents.filter(d => d.type === filterType)
+
   return (
     <div>
+      {/* Filtre par type */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setFilterType('tous')}
+          style={{ padding: '7px 14px', borderRadius: '20px', border: '1px solid', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', ...(filterType === 'tous' ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }) }}
+        >
+          Tous ({documents.length})
+        </button>
+        {(Object.entries(DOCUMENT_LABELS) as [DocumentType, string][]).filter(([v]) => documents.some(d => d.type === v)).map(([v, l]) => (
+          <button
+            key={v}
+            onClick={() => setFilterType(v)}
+            style={{ padding: '7px 14px', borderRadius: '20px', border: '1px solid', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', ...(filterType === v ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }) }}
+          >
+            {l} ({documents.filter(d => d.type === v).length})
+          </button>
+        ))}
+      </div>
+
       {/* Upload zone */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
         <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 600 }}>Ajouter un document</p>
@@ -655,16 +677,16 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
         </div>
       )}
 
-      {documents.length === 0 && (
+      {filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: '32px', color: 'var(--color-muted)', fontSize: '14px', background: 'var(--color-surface)', borderRadius: '14px', border: '1px solid var(--color-border)' }}>
-          Aucun document déposé.
+          {documents.length === 0 ? 'Aucun document déposé.' : 'Aucun document dans cette catégorie.'}
         </div>
       )}
 
-      {documents.length > 0 && (
+      {filtered.length > 0 && (
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', overflow: 'hidden' }}>
-          {documents.map((doc, i) => (
-            <div key={doc.id} style={{ padding: '14px 18px', borderBottom: i < documents.length - 1 ? '1px solid var(--color-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          {filtered.map((doc, i) => (
+            <div key={doc.id} style={{ padding: '14px 18px', borderBottom: i < filtered.length - 1 ? '1px solid var(--color-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: '22px', flexShrink: 0 }}>{docIcons[doc.type]}</span>
                 <div style={{ minWidth: 0 }}>
