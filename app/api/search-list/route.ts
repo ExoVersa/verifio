@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
   try {
     const url = isSiret
       ? `https://recherche-entreprises.api.gouv.fr/search?q=${query.replace(/\s/g, '')}&page=1&per_page=1`
-      : `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=5`
+      : `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=10`
 
-    const res = await fetch(url, { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } })
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     if (!res.ok) throw new Error('API indisponible')
 
     const data = await res.json()
