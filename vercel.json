@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/verifier-changements",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

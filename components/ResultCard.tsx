@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash,
   Leaf, ChevronRight, Users, Scale, Clock, Sparkles, Award, Briefcase,
-  ClipboardList, ArrowLeftRight, Download, GitCompare, ClipboardCheck,
+  ClipboardList, ArrowLeftRight, Download, GitCompare, ClipboardCheck, Bell, X,
 } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
@@ -157,10 +157,116 @@ function SectionHeader({ icon, title, badge }: { icon: React.ReactNode; title: s
   )
 }
 
+// ── Surveillance modal ────────────────────────────────────────────
+function SurveillanceModal({ result, onClose, onDone }: { result: SearchResult; onClose: () => void; onDone: () => void }) {
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim() || loading) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/surveillance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          siret: result.siret,
+          nom: result.nom,
+          score: result.score,
+          statut: result.statut,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) setError(data.error || 'Erreur lors de l\'activation.')
+      else { setDone(true); onDone() }
+    } catch {
+      setError('Erreur réseau. Réessayez.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--color-surface)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <Bell size={16} color="var(--color-accent)" />
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>Surveiller cet artisan</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>{result.nom}</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', padding: '2px', lineHeight: 1 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {done ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔔</div>
+            <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700, color: 'var(--color-accent)' }}>Alerte activée !</p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+              Nous vous enverrons un email si cet artisan change de statut, passe en liquidation ou reçoit une procédure judiciaire.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <p style={{ margin: '0 0 16px', fontSize: '14px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+              Nous vous alerterons si cet artisan change de statut, passe en liquidation ou reçoit une procédure judiciaire.
+              <strong style={{ color: 'var(--color-text)' }}> Aucun compte requis.</strong>
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Votre email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="prenom@exemple.fr"
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--color-border)', borderRadius: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-bg)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'var(--color-danger)' }}>{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || !email.trim()}
+              style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: loading || !email.trim() ? 'var(--color-border)' : 'var(--color-accent)', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: loading || !email.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              {loading ? (
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff' }} className="spin" />
+              ) : (
+                <><Bell size={15} /> M&apos;alerter</>
+              )}
+            </button>
+          </form>
+        )}
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────
 export default function ResultCard({ result, onSelect }: Props) {
   const [enrich, setEnrich] = useState<EnrichState>({ loading: false })
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [showSurveillance, setShowSurveillance] = useState(false)
+  const [surveillanceActive, setSurveillanceActive] = useState(false)
 
   useEffect(() => {
     setEnrich({ loading: true })
@@ -292,6 +398,13 @@ export default function ResultCard({ result, onSelect }: Props) {
 
   return (
     <div>
+      {showSurveillance && (
+        <SurveillanceModal
+          result={result}
+          onClose={() => setShowSurveillance(false)}
+          onDone={() => { setSurveillanceActive(true); setShowSurveillance(false) }}
+        />
+      )}
       <div className="result-card fade-up">
 
         {/* ── COMPANY HEADER ──────────────────────────────── */}
@@ -638,6 +751,26 @@ export default function ResultCard({ result, onSelect }: Props) {
             <ClipboardCheck size={16} />
             Créer un chantier avec cet artisan
           </a>
+
+          {/* Bouton surveillance */}
+          <button
+            onClick={() => {
+              if (!surveillanceActive) setShowSurveillance(true)
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              width: '100%', padding: '12px 20px', borderRadius: '12px', border: '1px solid',
+              fontSize: '13px', fontWeight: 600, cursor: surveillanceActive ? 'default' : 'pointer',
+              fontFamily: 'var(--font-body)', transition: 'all 0.15s', boxSizing: 'border-box',
+              ...(surveillanceActive
+                ? { background: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }
+                : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-muted)' }),
+            }}
+          >
+            <Bell size={14} />
+            {surveillanceActive ? '✓ Alerte activée' : 'Recevoir une alerte si le statut change'}
+          </button>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <a
               href={`/comparer?q=${encodeURIComponent(result.siret)}`}
