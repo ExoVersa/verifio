@@ -559,8 +559,13 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
       setUploading(false)
       return
     }
-    const insertPayload = { chantier_id: chantier.id, nom: docNom || file.name, type: docType, url: path }
-    const { error: insertErr } = await supabase.from('chantier_documents').insert(insertPayload)
+    const { error: insertErr } = await supabase.from('chantier_documents').insert({
+      chantier_id: chantier.id,
+      nom: 'test.pdf',
+      type: 'devis',
+      url: 'test/path',
+    })
+    console.log('TEST INSERT ERROR:', insertErr)
     if (insertErr) {
       setUploadError(`Erreur base de données : ${insertErr.message}`)
       setUploading(false)
