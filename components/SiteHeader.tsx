@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, Fragment } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
   ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin, HardHat,
-  AlertTriangle, Euro, Wrench,
+  AlertTriangle, Euro, History, Bell, Shield,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -17,14 +16,18 @@ interface NavItem {
   href: string | null
   label: string
   desc: string
-  icon: React.ReactNode
+  Icon: React.ComponentType<{ size: number; color?: string }>
   soon?: boolean
 }
 
 interface NavMenu {
   id: string
+  emoji: string
   label: string
   items: NavItem[]
+  stat: { value: string; label: string; tip: string }
+  ctaHref: string
+  ctaLabel: string
 }
 
 interface SiteHeaderProps {
@@ -36,117 +39,221 @@ interface SiteHeaderProps {
 const NAV_MENUS: NavMenu[] = [
   {
     id: 'verifier',
+    emoji: '🔍',
     label: 'Vérifier',
+    ctaHref: '/',
+    ctaLabel: 'Vérifier un artisan',
+    stat: { value: '26 000', label: 'arnaques signalées en 2024', tip: 'Vérifiez avant de signer' },
     items: [
-      { href: '/', icon: <Search size={15} />, label: 'Rechercher un artisan', desc: 'Vérifiez SIRET, certifications et alertes légales' },
-      { href: '/comparer', icon: <ArrowLeftRight size={15} />, label: 'Comparer des artisans', desc: 'Confrontez 2 ou 3 profils côte à côte' },
-      { href: '/trouver-artisan', icon: <MapPin size={15} />, label: 'Trouver près de moi', desc: 'Artisans certifiés RGE près de chez vous' },
+      { href: '/', Icon: Search, label: 'Rechercher un artisan', desc: 'Vérifiez SIRET, certifications et alertes légales' },
+      { href: '/comparer', Icon: ArrowLeftRight, label: 'Comparer des artisans', desc: 'Confrontez 2 ou 3 profils côte à côte' },
+      { href: '/trouver-artisan', Icon: MapPin, label: 'Trouver un artisan près de moi', desc: 'Artisans certifiés RGE près de chez vous' },
     ],
   },
   {
     id: 'analyser',
+    emoji: '📊',
     label: 'Analyser',
+    ctaHref: '/simulateur-prix',
+    ctaLabel: 'Simuler mon devis',
+    stat: { value: '3 500€', label: 'économisés en moyenne', tip: 'Grâce au simulateur de prix' },
     items: [
-      { href: '/simulateur-prix', icon: <Calculator size={15} />, label: 'Simulateur de prix', desc: 'Votre devis est-il au bon tarif ?' },
-      { href: '/analyser-devis', icon: <FileSearch size={15} />, label: 'Analyser un devis IA', desc: 'Conformité légale et mentions obligatoires' },
-      { href: null, icon: <ArrowLeftRight size={15} />, label: 'Comparer des devis', desc: 'Comparez plusieurs devis entre eux', soon: true },
+      { href: '/simulateur-prix', Icon: Calculator, label: 'Simulateur de prix', desc: 'Votre devis est-il au bon tarif ?' },
+      { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser un devis IA', desc: 'Conformité légale et mentions obligatoires' },
+      { href: null, Icon: Euro, label: "Calculateur d'aides État", desc: "MaPrimeRénov', CEE et plus", soon: true },
     ],
   },
   {
     id: 'proteger',
+    emoji: '⚖️',
     label: 'Se protéger',
+    ctaHref: '/guide-chantier',
+    ctaLabel: 'Voir le guide chantier',
+    stat: { value: '78%', label: 'des litiges évités', tip: 'Avec notre checklist complète' },
     items: [
-      { href: '/guide-chantier', icon: <ClipboardCheck size={15} />, label: 'Guide chantier', desc: 'Checklist de suivi en 4 phases' },
-      { href: '/assistant-juridique', icon: <Scale size={15} />, label: 'Assistant juridique', desc: 'Droits et recours en cas de litige' },
-      { href: null, icon: <AlertTriangle size={15} />, label: 'Signaler un artisan', desc: 'Alertez la communauté', soon: true },
+      { href: '/guide-chantier', Icon: ClipboardCheck, label: 'Guide chantier étape par étape', desc: 'Checklist complète en 4 phases' },
+      { href: '/assistant-juridique', Icon: Scale, label: 'Assistant juridique', desc: 'Vos droits et recours en cas de litige' },
+      { href: null, Icon: AlertTriangle, label: 'Signaler un artisan', desc: 'Alertez la communauté', soon: true },
     ],
   },
   {
-    id: 'outils',
-    label: 'Outils',
+    id: 'chantier',
+    emoji: '📋',
+    label: 'Mon chantier',
+    ctaHref: '/mes-chantiers',
+    ctaLabel: 'Mon carnet de chantier',
+    stat: { value: '1 200+', label: 'chantiers suivis', tip: "Sur Verifio aujourd'hui" },
     items: [
-      { href: '/mes-chantiers', icon: <HardHat size={15} />, label: 'Carnet de chantier', desc: 'Suivez vos travaux et paiements' },
-      { href: null, icon: <Euro size={15} />, label: "Calculateur d'aides", desc: "MaPrimeRénov', CEE et plus", soon: true },
+      { href: '/mes-chantiers', Icon: HardHat, label: 'Carnet de chantier', desc: 'Suivez vos travaux et paiements' },
+      { href: '/mon-espace?tab=surveillances', Icon: Bell, label: 'Mes surveillances', desc: 'Artisans que vous surveillez' },
+      { href: '/mon-espace?tab=historique', Icon: History, label: 'Mon historique', desc: 'Vos dernières recherches' },
     ],
   },
 ]
 
-// ── Dropdown panel ─────────────────────────────────────────────────────────
+// ── Mega Menu Panel ────────────────────────────────────────────────────────
 
-function DropdownPanel({ items, onClose }: { items: NavItem[]; onClose: () => void }) {
+function MegaMenuPanel({
+  menu,
+  onClose,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  menu: NavMenu
+  onClose: () => void
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}) {
   return (
-    <div style={{
-      position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
-      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-      borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-      padding: '6px', minWidth: '280px', zIndex: 100,
-    }}>
-      {items.map((item) => {
-        const inner = (
-          <>
+    <div
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        marginTop: '8px',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '18px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+        padding: '8px',
+        minWidth: '560px',
+        zIndex: 200,
+        display: 'grid',
+        gridTemplateColumns: '1fr 200px',
+        gap: '8px',
+      }}
+    >
+      {/* Left: items */}
+      <div style={{ padding: '8px 0' }}>
+        {menu.items.map((item) => {
+          const iconEl = (
             <div style={{
-              width: '32px', height: '32px', borderRadius: '8px',
-              background: item.soon ? 'var(--color-border)' : 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
+              width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+              background: item.soon ? 'var(--color-border)' : 'var(--color-accent-light)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: item.soon ? 'var(--color-muted)' : 'var(--color-accent)', flexShrink: 0,
             }}>
-              {item.icon}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <p style={{
-                  margin: 0, fontSize: '13px', fontWeight: 600, lineHeight: 1.3,
-                  color: item.soon ? 'var(--color-muted)' : 'var(--color-text)',
-                }}>
-                  {item.label}
-                </p>
-                {item.soon && (
-                  <span style={{
-                    fontSize: '10px', fontWeight: 700, padding: '2px 6px',
-                    borderRadius: '20px', background: '#fef3c7', color: '#92400e', flexShrink: 0,
-                  }}>
-                    Bientôt
-                  </span>
-                )}
-              </div>
-              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.4 }}>
-                {item.desc}
-              </p>
-            </div>
-          </>
-        )
-
-        if (item.soon || !item.href) {
-          return (
-            <div
-              key={item.label}
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                padding: '10px 12px', borderRadius: '10px', cursor: 'not-allowed', opacity: 0.65,
-              }}
-            >
-              {inner}
+              <item.Icon
+                size={16}
+                color={item.soon ? 'var(--color-muted)' : 'var(--color-accent)'}
+              />
             </div>
           )
-        }
-        return (
-          <a
-            key={item.href}
-            href={item.href}
-            onClick={onClose}
-            style={{
-              display: 'flex', alignItems: 'flex-start', gap: '12px',
-              padding: '10px 12px', borderRadius: '10px', textDecoration: 'none',
-              color: 'var(--color-text)', transition: 'background 0.12s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            {inner}
-          </a>
-        )
-      })}
+
+          const content = (
+            <>
+              {iconEl}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <p style={{
+                    margin: 0, fontSize: '13px', fontWeight: 600, lineHeight: 1.3,
+                    color: item.soon ? 'var(--color-muted)' : 'var(--color-text)',
+                  }}>
+                    {item.label}
+                  </p>
+                  {item.soon && (
+                    <span style={{
+                      fontSize: '10px', fontWeight: 700, padding: '2px 6px',
+                      borderRadius: '20px', background: '#fef3c7', color: '#92400e', flexShrink: 0,
+                    }}>
+                      Bientôt
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.4 }}>
+                  {item.desc}
+                </p>
+              </div>
+            </>
+          )
+
+          if (item.soon || !item.href) {
+            return (
+              <div
+                key={item.label}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '12px',
+                  padding: '10px 14px', borderRadius: '12px', opacity: 0.6, cursor: 'not-allowed',
+                }}
+              >
+                {content}
+              </div>
+            )
+          }
+
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: '12px',
+                padding: '10px 14px', borderRadius: '12px',
+                textDecoration: 'none', color: 'var(--color-text)',
+                transition: 'background 0.12s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {content}
+            </a>
+          )
+        })}
+      </div>
+
+      {/* Right: stat panel */}
+      <div style={{
+        background: '#1B4332',
+        borderRadius: '12px',
+        padding: '20px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: '16px',
+      }}>
+        <div>
+          <p style={{
+            margin: '0 0 4px',
+            fontSize: '28px',
+            fontWeight: 800,
+            color: '#D8F3DC',
+            fontFamily: 'var(--font-display)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+          }}>
+            {menu.stat.value}
+          </p>
+          <p style={{ margin: 0, fontSize: '12px', color: '#74C69D', lineHeight: 1.4 }}>
+            {menu.stat.label}
+          </p>
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#B7E4C7', fontStyle: 'italic', lineHeight: 1.4 }}>
+            « {menu.stat.tip} »
+          </p>
+        </div>
+
+        <a
+          href={menu.ctaHref}
+          onClick={onClose}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '9px 12px',
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '8px',
+            color: '#fff',
+            textDecoration: 'none',
+            fontSize: '12px',
+            fontWeight: 600,
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+        >
+          {menu.ctaLabel} →
+        </a>
+      </div>
     </div>
   )
 }
@@ -156,27 +263,45 @@ function DropdownPanel({ items, onClose }: { items: NavItem[]; onClose: () => vo
 export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const pathname = usePathname()
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [survCount, setSurvCount] = useState(0)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileSection, setMobileSection] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
-  const headerRef = useRef<HTMLElement>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
 
+  // Auth
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      if (data.user?.email) loadSurvCount(data.user.email)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
+      if (session?.user?.email) loadSurvCount(session.user.email)
+      else setSurvCount(0)
     })
     return () => subscription.unsubscribe()
   }, [])
 
+  async function loadSurvCount(email: string) {
+    const { count } = await supabase
+      .from('surveillances')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+    setSurvCount(count ?? 0)
+  }
+
+  // Scroll shadow
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
@@ -189,22 +314,36 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Close everything on route change
+  // Close on route change
   useEffect(() => {
     setOpenMenu(null)
     setUserMenuOpen(false)
     setMobileOpen(false)
   }, [pathname])
 
+  // Cleanup timer on unmount
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current) }, [])
+
+  // ── Hover mega menu handlers ──────────────────────────────────────────
+
+  const handleNavEnter = (menuId: string) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+    setOpenMenu(menuId)
+    setUserMenuOpen(false)
+  }
+
+  const handleNavLeave = () => {
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 150)
+  }
+
+  const handlePanelEnter = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+  }
+
   const closeAll = () => {
     setOpenMenu(null)
     setUserMenuOpen(false)
     setMobileOpen(false)
-  }
-
-  const toggleMenu = (id: string) => {
-    setOpenMenu(prev => prev === id ? null : id)
-    setUserMenuOpen(false)
   }
 
   const toggleUserMenu = () => {
@@ -220,298 +359,366 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
     return user?.email?.charAt(0).toUpperCase() || 'U'
   })()
 
-  const logoContent = (
-    <>
-      <svg width="24" height="26" viewBox="0 0 24 26" fill="none" aria-hidden="true">
-        <path
-          d="M12 1L2 5.5V12c0 5.25 4.3 10.15 10 11.5C17.7 22.15 22 17.25 22 12V5.5L12 1Z"
-          fill="var(--color-accent)"
-        />
-        <path
-          d="M8 13l2.5 2.5L16 10"
-          stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-        />
-      </svg>
-      <span className="font-display" style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-accent)', letterSpacing: '-0.02em' }}>
-        Verifio
-      </span>
-    </>
-  )
-
-  // ── Bottom nav items ────────────────────────────────────────────────────
+  // ── Bottom nav links ──────────────────────────────────────────────────
 
   const bottomNavLinks = [
     { href: '/', Icon: Search, label: 'Rechercher' },
-    { href: '/simulateur-prix', Icon: Wrench, label: 'Outils' },
+    { href: '/simulateur-prix', Icon: Calculator, label: 'Analyser' },
+    { href: '/guide-chantier', Icon: Shield, label: 'Protéger' },
     { href: user ? '/mon-espace' : '/auth', Icon: User, label: 'Mon espace' },
   ]
 
   return (
     <Fragment>
-      {/* ── HEADER ── */}
-      <header
+      {/* ── STICKY WRAPPER (top bar + header) ── */}
+      <div
         ref={headerRef}
-        className={scrolled ? 'header-scrolled' : ''}
-        style={{
-          padding: '0 24px', height: '58px',
-          borderBottom: '1px solid var(--color-border)',
-          background: 'var(--color-surface)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 50,
-          transition: 'box-shadow 0.2s',
-        }}
+        style={{ position: 'sticky', top: 0, zIndex: 50 }}
       >
-        {/* Logo */}
-        <div style={{ flexShrink: 0 }}>
-          {onLogoClick ? (
-            <button
-              onClick={() => { onLogoClick(); closeAll() }}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              {logoContent}
-            </button>
-          ) : (
-            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-              {logoContent}
-            </a>
-          )}
+        {/* ── TOP BAR ── */}
+        <div style={{
+          background: '#1B4332',
+          padding: '0 24px',
+          height: '34px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <p style={{ margin: 0, fontSize: '11px', color: '#D8F3DC', fontWeight: 500 }}>
+            🛡️ Données officielles INSEE · ADEME · BODACC · Mise à jour quotidienne
+          </p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#74C69D', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>⭐</span> 4.8/5 — Fait confiance par 10 000+ particuliers
+          </p>
         </div>
 
-        {/* ── CENTER: Desktop dropdown nav ── */}
-        <nav className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {NAV_MENUS.map((menu) => (
-            <div key={menu.id} style={{ position: 'relative' }}>
+        {/* ── MAIN HEADER ── */}
+        <header
+          style={{
+            padding: '0 24px',
+            height: '60px',
+            borderBottom: '1px solid var(--color-border)',
+            background: 'var(--color-surface)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'box-shadow 0.2s',
+            boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
+          }}
+        >
+          {/* ── LOGO ── */}
+          <div style={{ flexShrink: 0 }}>
+            {onLogoClick ? (
               <button
-                onClick={() => toggleMenu(menu.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  background: openMenu === menu.id ? 'var(--color-bg)' : 'transparent',
-                  border: 'none', cursor: 'pointer', padding: '7px 12px', borderRadius: '8px',
-                  fontSize: '13px', fontWeight: 600,
-                  color: openMenu === menu.id ? 'var(--color-accent)' : 'var(--color-text)',
-                  fontFamily: 'var(--font-body)', transition: 'background 0.15s, color 0.15s',
-                }}
+                onClick={() => { onLogoClick(); closeAll() }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
-                {menu.label}
-                <ChevronDown
-                  size={13}
-                  style={{
-                    transition: 'transform 0.2s',
-                    transform: openMenu === menu.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}
-                />
+                <LogoContent />
               </button>
-              {openMenu === menu.id && <DropdownPanel items={menu.items} onClose={closeAll} />}
-            </div>
-          ))}
-        </nav>
+            ) : (
+              <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                <LogoContent />
+              </a>
+            )}
+          </div>
 
-        {/* ── RIGHT ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-
-          {/* Desktop auth / user menu */}
-          <div className="nav-desktop">
-            {user ? (
-              <div style={{ position: 'relative' }}>
+          {/* ── CENTER: Desktop mega-menu nav ── */}
+          <nav className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: '2px', position: 'relative' }}>
+            {NAV_MENUS.map((menu) => (
+              <div
+                key={menu.id}
+                style={{ position: 'relative' }}
+                onMouseEnter={() => handleNavEnter(menu.id)}
+                onMouseLeave={handleNavLeave}
+              >
                 <button
-                  onClick={toggleUserMenu}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: userMenuOpen ? 'var(--color-bg)' : 'transparent',
-                    border: `1px solid ${userMenuOpen ? 'var(--color-border)' : 'transparent'}`,
-                    borderRadius: '10px', cursor: 'pointer', padding: '5px 10px 5px 5px',
-                    fontFamily: 'var(--font-body)', transition: 'background 0.15s',
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    background: openMenu === menu.id ? 'var(--color-bg)' : 'transparent',
+                    border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                    fontSize: '13.5px', fontWeight: 600,
+                    color: openMenu === menu.id ? 'var(--color-accent)' : 'var(--color-text)',
+                    fontFamily: 'var(--font-body)', transition: 'background 0.15s, color 0.15s',
                   }}
                 >
-                  <div style={{
-                    width: '30px', height: '30px', borderRadius: '50%',
-                    background: 'var(--color-accent)', color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '12px', fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {initials}
-                  </div>
+                  <span>{menu.emoji}</span>
+                  {menu.label}
                   <ChevronDown
-                    size={13}
+                    size={12}
                     style={{
-                      color: 'var(--color-muted)', transition: 'transform 0.2s',
-                      transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                      transform: openMenu === menu.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                      color: 'var(--color-muted)',
                     }}
                   />
                 </button>
 
-                {/* User dropdown */}
-                {userMenuOpen && (
-                  <div style={{
-                    position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                    background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-                    borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-                    padding: '6px', minWidth: '210px', zIndex: 100,
-                  }}>
-                    <div style={{
-                      padding: '10px 12px 10px',
-                      borderBottom: '1px solid var(--color-border)',
-                      marginBottom: '4px',
-                    }}>
-                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)', fontWeight: 500 }}>
-                        Connecté en tant que
-                      </p>
-                      <p style={{
-                        margin: '2px 0 0', fontSize: '13px', fontWeight: 600,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        color: 'var(--color-text)',
-                      }}>
-                        {user.email}
-                      </p>
-                    </div>
-                    {[
-                      { href: '/mon-espace', label: 'Mon espace', Icon: User },
-                      { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
-                    ].map(({ href, label, Icon }) => (
-                      <a
-                        key={href}
-                        href={href}
-                        onClick={closeAll}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '9px 12px', borderRadius: '10px',
-                          textDecoration: 'none', color: 'var(--color-text)',
-                          fontSize: '13px', fontWeight: 500, transition: 'background 0.12s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <Icon size={14} color="var(--color-muted)" />
-                        {label}
-                      </a>
-                    ))}
-                    <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
-                    <button
-                      onClick={() => { supabase.auth.signOut(); closeAll() }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '9px 12px', borderRadius: '10px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#dc2626', fontSize: '13px', fontWeight: 500,
-                        fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left',
-                        transition: 'background 0.12s',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <LogOut size={14} />
-                      Se déconnecter
-                    </button>
-                  </div>
+                {openMenu === menu.id && (
+                  <MegaMenuPanel
+                    menu={menu}
+                    onClose={closeAll}
+                    onMouseEnter={handlePanelEnter}
+                    onMouseLeave={handleNavLeave}
+                  />
                 )}
               </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Link
-                  href="/auth"
-                  style={{
-                    fontSize: '13px', fontWeight: 600, color: 'var(--color-text)',
-                    textDecoration: 'none', padding: '7px 14px', borderRadius: '8px',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/auth"
-                  style={{
-                    fontSize: '13px', fontWeight: 600, color: '#fff',
-                    textDecoration: 'none', padding: '7px 14px', borderRadius: '8px',
-                    background: 'var(--color-accent)',
-                  }}
-                >
-                  S'inscrire
-                </Link>
-              </div>
-            )}
+            ))}
+          </nav>
+
+          {/* ── RIGHT ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <div className="nav-desktop">
+              {user ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Bell */}
+                  <a
+                    href="/mon-espace?tab=surveillances"
+                    style={{
+                      position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                      color: 'var(--color-text)', textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
+                    title="Mes surveillances"
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-border)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                  >
+                    <Bell size={16} />
+                    {survCount > 0 && (
+                      <span style={{
+                        position: 'absolute', top: '-3px', right: '-3px',
+                        width: '16px', height: '16px', borderRadius: '50%',
+                        background: 'var(--color-accent)', color: '#fff',
+                        fontSize: '9px', fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid var(--color-surface)',
+                      }}>
+                        {survCount > 9 ? '9+' : survCount}
+                      </span>
+                    )}
+                  </a>
+
+                  {/* Avatar + user menu */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={toggleUserMenu}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: userMenuOpen ? 'var(--color-bg)' : 'transparent',
+                        border: `1px solid ${userMenuOpen ? 'var(--color-border)' : 'transparent'}`,
+                        borderRadius: '10px', cursor: 'pointer', padding: '4px 10px 4px 4px',
+                        fontFamily: 'var(--font-body)', transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: '#1B4332', color: '#D8F3DC',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', fontWeight: 700, flexShrink: 0,
+                      }}>
+                        {initials}
+                      </div>
+                      <ChevronDown
+                        size={12}
+                        style={{
+                          color: 'var(--color-muted)', transition: 'transform 0.2s',
+                          transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      />
+                    </button>
+
+                    {userMenuOpen && (
+                      <div style={{
+                        position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                        borderRadius: '16px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+                        padding: '6px', minWidth: '220px', zIndex: 200,
+                      }}>
+                        <div style={{
+                          padding: '10px 12px 12px',
+                          borderBottom: '1px solid var(--color-border)',
+                          marginBottom: '4px',
+                        }}>
+                          <div style={{
+                            width: '38px', height: '38px', borderRadius: '50%',
+                            background: '#1B4332', color: '#D8F3DC',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '14px', fontWeight: 700, marginBottom: '8px',
+                          }}>
+                            {initials}
+                          </div>
+                          <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Connecté en tant que</p>
+                          <p style={{
+                            margin: '2px 0 0', fontSize: '13px', fontWeight: 600,
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {user.email}
+                          </p>
+                        </div>
+
+                        {[
+                          { href: '/mon-espace', label: 'Mon espace', Icon: User },
+                          { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
+                          { href: '/mon-espace?tab=surveillances', label: `Mes surveillances${survCount > 0 ? ` (${survCount})` : ''}`, Icon: Bell },
+                        ].map(({ href, label, Icon }) => (
+                          <a
+                            key={href}
+                            href={href}
+                            onClick={closeAll}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              padding: '9px 12px', borderRadius: '10px',
+                              textDecoration: 'none', color: 'var(--color-text)',
+                              fontSize: '13px', fontWeight: 500, transition: 'background 0.12s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <Icon size={14} color="var(--color-muted)" />
+                            {label}
+                          </a>
+                        ))}
+
+                        <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
+                        <button
+                          onClick={() => { supabase.auth.signOut(); closeAll() }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '9px 12px', borderRadius: '10px',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#dc2626', fontSize: '13px', fontWeight: 500,
+                            fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left',
+                            transition: 'background 0.12s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <LogOut size={14} />
+                          Se déconnecter
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <a
+                    href="/auth"
+                    style={{
+                      fontSize: '13px', fontWeight: 500, color: 'var(--color-text)',
+                      textDecoration: 'none', padding: '7px 14px',
+                    }}
+                  >
+                    Se connecter
+                  </a>
+                  <a
+                    href="/"
+                    style={{
+                      fontSize: '13px', fontWeight: 700, color: '#fff',
+                      textDecoration: 'none', padding: '8px 16px', borderRadius: '9px',
+                      background: '#1B4332',
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                  >
+                    Vérifier un artisan →
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Hamburger */}
+            <button
+              className="nav-hamburger"
+              onClick={() => setMobileOpen((o) => !o)}
+              style={{
+                background: 'none', border: '1px solid var(--color-border)',
+                borderRadius: '8px', cursor: 'pointer', padding: '7px 9px',
+                display: 'flex', alignItems: 'center', color: 'var(--color-text)',
+              }}
+              aria-label="Menu"
+            >
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
+        </header>
 
-          {/* Hamburger — tablet/mobile */}
-          <button
-            className="nav-hamburger"
-            onClick={() => setMobileOpen((o) => !o)}
-            style={{
-              background: 'none', border: '1px solid var(--color-border)',
-              borderRadius: '8px', cursor: 'pointer', padding: '7px 9px',
-              display: 'flex', alignItems: 'center', color: 'var(--color-text)',
-            }}
-            aria-label="Menu"
-          >
-            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
-        </div>
-
-        {/* ── MOBILE MENU (slide panel) ── */}
+        {/* ── MOBILE FULLSCREEN MENU ── */}
         {mobileOpen && (
           <div style={{
-            position: 'absolute', top: '58px', left: 0, right: 0,
-            background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)',
-            padding: '8px 16px 20px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 49,
-            maxHeight: 'calc(100vh - 58px - 64px)', overflowY: 'auto',
+            position: 'fixed', inset: 0,
+            top: '94px', // top bar + header height
+            background: 'var(--color-surface)',
+            zIndex: 49,
+            overflowY: 'auto',
+            padding: '16px 20px 100px',
           }}>
-            {/* Accordion nav sections */}
+            {/* Nav sections */}
             {NAV_MENUS.map((menu) => (
-              <div key={menu.id} style={{ marginBottom: '2px' }}>
+              <div key={menu.id} style={{ marginBottom: '4px' }}>
                 <button
                   onClick={() => setMobileSection(prev => prev === menu.id ? null : menu.id)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', padding: '11px 8px',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)',
-                    textTransform: 'uppercase', letterSpacing: '0.07em',
+                    width: '100%', padding: '13px 12px',
+                    background: mobileSection === menu.id ? 'var(--color-bg)' : 'none',
+                    border: 'none', borderRadius: '12px', cursor: 'pointer',
+                    fontSize: '15px', fontWeight: 700,
+                    color: 'var(--color-text)',
                     fontFamily: 'var(--font-body)',
                   }}
                 >
-                  {menu.label}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>{menu.emoji}</span>
+                    {menu.label}
+                  </span>
                   <ChevronDown
-                    size={14}
+                    size={16}
                     style={{
                       color: 'var(--color-muted)', transition: 'transform 0.2s',
                       transform: mobileSection === menu.id ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
                   />
                 </button>
+
                 {mobileSection === menu.id && (
-                  <div style={{ paddingBottom: '4px' }}>
+                  <div style={{ paddingBottom: '8px', paddingLeft: '8px' }}>
                     {menu.items.map((item) => {
                       const inner = (
                         <>
                           <div style={{
-                            width: '30px', height: '30px', borderRadius: '7px',
-                            background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                            width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                            background: item.soon ? 'var(--color-border)' : 'var(--color-accent-light)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: item.soon ? 'var(--color-muted)' : 'var(--color-accent)', flexShrink: 0,
                           }}>
-                            {item.icon}
+                            <item.Icon size={15} color={item.soon ? 'var(--color-muted)' : 'var(--color-accent)'} />
                           </div>
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: item.soon ? 'var(--color-muted)' : 'var(--color-text)' }}>
                               {item.label}
                             </p>
-                            <p style={{ margin: '1px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>
                               {item.desc}
                             </p>
                           </div>
                           {item.soon && (
                             <span style={{
                               fontSize: '10px', fontWeight: 700, padding: '2px 6px',
-                              borderRadius: '20px', background: '#fef3c7', color: '#92400e', flexShrink: 0,
+                              borderRadius: '20px', background: '#fef3c7', color: '#92400e',
                             }}>
                               Bientôt
                             </span>
                           )}
                         </>
                       )
+
                       if (item.soon || !item.href) {
                         return (
-                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: '10px', opacity: 0.65, cursor: 'not-allowed' }}>
+                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', opacity: 0.6, cursor: 'not-allowed' }}>
                             {inner}
                           </div>
                         )
@@ -521,7 +728,9 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                           key={item.href}
                           href={item.href}
                           onClick={closeAll}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', transition: 'background 0.12s' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         >
                           {inner}
                         </a>
@@ -532,71 +741,93 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               </div>
             ))}
 
-            <div style={{ height: '1px', background: 'var(--color-border)', margin: '10px 0' }} />
+            <div style={{ height: '1px', background: 'var(--color-border)', margin: '16px 0' }} />
 
-            {/* User section */}
+            {/* Auth section */}
             {user ? (
               <>
-                <div style={{ padding: '6px 8px 2px', fontSize: '11px', color: 'var(--color-muted)', fontWeight: 500 }}>
-                  {user.email}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 12px',
+                  background: 'var(--color-bg)', borderRadius: '12px', marginBottom: '8px',
+                }}>
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: '#1B4332', color: '#D8F3DC',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '15px', fontWeight: 700, flexShrink: 0,
+                  }}>
+                    {initials}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Connecté</p>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email}
+                    </p>
+                  </div>
                 </div>
+
                 {[
                   { href: '/mon-espace', label: 'Mon espace', Icon: User },
                   { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
+                  { href: '/mon-espace?tab=surveillances', label: 'Mes surveillances', Icon: Bell },
                 ].map(({ href, label, Icon }) => (
                   <a
                     key={href}
                     href={href}
                     onClick={closeAll}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '11px 8px', borderRadius: '10px',
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '12px', borderRadius: '12px', marginBottom: '4px',
                       textDecoration: 'none', color: 'var(--color-text)',
-                      fontSize: '13px', fontWeight: 600,
+                      fontSize: '14px', fontWeight: 600, transition: 'background 0.12s',
                     }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <Icon size={15} color="var(--color-accent)" />
+                    <Icon size={16} color="var(--color-accent)" />
                     {label}
                   </a>
                 ))}
+
                 <button
                   onClick={() => { supabase.auth.signOut(); closeAll() }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '11px 8px', borderRadius: '10px',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px', borderRadius: '12px', width: '100%',
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#dc2626', fontSize: '13px', fontWeight: 600,
-                    fontFamily: 'var(--font-body)', width: '100%',
+                    color: '#dc2626', fontSize: '14px', fontWeight: 600,
+                    fontFamily: 'var(--font-body)', marginTop: '4px',
                   }}
                 >
-                  <LogOut size={15} />
-                  Déconnexion
+                  <LogOut size={16} />
+                  Se déconnecter
                 </button>
               </>
             ) : (
-              <div style={{ display: 'flex', gap: '8px', padding: '4px 0' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <a
                   href="/auth"
                   onClick={closeAll}
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '12px', borderRadius: '10px',
+                    padding: '14px', borderRadius: '12px',
                     border: '1px solid var(--color-border)',
                     textDecoration: 'none', color: 'var(--color-text)',
-                    fontSize: '13px', fontWeight: 600,
+                    fontSize: '14px', fontWeight: 600,
                   }}
                 >
-                  Connexion
+                  Se connecter
                 </a>
                 <a
                   href="/auth"
                   onClick={closeAll}
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '12px', borderRadius: '10px',
-                    background: 'var(--color-accent)',
+                    padding: '14px', borderRadius: '12px',
+                    background: '#1B4332',
                     textDecoration: 'none', color: '#fff',
-                    fontSize: '13px', fontWeight: 600,
+                    fontSize: '14px', fontWeight: 700,
                   }}
                 >
                   S'inscrire
@@ -610,7 +841,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           .nav-desktop { display: flex; }
           .nav-hamburger { display: none !important; }
           .nav-bottom { display: none !important; }
-          @media (max-width: 768px) {
+          @media (max-width: 900px) {
             .nav-desktop { display: none !important; }
             .nav-hamburger { display: flex !important; }
           }
@@ -619,7 +850,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             body { padding-bottom: 64px; }
           }
         `}</style>
-      </header>
+      </div>
 
       {/* ── MOBILE BOTTOM NAV ── */}
       <nav
@@ -638,7 +869,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           const isActive = pathname === href
           return (
             <a
-              key={href}
+              key={label}
               href={href}
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column',
@@ -649,26 +880,39 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 fontFamily: 'var(--font-body)',
               }}
             >
-              <Icon size={22} />
+              <Icon size={20} />
               <span>{label}</span>
             </a>
           )
         })}
-        <button
-          onClick={() => setMobileOpen(o => !o)}
-          style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: '3px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: mobileOpen ? 'var(--color-accent)' : 'var(--color-muted)',
-            fontSize: '10px', fontWeight: mobileOpen ? 700 : 500,
-            fontFamily: 'var(--font-body)',
-          }}
-        >
-          <Menu size={22} />
-          <span>Menu</span>
-        </button>
       </nav>
     </Fragment>
+  )
+}
+
+// ── Logo subcomponent ──────────────────────────────────────────────────────
+
+function LogoContent() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <svg width="26" height="28" viewBox="0 0 26 28" fill="none" aria-hidden="true">
+        <path
+          d="M13 1L2 6V13c0 5.8 4.8 11.2 11 12.5C19.2 24.2 24 18.8 24 13V6L13 1Z"
+          fill="#1B4332"
+        />
+        <path
+          d="M9 14l3 3L18 11"
+          stroke="#D8F3DC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        />
+      </svg>
+      <div>
+        <p className="font-display" style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1B4332', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+          Verifio
+        </p>
+        <p style={{ margin: 0, fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>
+          Vérifiez avant de signer
+        </p>
+      </div>
+    </div>
   )
 }
