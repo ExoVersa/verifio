@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Search } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import ResultCard from '@/components/ResultCard'
+import ShareButton from '@/components/ShareButton'
 import type { SearchResult } from '@/types'
 
 export default function ArtisanFichePage() {
@@ -36,19 +37,29 @@ export default function ArtisanFichePage() {
 
       <div style={{ maxWidth: '760px', margin: '0 auto', padding: '28px 24px 80px' }}>
 
-        {/* Back button */}
-        <button
-          onClick={() => router.back()}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--color-muted)', fontSize: '13px', fontWeight: 500,
-            padding: 0, marginBottom: '24px', fontFamily: 'var(--font-body)',
-          }}
-        >
-          <ArrowLeft size={15} />
-          Retour
-        </button>
+        {/* Back + Share */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--color-muted)', fontSize: '13px', fontWeight: 500,
+              padding: 0, fontFamily: 'var(--font-body)',
+            }}
+          >
+            <ArrowLeft size={15} />
+            Retour
+          </button>
+          {result && (
+            <ShareButton
+              url={typeof window !== 'undefined' ? window.location.href : `https://verifio-eight.vercel.app/artisan/${siret}`}
+              nom={result.nom}
+              score={result.score}
+              statut={result.statut}
+            />
+          )}
+        </div>
 
         {/* Loading */}
         {loading && (

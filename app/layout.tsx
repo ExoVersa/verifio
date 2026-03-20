@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import OnboardingModal from '@/components/OnboardingModal'
 
 export const metadata: Metadata = {
   title: 'ArtisanCheck — Vérifiez votre artisan avant de signer',
@@ -17,7 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        {children}
+        <OnboardingModal />
+      </body>
     </html>
   )
 }

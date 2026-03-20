@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, AlertTriangle, ArrowLeft } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import SearchBar from '@/components/SearchBar'
+import ShareButton from '@/components/ShareButton'
 import type { SearchCandidate } from '@/types'
 
 /* ── Candidate card ──────────────────────────────────────── */
@@ -286,12 +287,18 @@ function RechercheInner() {
                   <span style={{ color: 'var(--color-accent)' }}> — {filteredCandidates.length} après filtres</span>
                 )}
               </p>
-              <div style={{ display: 'flex', gap: '4px' }}>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 {(['pertinence', 'anciennete'] as const).map(s => (
                   <button key={s} onClick={() => handleSortBy(s)}
                     style={{ padding: '5px 12px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', ...(sortBy === s ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'var(--color-surface)', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }) }}
                   >{s === 'pertinence' ? 'Pertinence' : 'Ancienneté'}</button>
                 ))}
+                <ShareButton
+                  url={typeof window !== 'undefined' ? window.location.href : ''}
+                  nom={qParam}
+                  label="Partager"
+                  compact
+                />
               </div>
             </div>
 
