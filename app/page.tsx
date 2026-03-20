@@ -516,45 +516,69 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── PRICING ── */}
+          {/* ── TARIFS ── */}
           <section style={{ padding: '88px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '680px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Tarif</p>
-              <h2 className="font-display" style={{ margin: '0 0 52px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Gratuit + rapport complet à 4,90&nbsp;€
+            <div className="section-hidden" style={{ maxWidth: '780px', margin: '0 auto' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Tarifs</p>
+              <h2 className="font-display" style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
+                La vérification est 100&nbsp;% gratuite
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gratuit</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>0&nbsp;€</p>
-                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'var(--color-muted)' }}>Sans inscription, sans CB</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px', flex: 1 }}>
-                    {['Score de confiance /100', 'Statut légal actif / fermé', 'Certification RGE', 'Alertes procédures', 'Adresse & activité'].map(f => (
+              <p style={{ margin: '0 0 48px', fontSize: '16px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                Score, statut, RGE, BODACC, dirigeants, synthèse IA — tout sans inscription, sans CB.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                {/* Gratuit */}
+                <div style={{ background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vérification artisan</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', color: '#D8F3DC', fontFamily: 'var(--font-display)' }}>Gratuit</p>
+                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: '#74C69D' }}>Sans inscription · Sans CB · Pour toujours</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
+                    {['Score de confiance /100', 'Statut légal & BODACC', 'Certification RGE ADEME', 'Dirigeants & capital social', 'Synthèse IA personnalisée', 'Checklist documents légaux'].map(f => (
                       <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={15} color="#166534" />
+                        <CheckCircle2 size={14} color="#52B788" />
+                        <span style={{ fontSize: '13px', color: '#B7E4C7' }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: '#52B788', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'opacity 0.15s' }}>
+                    Vérifier maintenant →
+                  </button>
+                </div>
+                {/* Analyse devis */}
+                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Analyse de devis IA</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>9,90&nbsp;€</p>
+                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'var(--color-muted)' }}>Par analyse · Résultat en 30 secondes</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
+                    {['Analyse IA de votre PDF de devis', 'Mentions légales obligatoires', 'Prix vs marché (simulateur)', 'Clauses abusives détectées', 'Rapport téléchargeable PDF'].map(f => (
+                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <CheckCircle2 size={14} color="#166534" />
                         <span style={{ fontSize: '13px' }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 0.15s' }}>
-                    Vérifier gratuitement
-                  </button>
+                  <a href="/analyser-devis" style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', color: 'var(--color-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', transition: 'background 0.15s' }}>
+                    Analyser mon devis
+                  </a>
                 </div>
-                <div style={{ background: 'var(--color-accent)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#D8F3DC', color: '#1B4332', fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '20px', letterSpacing: '0.05em' }}>RECOMMANDÉ</div>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'rgba(216,243,220,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Rapport complet</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', fontFamily: 'var(--font-display)' }}>4,90&nbsp;€</p>
-                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'rgba(216,243,220,0.7)' }}>Rapport PDF · Valable 30 jours</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px', flex: 1 }}>
-                    {['Tout du gratuit inclus', 'Dirigeants complets (INPI)', 'Historique BODACC complet', 'Capital social & finances', 'Synthèse IA personnalisée', 'Checklist documents légaux'].map(f => (
+                {/* Espace artisan */}
+                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)', opacity: 0.8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Espace artisan</p>
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: '#fef3c7', color: '#92400e' }}>Bientôt</span>
+                  </div>
+                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>29&nbsp;€<span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-muted)' }}>/mois</span></p>
+                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'var(--color-muted)' }}>Pour les artisans · Accès complet</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
+                    {['Page vitrine vérifiée', 'Répondre aux avis clients', 'Statistiques de visibilité', 'Badge "Vérifié Verifio"', 'Leads qualifiés chantiers'].map(f => (
                       <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={15} color="#D8F3DC" />
-                        <span style={{ fontSize: '13px', color: '#fff' }}>{f}</span>
+                        <CheckCircle2 size={14} color="var(--color-muted)" />
+                        <span style={{ fontSize: '13px', color: 'var(--color-muted)' }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: '#fff', color: 'var(--color-accent)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'opacity 0.15s' }}>
-                    Obtenir le rapport complet
+                  <button disabled style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '14px', fontWeight: 600, cursor: 'not-allowed', fontFamily: 'var(--font-body)', color: 'var(--color-muted)' }}>
+                    Bientôt disponible
                   </button>
                 </div>
               </div>
