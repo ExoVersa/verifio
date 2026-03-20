@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
-
 // ── Vérification Vercel Cron signature ─────────────────────────────────────────
 function isCronRequest(req: NextRequest): boolean {
   const authHeader = req.headers.get('authorization')
-  // En production, Vercel envoie un header Authorization avec le CRON_SECRET
   if (process.env.CRON_SECRET) {
     return authHeader === `Bearer ${process.env.CRON_SECRET}`
   }
-  // En dev, pas de secret requis
   return true
 }
 
@@ -43,13 +33,17 @@ async function fetchStatutActuel(siret: string): Promise<{ statut: string; nom: 
 }
 
 // ── Email d'alerte ─────────────────────────────────────────────────────────────
-async function sendAlertEmail(opts: {
-  email: string
-  siret: string
-  nom: string
-  statutAvant: string
-  statutApres: string
-}) {
+async function sendAlertEmail(
+  resend: Resend,
+  BASE_URL: string,
+  opts: {
+    email: string
+    siret: string
+    nom: string
+    statutAvant: string
+    statutApres: string
+  },
+) {
   const unsubLink = `${BASE_URL}/api/surveillance/unsubscribe?email=${encodeURIComponent(opts.email)}&siret=${encodeURIComponent(opts.siret)}`
   const ficheLink = `${BASE_URL}/artisan/${opts.siret}`
 
@@ -126,8 +120,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Clients instanciés à l'intérieur du handler pour éviter les erreurs au build time
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+
   try {
-    // Récupérer toutes les surveillances
     const { data: surveillances, error } = await supabase
       .from('surveillances')
       .select('*')
@@ -153,16 +154,14 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      // Vérifier si au moins une surveillance a un statut différent
       const changed = group.some(s => s.statut_initial !== current.statut)
       results.push({ siret, changed })
 
       if (changed) {
-        // Envoyer un email à chaque email qui surveille ce SIRET
         for (const surveillance of group) {
           if (surveillance.statut_initial !== current.statut) {
             try {
-              await sendAlertEmail({
+              await sendAlertEmail(resend, BASE_URL, {
                 email: surveillance.email,
                 siret,
                 nom: current.nom || surveillance.nom_artisan || siret,
@@ -171,7 +170,6 @@ export async function GET(req: NextRequest) {
               })
               alertesSent++
 
-              // Mettre à jour le statut en DB pour éviter les re-alertes
               await supabase
                 .from('surveillances')
                 .update({ statut_initial: current.statut })
