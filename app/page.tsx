@@ -765,8 +765,9 @@ export default function Home() {
                   <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>À propos</p>
                   {[
                     { href: '/a-propos', label: 'Notre mission' },
-                    { href: '/a-propos#contact', label: 'Contact' },
+                    { href: '/contact', label: 'Contact' },
                     { href: '/mentions-legales', label: 'Mentions légales' },
+                    { href: '/politique-confidentialite', label: 'Confidentialité' },
                     { href: '/cgu', label: 'CGU' },
                   ].map(({ href, label }) => (
                     <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
