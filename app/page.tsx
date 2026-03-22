@@ -179,8 +179,19 @@ export default function Home() {
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section style={{ background: 'var(--color-bg)' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+      <section style={{ position: 'relative', overflow: 'hidden', background: '#1B4332' }}>
+        {/* Background photo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&auto=format&fit=crop"
+          alt=""
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        />
+        {/* Dark green overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(27,67,50,0.87)' }} />
+
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
             {/* Hero 2-column */}
             <div style={{
               display: 'grid',
@@ -193,18 +204,18 @@ export default function Home() {
               {/* LEFT — text + search */}
               <div className="fade-up">
                 {/* Trust badge */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 600, color: 'var(--color-accent)', background: 'var(--color-accent-light)', padding: '5px 14px', borderRadius: '20px', marginBottom: '28px', border: '1px solid rgba(27,67,50,0.2)' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 600, color: '#D8F3DC', background: 'rgba(255,255,255,0.1)', padding: '5px 14px', borderRadius: '20px', marginBottom: '28px', border: '1px solid rgba(216,243,220,0.25)' }}>
                   <ShieldCheck size={13} />
                   Données 100% officielles — INSEE · ADEME · BODACC
                 </div>
 
-                <h1 className="font-display" style={{ margin: '0 0 20px', fontSize: 'clamp(36px, 5.5vw, 60px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.03em' }}>
+                <h1 className="font-display" style={{ margin: '0 0 20px', fontSize: 'clamp(36px, 5.5vw, 60px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff' }}>
                   Vérifiez votre artisan<br />
-                  <span style={{ color: 'var(--color-accent)' }}>avant de signer.</span>
+                  <span style={{ color: '#74C69D' }}>avant de signer.</span>
                 </h1>
 
-                <p style={{ margin: '0 0 36px', fontSize: '18px', color: 'var(--color-muted)', lineHeight: 1.65, maxWidth: '480px' }}>
-                  26&nbsp;000 arnaques signalées en 2024. Protégez-vous en 30 secondes — <strong style={{ color: 'var(--color-text)' }}>100% gratuit</strong>.
+                <p style={{ margin: '0 0 36px', fontSize: '18px', color: 'rgba(216,243,220,0.85)', lineHeight: 1.65, maxWidth: '480px' }}>
+                  26&nbsp;000 arnaques signalées en 2024. Protégez-vous en 30 secondes — <strong style={{ color: '#D8F3DC' }}>100% gratuit</strong>.
                 </p>
 
                 {/* Search bar */}
@@ -236,7 +247,7 @@ export default function Home() {
                     { icon: '📋', label: 'BODACC en temps réel' },
                     { icon: '🆓', label: '100% gratuit' },
                   ].map(({ icon, label }) => (
-                    <div key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--color-muted)', background: 'var(--color-surface)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--color-border)' }}>
+                    <div key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: '#D8F3DC', background: 'rgba(255,255,255,0.08)', padding: '6px 12px', borderRadius: '20px', border: '1px solid rgba(216,243,220,0.2)' }}>
                       <span>{icon}</span>
                       {label}
                     </div>
@@ -282,6 +293,34 @@ export default function Home() {
                     </p>
                     <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, lineHeight: 1.3, color: 'var(--color-text)' }}>{label}</p>
                     <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── VERIFIO KEY METRICS ── */}
+          <section style={{ padding: '72px 24px', background: '#1B4332' }}>
+            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.10em' }}>
+                Verifio en chiffres
+              </p>
+              <h2 className="font-display" style={{ margin: '0 0 48px', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#D8F3DC' }}>
+                La protection que vous méritez
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                {[
+                  { target: 26000, suffix: '+', label: 'signalements\nanalysés', icon: '🔍' },
+                  { target: 6, suffix: '', label: 'sources\nofficiales', icon: '🏛️' },
+                  { target: 30, suffix: ' sec', label: 'pour obtenir\nun rapport', icon: '⚡' },
+                  { target: 100, suffix: '%', label: 'gratuit\npour tous', icon: '🆓' },
+                ].map(({ target, suffix, label, icon }) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '18px', padding: '24px 16px', border: '1px solid rgba(216,243,220,0.12)' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>{icon}</div>
+                    <p style={{ margin: '0 0 4px', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 900, color: '#D8F3DC', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+                      <AnimatedCounter target={target} suffix={suffix} />
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#74C69D', lineHeight: 1.4, fontWeight: 500, whiteSpace: 'pre-line' }}>{label}</p>
                   </div>
                 ))}
               </div>
@@ -483,10 +522,22 @@ export default function Home() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                 {[
-                  { initials: 'SM', color: '#dc2626', bg: '#fee2e2', name: 'Sophie M.', location: 'Lyon', works: 'Salle de bain', tag: 'Liquidation judiciaire', tagColor: '#dc2626', tagBg: '#fee2e2', text: 'J\'allais signer un devis de 8 000€. Verifio m\'a montré que la société était en liquidation judiciaire depuis 3 mois. Sauvée !', stars: 5 },
-                  { initials: 'TB', color: '#d97706', bg: '#fef3c7', name: 'Thierry B.', location: 'Nantes', works: 'Plomberie', tag: 'SIRET invalide', tagColor: '#dc2626', tagBg: '#fee2e2', text: 'Le plombier avait un SIRET qui n\'existait pas. Score de 18/100. J\'ai trouvé un artisan RGE avec un score de 84 grâce à l\'annuaire.', stars: 5 },
-                  { initials: 'IR', color: '#7c3aed', bg: '#f3e8ff', name: 'Isabelle R.', location: 'Bordeaux', works: 'Isolation', tag: 'Changement de dirigeant', tagColor: '#d97706', tagBg: '#fef3c7', text: 'La société avait changé de gérant 2 fois en 6 mois. Un signal que je n\'aurais jamais vu sans Verifio. J\'ai pu demander des garanties.', stars: 5 },
-                ].map(({ initials, color, bg, name, location, works, tag, tagColor, tagBg, text, stars }) => (
+                  {
+                    name: 'Marie D.', location: 'Tours', avatarSeed: 'Marie+D',
+                    text: 'J\'ai évité une arnaque grâce à Verifio. L\'artisan était en liquidation judiciaire depuis 2 mois !',
+                    tag: 'Liquidation judiciaire', tagColor: '#dc2626', tagBg: '#fee2e2',
+                  },
+                  {
+                    name: 'Thomas L.', location: 'Lyon', avatarSeed: 'Thomas+L',
+                    text: 'Avant de signer 15 000€ de travaux, j\'ai vérifié les 3 artisans. Un seul avait un bon score. Je n\'ai plus hésité.',
+                    tag: 'Comparaison de devis', tagColor: '#d97706', tagBg: '#fef3c7',
+                  },
+                  {
+                    name: 'Sophie M.', location: 'Bordeaux', avatarSeed: 'Sophie+M',
+                    text: 'Le simulateur de prix m\'a montré que mon devis était 40% trop cher. J\'ai renégocié.',
+                    tag: 'Devis trop cher', tagColor: '#7c3aed', tagBg: '#f3e8ff',
+                  },
+                ].map(({ name, location, avatarSeed, text, tag, tagColor, tagBg }) => (
                   <div key={name} className="card-hover" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--shadow-card)' }}>
                     <Quote size={18} color="var(--color-border)" />
                     <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.75, color: 'var(--color-text)', flex: 1 }}>{text}</p>
@@ -496,22 +547,74 @@ export default function Home() {
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {/* Initials circle */}
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: bg, border: `2px solid ${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontSize: '13px', fontWeight: 800, color }}>{initials}</span>
-                          </div>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://ui-avatars.com/api/?name=${avatarSeed}&background=1B4332&color=fff&size=64&bold=true`}
+                            alt={name}
+                            width={36} height={36}
+                            style={{ borderRadius: '50%', flexShrink: 0 }}
+                          />
                           <div>
                             <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{name}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{location} · {works}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{location}</p>
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '2px' }}>
-                          {Array.from({ length: stars }).map((_, i) => <Star key={i} size={12} color="#f59e0b" fill="#f59e0b" />)}
+                          {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} color="#f59e0b" fill="#f59e0b" />)}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── PARTENAIRES / SOURCES ── */}
+          <section style={{ padding: '48px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+              <p style={{ margin: '0 0 28px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>
+                Données issues de sources officielles
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
+                {/* INSEE */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#003189', fontFamily: 'var(--font-display)' }}>insee</span>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#003189', textTransform: 'uppercase', letterSpacing: '0.05em' }}>•fr</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Registre SIRENE</span>
+                </div>
+                {/* ADEME */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#e2001a', fontFamily: 'var(--font-display)' }}>ADEME</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Certifications RGE</span>
+                </div>
+                {/* BODACC */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#1a1a6e', fontFamily: 'var(--font-display)' }}>BODACC</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Annonces légales</span>
+                </div>
+                {/* France Rénov */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0055a4', fontFamily: 'var(--font-display)' }}>France</span>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#ef4135', fontFamily: 'var(--font-display)' }}>Rénov&apos;</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Aides rénovation</span>
+                </div>
+                {/* Badge données certifiées */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-safe-border)', background: 'var(--color-safe-bg)' }}>
+                    <ShieldCheck size={16} color="var(--color-safe)" />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Données certifiées</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Mises à jour quotidiennement</span>
+                </div>
               </div>
             </div>
           </section>
@@ -613,24 +716,71 @@ export default function Home() {
           </section>
 
           {/* ── FOOTER ── */}
-          <footer style={{ background: 'var(--color-text)', padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={18} color="#D8F3DC" />
-                <span className="font-display" style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>Verifio</span>
+          <footer style={{ background: 'var(--color-text)', padding: '56px 24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+              {/* Top row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '40px', marginBottom: '48px' }}>
+                {/* Brand */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <ShieldCheck size={20} color="#D8F3DC" />
+                    <span className="font-display" style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>Verifio</span>
+                  </div>
+                  <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+                    Fait avec ❤️ pour protéger les particuliers français contre les arnaques sur les chantiers.
+                  </p>
+                  {/* Social */}
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 700, transition: 'background 0.15s' }}>in</a>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 700, transition: 'background 0.15s' }}>𝕏</a>
+                  </div>
+                </div>
+                {/* Services */}
+                <div>
+                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Services</p>
+                  {[
+                    { href: '/', label: 'Vérifier un artisan' },
+                    { href: '/trouver-artisan', label: 'Annuaire RGE' },
+                    { href: '/simulateur-prix', label: 'Simulateur de prix' },
+                    { href: '/analyser-devis', label: 'Analyser un devis IA' },
+                    { href: '/calculateur-aides', label: 'Calculateur d\'aides' },
+                  ].map(({ href, label }) => (
+                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
+                  ))}
+                </div>
+                {/* Outils */}
+                <div>
+                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Outils</p>
+                  {[
+                    { href: '/assistant-juridique', label: 'Assistant juridique IA' },
+                    { href: '/comparer', label: 'Comparer des artisans' },
+                    { href: '/guide-chantier', label: 'Guide chantier' },
+                    { href: '/mon-espace', label: 'Mon espace' },
+                  ].map(({ href, label }) => (
+                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
+                  ))}
+                </div>
+                {/* À propos */}
+                <div>
+                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>À propos</p>
+                  {[
+                    { href: '/a-propos', label: 'Notre mission' },
+                    { href: '/a-propos#contact', label: 'Contact' },
+                    { href: '/mentions-legales', label: 'Mentions légales' },
+                    { href: '/cgu', label: 'CGU' },
+                  ].map(({ href, label }) => (
+                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
+                  ))}
+                </div>
               </div>
-              <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-                Données INSEE · ADEME · BODACC · INPI — À des fins d&apos;information uniquement
-              </p>
-              <div style={{ display: 'flex', gap: '20px' }}>
-                {[
-                  { href: '/trouver-artisan', label: 'Annuaire RGE' },
-                  { href: '/simulateur-prix', label: 'Simulateur' },
-                  { href: '/analyser-devis', label: 'Analyser devis' },
-                  { href: '/assistant-juridique', label: 'Assistant IA' },
-                ].map(({ href, label }) => (
-                  <Link key={href} href={href} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}>{label}</Link>
-                ))}
+              {/* Bottom bar */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
+                  © 2026 Verifio — Données INSEE · ADEME · BODACC · INPI — À des fins d&apos;information uniquement
+                </p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
+                  Fait avec ❤️ en France
+                </p>
               </div>
             </div>
           </footer>

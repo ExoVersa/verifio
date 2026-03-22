@@ -444,6 +444,35 @@ export default function ResultCard({ result, onSelect }: Props) {
             </div>
           </div>
 
+          {/* ── EMPATHETIC PHRASE ── */}
+          {(() => {
+            const s = result.score
+            if (s >= 70) return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', marginBottom: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '15px' }}>✅</span>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#14532d', lineHeight: 1.4 }}>
+                  Vous pouvez avancer sereinement avec cet artisan
+                </p>
+              </div>
+            )
+            if (s >= 45) return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', marginBottom: '12px', background: '#fffbeb', border: '1px solid #fde68a' }}>
+                <span style={{ fontSize: '15px' }}>⚠️</span>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#92400e', lineHeight: 1.4 }}>
+                  Quelques vérifications supplémentaires recommandées
+                </p>
+              </div>
+            )
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', marginBottom: '12px', background: '#fef2f2', border: '1px solid #fecaca' }}>
+                <span style={{ fontSize: '15px' }}>🚨</span>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#991b1b', lineHeight: 1.4 }}>
+                  Nous vous conseillons de demander des garanties supplémentaires
+                </p>
+              </div>
+            )
+          })()}
+
           {/* AI phrase */}
           {enrich.loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
