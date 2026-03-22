@@ -24,7 +24,7 @@ export default function AProposPage() {
             Protéger chaque Français<br />
             <span style={{ color: '#74C69D' }}>avant qu&apos;il soit victime</span>
           </h1>
-          <p style={{ margin: 0, fontSize: '18px', color: 'rgba(216,243,220,0.8)', lineHeight: 1.65, maxWidth: '560px', margin: '0 auto' }}>
+          <p style={{ fontSize: '18px', color: 'rgba(216,243,220,0.8)', lineHeight: 1.65, maxWidth: '560px', margin: '0 auto' }}>
             Verifio est né d&apos;un constat simple : <strong style={{ color: '#D8F3DC' }}>34% des Français ont été victimes d&apos;arnaques sur les chantiers.</strong> Nous avons décidé que ça devait changer.
           </p>
         </div>
