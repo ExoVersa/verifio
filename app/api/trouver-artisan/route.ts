@@ -184,12 +184,9 @@ async function searchByCommune(
   perPage = 25,
   page = 1,
 ): Promise<{ results: ArtisanResult[]; total: number }> {
-  const params = new URLSearchParams({
-    code_commune: codeCommune,
-    etat_administratif: 'A',
-    per_page: String(perPage),
-    page: String(page),
-  })
+  // NOTE: parameter order matters for this API — section_activite_principale must come
+  // before etat_administratif or the API returns 400.
+  const params = new URLSearchParams({ code_commune: codeCommune })
 
   if (nafCode) {
     params.set('activite_principale', nafCode)
@@ -200,6 +197,11 @@ async function searchByCommune(
   if (rgeOnly) {
     params.set('est_rge', 'true')
   }
+
+  // per_page max is 25; etat_administratif must come after per_page+page (API quirk)
+  params.set('per_page', String(Math.min(perPage, 25)))
+  params.set('page', String(page))
+  params.set('etat_administratif', 'A')
 
   const url = `https://recherche-entreprises.api.gouv.fr/search?${params}`
   try {
@@ -257,15 +259,14 @@ export async function GET(req: NextRequest) {
 
   if (useFallbackPostalCode) {
     // Fallback: use code_postal directly — this path is rarely hit (when geo API fails)
-    const fallbackParams = new URLSearchParams({
-      code_postal: codePostal,
-      etat_administratif: 'A',
-      per_page: '50',
-      page: '1',
-    })
+    // section_activite_principale must come before etat_administratif (API quirk)
+    const fallbackParams = new URLSearchParams({ code_postal: codePostal })
     if (primaryNaf) fallbackParams.set('activite_principale', primaryNaf)
     else fallbackParams.set('section_activite_principale', 'F')
     if (rgeOnly) fallbackParams.set('est_rge', 'true')
+    fallbackParams.set('per_page', '25')
+    fallbackParams.set('page', '1')
+    fallbackParams.set('etat_administratif', 'A')
     searchPromises.push(
       fetch(`https://recherche-entreprises.api.gouv.fr/search?${fallbackParams}`, { next: { revalidate: 3600 } })
         .then(r => r.ok ? r.json() : { results: [], total_results: 0 })
@@ -279,8 +280,9 @@ export async function GET(req: NextRequest) {
     // Main path: one call per commune code
     // Specific type → higher per_page on first communes, lower on the rest
     // Generic section=F → lower per_page to cap results
-    const perPageMain = primaryNaf ? 50 : 30
-    const perPageOther = primaryNaf ? 25 : 15
+    // API hard limit: per_page ≤ 25
+    const perPageMain = 25
+    const perPageOther = 15
 
     allCommuneCodes.forEach((code, i) => {
       searchPromises.push(searchByCommune(code, rgeOnly, primaryNaf, i === 0 ? perPageMain : perPageOther, 1))
@@ -290,8 +292,8 @@ export async function GET(req: NextRequest) {
   const nested = await Promise.all(searchPromises)
 
   // Fetch page 2 for the first commune if it has many more results (specific type only)
-  if (!useFallbackPostalCode && primaryNaf && allCommuneCodes.length > 0 && nested[0].total > 50) {
-    const page2 = await searchByCommune(allCommuneCodes[0], rgeOnly, primaryNaf, 50, 2)
+  if (!useFallbackPostalCode && primaryNaf && allCommuneCodes.length > 0 && nested[0].total > 25) {
+    const page2 = await searchByCommune(allCommuneCodes[0], rgeOnly, primaryNaf, 25, 2)
     nested.push(page2)
   }
 
