@@ -60,7 +60,7 @@ const NAV_MENUS: NavMenu[] = [
     items: [
       { href: '/simulateur-prix', Icon: Calculator, label: 'Simulateur de prix', desc: 'Votre devis est-il au bon tarif ?' },
       { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser un devis IA', desc: 'Conformité légale et mentions obligatoires' },
-      { href: null, Icon: Euro, label: "Calculateur d'aides État", desc: "MaPrimeRénov', CEE et plus", soon: true },
+      { href: '/calculateur-aides', Icon: Euro, label: "Calculateur d'aides État", desc: "MaPrimeRénov', CEE et plus" },
     ],
   },
   {

@@ -99,30 +99,56 @@ function getEffectifLabel(tranche: string): string {
 
 /** Resolve a postal code → list of INSEE commune codes (one CP can cover several communes) */
 async function getCommuneCodesForPostalCode(codePostal: string): Promise<string[]> {
+  // Primary: geo.api.gouv.fr
   try {
     const res = await fetch(
       `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=code&limit=10`,
       { next: { revalidate: 86400 } },
     )
-    if (!res.ok) return []
-    const data = await res.json()
-    return (data as { code: string }[]).map(c => c.code).filter(Boolean)
-  } catch {
-    return []
-  }
+    if (res.ok) {
+      const data = await res.json()
+      const codes = (data as { code: string }[]).map(c => c.code).filter(Boolean)
+      if (codes.length > 0) return codes
+    }
+  } catch { /* fallback below */ }
+  // Fallback: api-adresse.data.gouv.fr
+  try {
+    const res = await fetch(
+      `https://api-adresse.data.gouv.fr/search/?q=${codePostal}&type=municipality&autocomplete=0&limit=10`,
+      { next: { revalidate: 86400 } },
+    )
+    if (res.ok) {
+      const data = await res.json()
+      const codes = (data.features || [])
+        .map((f: any) => f.properties?.citycode)
+        .filter(Boolean)
+      return [...new Set<string>(codes)]
+    }
+  } catch { /* ignore */ }
+  return []
 }
 
 /** Get INSEE codes of communes within a radius of lat/lon */
 async function getNearbyCommuneCodes(lat: string, lon: string, rayonKm: number): Promise<string[]> {
-  const url = `https://geo.api.gouv.fr/communes?lat=${lat}&lon=${lon}&distance=${rayonKm * 1000}&fields=code&limit=40&boost=population`
   try {
+    const url = `https://geo.api.gouv.fr/communes?lat=${lat}&lon=${lon}&distance=${rayonKm * 1000}&fields=code&limit=40&boost=population`
     const res = await fetch(url, { next: { revalidate: 3600 } })
-    if (!res.ok) return []
-    const data = await res.json()
-    return (data as { code: string }[]).map(c => c.code).filter(Boolean)
-  } catch {
-    return []
-  }
+    if (res.ok) {
+      const data = await res.json()
+      const codes = (data as { code: string }[]).map(c => c.code).filter(Boolean)
+      if (codes.length > 0) return codes
+    }
+  } catch { /* fallback below */ }
+  // Fallback: api-adresse.data.gouv.fr reverse geocode + nearby
+  try {
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${lat},${lon}&type=municipality&limit=20`
+    const res = await fetch(url, { next: { revalidate: 3600 } })
+    if (res.ok) {
+      const data = await res.json()
+      return (data.features || []).map((f: any) => f.properties?.citycode).filter(Boolean)
+    }
+  } catch { /* ignore */ }
+  return []
 }
 
 function parseApiResult(r: any, codePostalFallback: string): ArtisanResult {

@@ -629,14 +629,28 @@ export default function ResultCard({ result, onSelect }: Props) {
           />
           <div style={{ padding: '12px 16px' }}>
             {result.rge.certifie && result.rge.domaines.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {[...new Set(result.rge.domaines)].slice(0, 6).map((d, i) => (
-                  <span key={i} className="badge badge-safe" style={{ fontSize: '11px' }}>{d}</span>
-                ))}
+              <div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                  {[...new Set(result.rge.domaines)].slice(0, 6).map((d, i) => (
+                    <span key={i} className="badge badge-safe" style={{ fontSize: '11px' }}>{d}</span>
+                  ))}
+                </div>
+                <a
+                  href="/calculateur-aides"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    fontSize: '12px', fontWeight: 600, color: 'var(--color-safe)',
+                    textDecoration: 'none', padding: '5px 10px',
+                    borderRadius: '8px', border: '1px solid var(--color-safe-border)',
+                    background: 'var(--color-safe-bg)',
+                  }}
+                >
+                  💶 Calculer mes aides MaPrimeRénov&apos; →
+                </a>
               </div>
             ) : (
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
-                Non certifié RGE. Non obligatoire pour tous les travaux, mais requis pour les aides de l'État (MaPrimeRénov').
+                Non certifié RGE. Non obligatoire pour tous les travaux, mais requis pour les aides de l&apos;État (MaPrimeRénov&apos;).
               </p>
             )}
           </div>

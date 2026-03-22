@@ -268,11 +268,27 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
   const fetchCommunes = useCallback(async (query: string) => {
     if (query.length < 2) { setCommuneSuggestions([]); return }
     try {
+      // Primary: geo.api.gouv.fr
       const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,code,codesPostaux&limit=6&boost=population`)
+      if (res.ok) {
+        const data: Commune[] = await res.json()
+        setCommuneSuggestions(data)
+        setShowSuggestions(true)
+        return
+      }
+    } catch { /* fallback below */ }
+    try {
+      // Fallback: api-adresse.data.gouv.fr
+      const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&autocomplete=1&limit=6`)
       if (!res.ok) return
-      const data: Commune[] = await res.json()
-      setCommuneSuggestions(data)
-      setShowSuggestions(true)
+      const data = await res.json()
+      const communes: Commune[] = (data.features || []).map((f: any) => ({
+        nom: f.properties.city || f.properties.name,
+        code: f.properties.citycode,
+        codesPostaux: [f.properties.postcode],
+      }))
+      setCommuneSuggestions(communes)
+      setShowSuggestions(communes.length > 0)
     } catch { /* ignore */ }
   }, [])
 
@@ -387,36 +403,73 @@ export default function TrouverArtisan({ initialType = '', initialVille = '', in
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!codeCommune || !codePostal) {
-      // Resolve city name → INSEE code + postal code
-      const query = ville.trim()
-      if (!query) return
-      try {
-        const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
+  const resolveVille = async (query: string): Promise<{ cp: string; cc: string; nom: string; lat?: string; lon?: string } | null> => {
+    // Try geo.api.gouv.fr first
+    try {
+      const res = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(query)}&fields=nom,code,codesPostaux&limit=1&boost=population`)
+      if (res.ok) {
         const data: Commune[] = await res.json()
         if (data[0]) {
           const cp = data[0].codesPostaux?.[0] || ''
-          const cc = data[0].code // INSEE code
-          setCodePostal(cp)
-          setCodeCommune(cc)
-          setVille(data[0].nom)
-          fetch(`https://geo.api.gouv.fr/communes/${cc}?fields=centre`)
-            .then(r => r.json())
-            .then(d => {
-              if (d.centre?.coordinates) {
-                setLon(String(d.centre.coordinates[0]))
-                setLat(String(d.centre.coordinates[1]))
+          const cc = data[0].code
+          // Try to get coordinates
+          let coordLat: string | undefined, coordLon: string | undefined
+          try {
+            const cr = await fetch(`https://geo.api.gouv.fr/communes/${cc}?fields=centre`)
+            if (cr.ok) {
+              const cd = await cr.json()
+              if (cd.centre?.coordinates) {
+                coordLon = String(cd.centre.coordinates[0])
+                coordLat = String(cd.centre.coordinates[1])
               }
-            })
-            .catch(() => {})
-          handleSearch(cp, cc)
+            }
+          } catch { /* coords optional */ }
+          return { cp, cc, nom: data[0].nom, lat: coordLat, lon: coordLon }
         }
-      } catch { /* ignore */ }
+      }
+    } catch { /* fallback */ }
+    // Fallback: api-adresse.data.gouv.fr
+    try {
+      const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&autocomplete=1&limit=1`)
+      if (res.ok) {
+        const data = await res.json()
+        const f = data.features?.[0]
+        if (f) {
+          return {
+            cp: f.properties.postcode || '',
+            cc: f.properties.citycode || '',
+            nom: f.properties.city || f.properties.name || query,
+            lon: f.geometry?.coordinates?.[0] ? String(f.geometry.coordinates[0]) : undefined,
+            lat: f.geometry?.coordinates?.[1] ? String(f.geometry.coordinates[1]) : undefined,
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    return null
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // If we already have a 5-digit postal code, search directly — no geo API needed
+    if (codePostal && /^\d{5}$/.test(codePostal)) {
+      handleSearch(codePostal, codeCommune || undefined)
       return
     }
-    handleSearch()
+
+    // Resolve city name → INSEE code + postal code
+    const query = ville.trim()
+    if (!query) return
+
+    const resolved = await resolveVille(query)
+    if (resolved) {
+      setCodePostal(resolved.cp)
+      setCodeCommune(resolved.cc)
+      setVille(resolved.nom)
+      if (resolved.lat) setLat(resolved.lat)
+      if (resolved.lon) setLon(resolved.lon)
+      handleSearch(resolved.cp, resolved.cc)
+    }
   }
 
   // Client-side filtering
