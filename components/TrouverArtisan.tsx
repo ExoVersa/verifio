@@ -158,7 +158,7 @@ function ArtisanCard({ artisan }: { artisan: ArtisanResult }) {
           <ScoreBadge score={artisan.score} loading={artisan.scoreLoading} />
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <a
-              href={`/?q=${artisan.siret || artisan.siren}`}
+              href={`/artisan/${artisan.siret || artisan.siren}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
