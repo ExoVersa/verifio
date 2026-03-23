@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { X, ExternalLink } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
+import { calculateScore, scoreColor, scoreBg } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -194,6 +195,15 @@ function CandidateCard({ c }: { c: CandidateResult }) {
     ? Math.floor((Date.now() - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null
 
+  const { total: score } = calculateScore({
+    statut: c.statut,
+    rge: c.rge ?? false,
+    dateCreation: c.dateCreation,
+    // dirigeants & bodacc not available in search results → defaults used
+  })
+  const color = scoreColor(score)
+  const bg = scoreBg(score)
+
   return (
     <div
       onClick={() => router.push(`/artisan/${c.siret}`)}
@@ -230,7 +240,10 @@ function CandidateCard({ c }: { c: CandidateResult }) {
               {isActif ? '● ACTIF' : '● FERMÉ'}
             </span>
             {c.rge && (
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#065f46', flexShrink: 0 }}>
+              <span style={{
+                fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                background: '#d1fae5', color: '#065f46', flexShrink: 0,
+              }}>
                 🌿 RGE
               </span>
             )}
@@ -264,9 +277,23 @@ function CandidateCard({ c }: { c: CandidateResult }) {
           </div>
         </div>
 
-        {/* CTA */}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: cv('accent'), whiteSpace: 'nowrap', paddingTop: '2px' }}>
-          Voir la fiche <ExternalLink size={12} />
+        {/* Right column: score + CTA */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          {/* Score badge */}
+          <div style={{
+            display: 'flex', alignItems: 'baseline', gap: '1px',
+            background: bg, border: `1px solid ${color}22`,
+            borderRadius: '10px', padding: '4px 10px',
+          }}>
+            <span style={{ fontSize: '18px', fontWeight: 800, color, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+              {score}
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color, opacity: 0.7 }}>/100</span>
+          </div>
+          {/* CTA */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: cv('accent'), whiteSpace: 'nowrap' }}>
+            Voir la fiche <ExternalLink size={12} />
+          </div>
         </div>
       </div>
     </div>

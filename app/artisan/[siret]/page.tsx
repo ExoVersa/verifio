@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import { dirigeantSlug } from '@/lib/dirigeant'
+import { calculateScore, getYears as getYearsUtil, scoreColor } from '@/lib/score'
 import type { SearchResult } from '@/types'
 
 /* ─── Interfaces ──────────────────────────────────────────── */
@@ -37,12 +38,8 @@ function formatDate(dateStr: string | undefined): string {
   }
 }
 
-function getYears(dateStr: string | undefined): number {
-  if (!dateStr) return 0
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return 0
-  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365))
-}
+// getYears is imported from @/lib/score as getYearsUtil
+const getYears = getYearsUtil
 
 function formeJuridiqueLabel(code: string | undefined, raw: string | undefined): string {
   if (!code && !raw) return '—'
@@ -104,30 +101,15 @@ function categorizeBodacc(annonces: Array<{ famille: string; type: string; date:
   return { proceduresCollectives, depotComptes, ventesCoissions, modifications }
 }
 
-/* ─── Score calculation ───────────────────────────────────── */
+/* ─── Score calculation (shared via lib/score.ts) ────────── */
 function computeScore(result: SearchResult) {
-  const rge = result.rge ?? { certifie: false, domaines: [], organismes: [] }
-  const dirigeants = result.dirigeants ?? []
-  const bodacc = result.bodacc ?? { procedureCollective: false, annonces: [], changementDirigeantRecent: false }
-
-  const statut_score = result.statut === 'actif' ? 25 : 0
-  const certif_score = rge.certifie ? 20 : 0
-  const age = getYears(result.dateCreation)
-  const anciennete_score = age >= 10 ? 20 : age >= 3 ? 14 : 7
-  const dirigeants_score = dirigeants.length > 0 ? 20 : 0
-  const nbProcedures = bodacc.annonces?.length ?? 0
-  const procedures_score = !bodacc.procedureCollective ? 15 : nbProcedures < 3 ? 5 : 0
-
-  const total = statut_score + certif_score + anciennete_score + dirigeants_score + procedures_score
-
-  return {
-    total,
-    statut_score,
-    certif_score,
-    anciennete_score,
-    dirigeants_score,
-    procedures_score,
-  }
+  return calculateScore({
+    statut: result.statut,
+    rge: result.rge,
+    dateCreation: result.dateCreation,
+    dirigeants: result.dirigeants,
+    bodacc: result.bodacc,
+  })
 }
 
 /* ─── Skeleton ────────────────────────────────────────────── */
@@ -374,7 +356,7 @@ export default function ArtisanFichePage() {
   }
   const score = result?.score ?? scores.total
 
-  const strokeColor = score >= 70 ? '#52B788' : score >= 50 ? '#f97316' : '#ef4444'
+  const strokeColor = scoreColor(score)
 
   const verdictText = score >= 70
     ? '✓ Vous pouvez avancer sereinement'
