@@ -1,355 +1,154 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import {
-  ShieldCheck, Upload, FileText, Image as ImageIcon, X, AlertTriangle,
-  Loader2, LogIn, CheckCircle2, ArrowLeft, FileSearch,
-} from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
-import type { DevisAnalysis, SearchResult } from '@/types'
-import DevisAnalysisCard from '@/components/DevisAnalysisCard'
 import SiteHeader from '@/components/SiteHeader'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 Mo (cohérent avec le serveur)
-const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+import { createClient } from '@/lib/supabase/client'
 
 export default function AnalyserDevisPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [fileDataUrl, setFileDataUrl] = useState<string | null>(null)
-  const [fileBase64, setFileBase64] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [fileError, setFileError] = useState<string | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<DevisAnalysis | null>(null)
-  const [company, setCompany] = useState<SearchResult | null>(null)
-  const [requiresPayment, setRequiresPayment] = useState(false)
-  const [limitReached, setLimitReached] = useState<{ plan: string; message: string } | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const resultsRef = useRef<HTMLDivElement>(null)
+  const [email, setEmail] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const handleFile = useCallback((f: File) => {
-    setFileError(null)
-    setError(null)
-    setAnalysis(null)
-    setRequiresPayment(false)
-
-    if (!ACCEPTED_TYPES.includes(f.type)) {
-      setFileError('Format non supporté. Utilisez PDF, JPG ou PNG.')
-      return
-    }
-    if (f.size > MAX_FILE_SIZE) {
-      setFileError('Fichier trop volumineux (max 5 Mo). Un vrai devis artisan fait rarement plus de 3-4 pages.')
-      return
-    }
-    setFile(f)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      setFileDataUrl(result)
-      setFileBase64(result.split(',')[1])
-    }
-    reader.readAsDataURL(f)
-  }, [])
-
-  const onDrop = useCallback((e: React.DragEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsDragging(false)
-    const dropped = e.dataTransfer.files[0]
-    if (dropped) handleFile(dropped)
-  }, [handleFile])
-
-  const handleAnalyze = async () => {
-    if (!fileBase64 || !file) return
-    setIsAnalyzing(true)
-    setError(null)
-    setAnalysis(null)
-    setRequiresPayment(false)
-    setLimitReached(null)
-
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      setError('Vous devez être connecté pour analyser un devis.')
-      setIsAnalyzing(false)
-      return
-    }
-
+    if (!email) return
+    setLoading(true)
     try {
-      const res = await fetch('/api/analyser-devis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ fileBase64, mimeType: file.type }),
-      })
-
-      const data = await res.json()
-
-      if (data.requiresPayment) {
-        setRequiresPayment(true)
-      } else if (data.limitReached) {
-        setLimitReached({ plan: data.plan, message: data.message })
-      } else if (data.error) {
-        setError(data.error)
-      } else {
-        setAnalysis(data.analysis)
-        setCompany(data.company || null)
-        setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-      }
+      const supabase = createClient()
+      await supabase.from('waitlist').insert({ email, feature: 'devis' })
     } catch {
-      setError('Erreur réseau. Vérifiez votre connexion et réessayez.')
+      // Table might not exist yet — show success anyway
     } finally {
-      setIsAnalyzing(false)
+      setLoading(false)
+      setSubmitted(true)
     }
   }
-
-  const removeFile = () => {
-    setFile(null)
-    setFileDataUrl(null)
-    setFileBase64(null)
-    setFileError(null)
-    setAnalysis(null)
-    setRequiresPayment(false)
-    setLimitReached(null)
-    setError(null)
-  }
-
-  const isPdf = file?.type === 'application/pdf'
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
-
-      {/* HEADER */}
+    <main style={{ minHeight: '100vh', background: '#F8F4EF', fontFamily: 'var(--font-bricolage, var(--font-body))' }}>
       <SiteHeader />
 
-      <section style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: '560px', margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
 
-        {/* Titre */}
-        <div style={{ marginBottom: '32px' }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', marginBottom: '20px' }}>
-            <ArrowLeft size={14} />Retour
-          </Link>
-          <h1 className="font-display" style={{ margin: '0 0 10px', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Analyser un devis
-          </h1>
-          <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
-            Déposez votre devis (PDF ou photo) — notre IA vérifie en 30 secondes les mentions légales obligatoires, la cohérence des prix et détecte les clauses suspectes.
-          </p>
+        {/* SVG Document + magnifying glass illustration */}
+        <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'center' }}>
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {/* Document */}
+            <rect x="12" y="10" width="38" height="50" rx="4" stroke="#52B788" strokeWidth="3" />
+            <line x1="20" y1="24" x2="42" y2="24" stroke="#52B788" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="20" y1="33" x2="42" y2="33" stroke="#52B788" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="20" y1="42" x2="34" y2="42" stroke="#52B788" strokeWidth="2.5" strokeLinecap="round" />
+            {/* Magnifying glass */}
+            <circle cx="56" cy="56" r="12" stroke="#52B788" strokeWidth="3" />
+            <line x1="65" y1="65" x2="72" y2="72" stroke="#52B788" strokeWidth="3" strokeLinecap="round" />
+          </svg>
         </div>
 
-        {/* Bloc plan requis */}
-        {requiresPayment && (
-          <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '16px', background: '#1B4332', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#D8F3DC' }}>Plan requis pour analyser un devis</p>
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#74C69D', lineHeight: 1.55 }}>
-              L&apos;analyse de devis est incluse dans le Pack Sérénité (19,90&nbsp;€ achat unique) ou l&apos;abonnement Tranquillité (4,90&nbsp;€/mois).
-            </p>
-            <a href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '10px', background: '#52B788', color: '#fff', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-              Voir les offres →
-            </a>
-          </div>
-        )}
-
-        {/* Bloc limite atteinte */}
-        {limitReached && (
-          <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '16px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: 'var(--color-text)' }}>
-              {limitReached.plan === 'serenite' ? '🔒 Analyse déjà utilisée' : '⏳ Limite mensuelle atteinte'}
-            </p>
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
-              {limitReached.message}
-            </p>
-            {limitReached.plan === 'serenite' && (
-              <a href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', background: '#1B4332', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 700 }}>
-                Protéger un nouveau chantier →
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Connexion requise */}
-        {!user && (
-          <div style={{
-            padding: '24px', borderRadius: '14px', border: '1px solid var(--color-border)',
-            background: 'var(--color-surface)', textAlign: 'center', marginBottom: '24px',
+        {/* Badge */}
+        <div style={{ marginBottom: '20px' }}>
+          <span style={{
+            display: 'inline-block',
+            background: '#D8F3DC',
+            color: '#1B4332',
+            fontSize: '12px',
+            fontWeight: 700,
+            padding: '4px 14px',
+            borderRadius: '20px',
           }}>
-            <LogIn size={32} color="var(--color-muted)" style={{ marginBottom: '12px' }} />
-            <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600 }}>Connexion requise</p>
-            <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--color-muted)' }}>
-              Connectez-vous pour analyser votre devis. L&apos;analyse est incluse dans le <strong>Pack Sérénité à 19,90&nbsp;€</strong> (achat unique par chantier).
-            </p>
-            <Link href="/auth" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
-              borderRadius: '10px', background: 'var(--color-text)', color: 'var(--color-bg)',
-              textDecoration: 'none', fontSize: '14px', fontWeight: 600,
-            }}>
-              <LogIn size={15} />Se connecter / S'inscrire
-            </Link>
-          </div>
-        )}
-
-        {/* Zone d'upload */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={onDrop}
-          onClick={() => !file && fileInputRef.current?.click()}
-          style={{
-            border: `2px dashed ${isDragging ? 'var(--color-accent)' : file ? 'var(--color-safe)' : 'var(--color-border)'}`,
-            borderRadius: '16px', padding: '32px 24px',
-            background: isDragging
-              ? 'color-mix(in srgb, var(--color-accent) 5%, var(--color-bg))'
-              : file ? 'var(--color-safe-bg)' : 'var(--color-surface)',
-            cursor: file ? 'default' : 'pointer',
-            transition: 'all 0.2s',
-            marginBottom: '16px',
-            textAlign: 'center',
-          }}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            style={{ display: 'none' }}
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-          />
-
-          {!file ? (
-            <>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '14px',
-                background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-              }}>
-                <Upload size={24} color="var(--color-accent)" />
-              </div>
-              <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>
-                Déposez votre devis ici
-              </p>
-              <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
-                ou cliquez pour sélectionner un fichier
-              </p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
-                PDF, JPG, PNG · Max 10 Mo
-              </p>
-            </>
-          ) : (
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {/* Aperçu */}
-              {isPdf ? (
-                <div style={{
-                  width: '80px', height: '100px', borderRadius: '10px', flexShrink: 0,
-                  background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                }}>
-                  <FileText size={28} color="var(--color-accent)" />
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 600 }}>PDF</span>
-                </div>
-              ) : (
-                fileDataUrl && (
-                  <img
-                    src={fileDataUrl}
-                    alt="Aperçu du devis"
-                    style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--color-border)', flexShrink: 0 }}
-                  />
-                )
-              )}
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 600 }}>{file.name}</p>
-                <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--color-muted)' }}>
-                  {(file.size / 1024 / 1024).toFixed(2)} Mo · {isPdf ? 'Document PDF' : 'Image'}
-                </p>
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeFile() }}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                    fontSize: '12px', color: 'var(--color-muted)', background: 'none', border: 'none',
-                    cursor: 'pointer', padding: '4px 8px', borderRadius: '6px',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                >
-                  <X size={13} />Supprimer
-                </button>
-              </div>
-            </div>
-          )}
+            Bientôt disponible
+          </span>
         </div>
 
-        {fileError && (
-          <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: 'var(--color-danger-bg)', marginBottom: '12px' }}>
-            <AlertTriangle size={15} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-danger)' }}>{fileError}</p>
-          </div>
-        )}
+        {/* Title */}
+        <h1 style={{
+          margin: '0 0 16px',
+          fontWeight: 800,
+          fontSize: 'clamp(28px, 5vw, 40px)',
+          color: '#1B4332',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.15,
+        }}>
+          Analyse IA de votre devis
+        </h1>
 
-        {/* Bouton Analyser */}
-        <button
-          onClick={handleAnalyze}
-          disabled={!file || !user || isAnalyzing}
-          style={{
-            width: '100%', padding: '15px 20px', borderRadius: '12px', border: 'none',
-            background: !file || !user ? 'var(--color-border)' : 'var(--color-text)',
-            color: !file || !user ? 'var(--color-muted)' : 'var(--color-bg)',
-            fontSize: '15px', fontWeight: 700, cursor: !file || !user ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-            fontFamily: 'var(--font-body)', transition: 'opacity 0.2s',
-            opacity: isAnalyzing ? 0.7 : 1,
-          }}
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              Analyse en cours…
-            </>
-          ) : (
-            <>
-              <FileSearch size={18} />
-              Analyser mon devis
-            </>
-          )}
-        </button>
-
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-        {/* Erreur */}
-        {error && (
-          <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)', marginTop: '16px' }}>
-            <AlertTriangle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-danger)' }}>{error}</p>
-          </div>
-        )}
-
-
-        {/* Résultats */}
-        <div ref={resultsRef}>
-          {analysis && (
-            <div style={{ marginTop: '36px' }}>
-              <p style={{ margin: '0 0 20px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Résultats de l'analyse
-              </p>
-              <DevisAnalysisCard analysis={analysis} company={company} />
-            </div>
-          )}
-        </div>
-
-        {/* Disclaimer */}
-        <p style={{ margin: '32px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-          Cette analyse est fournie à titre informatif par une intelligence artificielle. Elle ne constitue pas un avis juridique. Consultez un professionnel du droit pour toute décision importante.
+        {/* Description */}
+        <p style={{
+          margin: '0 0 40px',
+          fontSize: '16px',
+          color: '#6b7280',
+          lineHeight: 1.65,
+        }}>
+          Notre IA analyse votre devis PDF en profondeur : clauses abusives, mentions légales manquantes, prix anormaux. En quelques secondes.
         </p>
 
-      </section>
+        {/* Email form */}
+        {!submitted ? (
+          <form onSubmit={handleSubmit}>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 600, color: '#1B4332', textAlign: 'left' }}>
+              Soyez notifié dès l&apos;ouverture
+            </label>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+            }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="votre@email.com"
+                required
+                style={{
+                  flex: '1 1 200px',
+                  height: '48px',
+                  border: '1.5px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '0 16px',
+                  fontSize: '15px',
+                  fontFamily: 'var(--font-bricolage, var(--font-body))',
+                  outline: 'none',
+                  background: '#fff',
+                  color: '#111',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  flex: '0 0 auto',
+                  height: '48px',
+                  padding: '0 24px',
+                  background: '#1B4332',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-bricolage, var(--font-body))',
+                  opacity: loading ? 0.7 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {loading ? 'Envoi…' : 'Me notifier →'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p style={{ fontSize: '16px', fontWeight: 700, color: '#52B788', margin: '0 0 24px' }}>
+            ✓ Vous serez notifié en priorité !
+          </p>
+        )}
+
+        {/* Back link */}
+        <div style={{ marginTop: '48px' }}>
+          <Link href="/" style={{ fontSize: '14px', color: '#52B788', textDecoration: 'none' }}>
+            ← Retour à l&apos;accueil
+          </Link>
+        </div>
+
+      </div>
     </main>
   )
 }

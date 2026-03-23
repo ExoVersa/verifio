@@ -1,147 +1,362 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import { ShieldCheck, Database, Zap, Heart, ExternalLink } from 'lucide-react'
-import SiteHeader from '@/components/SiteHeader'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'À propos — Notre mission | Verifio',
-  description: 'Verifio est né d\'un constat simple : 34% des Français ont été victimes d\'arnaques sur les chantiers. Découvrez notre mission et nos engagements.',
-}
+import Link from 'next/link'
+import SiteHeader from '@/components/SiteHeader'
 
 export default function AProposPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: '#F8F4EF' }}>
       <SiteHeader />
 
-      {/* Hero */}
-      <section style={{ background: '#1B4332', padding: '80px 24px 64px' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', padding: '6px 16px', borderRadius: '20px', marginBottom: '24px', border: '1px solid rgba(216,243,220,0.2)' }}>
-            <Heart size={13} color="#D8F3DC" />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#D8F3DC' }}>Notre mission</span>
+      {/* 1. HERO SECTION */}
+      <section style={{ background: '#1B4332', padding: '80px 24px 72px', textAlign: 'center' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: 'rgba(255,255,255,0.12)',
+            color: '#D8F3DC',
+            fontSize: '12px',
+            fontWeight: 700,
+            padding: '5px 16px',
+            borderRadius: '20px',
+            border: '1px solid rgba(216,243,220,0.2)',
+            marginBottom: '24px',
+          }}>
+            Notre mission
           </div>
-          <h1 style={{ margin: '0 0 20px', fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.03em' }}>
-            Protéger chaque Français<br />
-            <span style={{ color: '#74C69D' }}>avant qu&apos;il soit victime</span>
+          <h1 style={{
+            fontFamily: 'Bricolage Grotesque, sans-serif',
+            fontWeight: 800,
+            color: '#fff',
+            fontSize: 'clamp(32px, 5vw, 52px)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            maxWidth: '680px',
+            margin: '0 auto 20px',
+          }}>
+            Nous croyons que vérifier un artisan devrait être accessible à tous
           </h1>
-          <p style={{ fontSize: '18px', color: 'rgba(216,243,220,0.8)', lineHeight: 1.65, maxWidth: '560px', margin: '0 auto' }}>
-            Verifio est né d&apos;un constat simple : <strong style={{ color: '#D8F3DC' }}>34% des Français ont été victimes d&apos;arnaques sur les chantiers.</strong> Nous avons décidé que ça devait changer.
+          <p style={{
+            color: 'rgba(216,243,220,0.85)',
+            fontSize: '17px',
+            lineHeight: 1.7,
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}>
+            Verifio est né d&apos;un constat simple : 34% des Français ont été victimes d&apos;arnaques sur les chantiers. Nous avons décidé que ça devait changer.
           </p>
         </div>
       </section>
 
-      {/* Mission */}
-      <section style={{ padding: '72px 24px', background: 'var(--color-bg)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px', alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Notre histoire</p>
-              <h2 style={{ margin: '0 0 16px', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                Pourquoi Verifio&nbsp;?
-              </h2>
-              <p style={{ margin: '0 0 14px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
-                Chaque année en France, des milliers de particuliers font confiance à des artisans qui disparaissent avec l&apos;acompte, livrent des travaux bâclés, ou opèrent sans assurance.
-              </p>
-              <p style={{ margin: '0 0 14px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
-                Ces informations existent — dans les bases de données officielles de l&apos;État. Mais elles sont dispersées, techniques, et inaccessibles au grand public.
-              </p>
-              <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
-                <strong style={{ color: 'var(--color-text)' }}>Verifio les centralise</strong> et les transforme en un verdict clair en 30 secondes — gratuitement.
-              </p>
-            </div>
-            <div style={{ background: 'var(--color-surface)', borderRadius: '20px', border: '1px solid var(--color-border)', padding: '32px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🛡️</div>
-              <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 900, color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>34&nbsp;%</p>
-              <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 600, color: 'var(--color-text)' }}>des Français victimes</p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>d&apos;arnaques sur les chantiers chaque année</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sources */}
-      <section style={{ padding: '72px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Transparence</p>
-          <h2 style={{ margin: '0 0 12px', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-            Comment ça marche&nbsp;?
-          </h2>
-          <p style={{ margin: '0 0 40px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-            Nous interrogeons 6 bases de données publiques et officielles pour chaque recherche.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { icon: <Database size={18} />, source: 'INSEE — SIRENE', desc: 'Vérifie l\'existence légale de l\'entreprise : numéro SIRET, statut actif/fermé, date de création, forme juridique.' },
-              { icon: <ShieldCheck size={18} />, source: 'ADEME — Registre RGE', desc: 'Contrôle les certifications Reconnu Garant de l\'Environnement, obligatoires pour les aides de l\'État (MaPrimeRénov\').' },
-              { icon: <Zap size={18} />, source: 'BODACC', desc: 'Consulte le Bulletin Officiel des Annonces Civiles et Commerciales pour détecter redressements, liquidations et procédures collectives.' },
-              { icon: <Database size={18} />, source: 'RNE / INPI', desc: 'Identifie les dirigeants, leur rôle et les changements récents de gouvernance qui peuvent signaler des risques.' },
-              { icon: <Database size={18} />, source: 'API Entreprise', desc: 'Consolide les données économiques : capital social, effectifs, chiffre d\'affaires et conventions collectives déclarées.' },
-              { icon: <Zap size={18} />, source: 'IA Anthropic (Claude)', desc: 'Génère une synthèse personnalisée et la checklist des documents à demander selon le secteur d\'activité.' },
-            ].map(({ icon, source, desc }) => (
-              <div key={source} style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--color-accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent)', flexShrink: 0 }}>
-                  {icon}
-                </div>
-                <div>
-                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: 'var(--color-text)' }}>{source}</p>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.55 }}>{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Engagements */}
-      <section style={{ padding: '72px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Nos engagements</p>
-          <h2 style={{ margin: '0 0 40px', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-            Ce que nous vous promettons
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-            {[
-              { icon: '📋', title: 'Données officielles', desc: 'Toutes nos données proviennent de sources gouvernementales vérifiables.' },
-              { icon: '🆓', title: 'Gratuit pour tous', desc: 'La vérification de base est et restera toujours gratuite, sans inscription.' },
-              { icon: '🎯', title: 'Mission claire', desc: 'Nous n\'avons aucun intérêt commercial à promouvoir un artisan plutôt qu\'un autre.' },
-              { icon: '🔒', title: 'Données sécurisées', desc: 'Vos recherches sont privées. Nous ne revendons aucune donnée personnelle.' },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} style={{ background: 'var(--color-surface)', borderRadius: '16px', border: '1px solid var(--color-border)', padding: '24px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', marginBottom: '12px' }}>{icon}</div>
-                <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: 'var(--color-text)' }}>{title}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.55 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ background: '#1B4332', borderRadius: '20px', padding: '32px', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '14px', color: '#74C69D', fontWeight: 600 }}>Notre promesse</p>
-            <p style={{ margin: '0 0 24px', fontSize: '20px', fontWeight: 700, color: '#D8F3DC', lineHeight: 1.4 }}>
-              &ldquo;Nos données sont officielles, notre service est gratuit, notre mission est claire.&rdquo;
+      {/* 2. HISTOIRE SECTION */}
+      <section style={{ background: '#fff', padding: '80px 24px' }}>
+        <div style={{
+          maxWidth: '900px',
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '60px',
+        }}>
+          {/* Left column */}
+          <div>
+            <p style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              color: '#52B788',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginBottom: '12px',
+              margin: '0 0 12px',
+            }}>
+              Le problème
             </p>
-            <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', borderRadius: '12px', background: '#52B788', color: '#fff', fontSize: '15px', fontWeight: 700, textDecoration: 'none' }}>
-              <ShieldCheck size={17} />
-              Vérifiez votre artisan maintenant
-            </Link>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: 800,
+              color: '#1B4332',
+              marginBottom: '16px',
+              margin: '0 0 16px',
+            }}>
+              Le problème que nous résolvons
+            </h2>
+            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: '0 0 14px' }}>
+              Chaque année, des milliers de particuliers font confiance à des artisans sans pouvoir les vérifier facilement. Les données existent — INSEE, ADEME, BODACC — mais elles sont éparpillées, techniques et illisibles pour un particulier.
+            </p>
+            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: 0 }}>
+              Un particulier ne devrait pas avoir besoin d&apos;être juriste ou comptable pour savoir si l&apos;artisan qu&apos;il s&apos;apprête à payer plusieurs milliers d&apos;euros est fiable.
+            </p>
+          </div>
+
+          {/* Right column */}
+          <div>
+            <p style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              color: '#52B788',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              margin: '0 0 12px',
+            }}>
+              Notre réponse
+            </p>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: 800,
+              color: '#1B4332',
+              margin: '0 0 16px',
+            }}>
+              Comment nous aidons
+            </h2>
+            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: '0 0 14px' }}>
+              Verifio agrège ces données officielles et les transforme en un score de confiance simple, gratuit et accessible à tous en 30 secondes.
+            </p>
+            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: 0 }}>
+              Nous ne créons pas de données — nous les rendons lisibles. Tout ce que vous voyez sur Verifio vient de sources gouvernementales officielles et est mis à jour quotidiennement.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Contact */}
-      <section id="contact" style={{ padding: '72px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-        <div style={{ maxWidth: '560px', margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Contact</p>
-          <h2 style={{ margin: '0 0 12px', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em' }}>Vous avez une question&nbsp;?</h2>
-          <p style={{ margin: '0 0 28px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
-            Nous lisons chaque message. Pour les signalements d&apos;erreurs ou suggestions d&apos;amélioration, contactez-nous directement.
-          </p>
-          <a
-            href="mailto:contact@verifio.fr"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 24px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '15px', fontWeight: 700, textDecoration: 'none' }}
-          >
-            <ExternalLink size={16} />
-            contact@verifio.fr
-          </a>
+      {/* 3. STATS STRIP */}
+      <section style={{ background: '#1B4332', padding: '48px 24px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '60px',
+          flexWrap: 'wrap',
+        }}>
+          {[
+            { number: '26 000+', label: "Signalements d'arnaques en 2024" },
+            { number: '100%', label: 'Données officielles' },
+            { number: '30s', label: 'Pour vérifier un artisan' },
+          ].map(({ number, label }) => (
+            <div key={number} style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '40px',
+                fontWeight: 900,
+                color: '#fff',
+                letterSpacing: '-0.04em',
+                lineHeight: 1.1,
+              }}>
+                {number}
+              </div>
+              <div style={{
+                fontSize: '14px',
+                color: 'rgba(216,243,220,0.75)',
+                marginTop: '4px',
+              }}>
+                {label}
+              </div>
+            </div>
+          ))}
         </div>
+      </section>
+
+      {/* 4. VALEURS SECTION */}
+      <section style={{ background: '#F8F4EF', padding: '80px 24px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: 800,
+            color: '#1B4332',
+            textAlign: 'center',
+            margin: '0 0 8px',
+          }}>
+            Nos valeurs
+          </h2>
+          <p style={{
+            textAlign: 'center',
+            color: '#6B7280',
+            fontSize: '15px',
+            margin: '0 0 48px',
+          }}>
+            Les principes qui guident chaque décision
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '20px',
+          }}>
+            {[
+              {
+                icon: '🛡️',
+                title: 'Données officielles uniquement',
+                body: "Jamais de données inventées ou estimées. Tout vient de sources gouvernementales vérifiées : INSEE, ADEME, BODACC.",
+              },
+              {
+                icon: '🎁',
+                title: 'Gratuit pour les particuliers',
+                body: "La vérification de base sera toujours gratuite. Nous croyons que se protéger ne devrait pas avoir un prix.",
+              },
+              {
+                icon: '🇫🇷',
+                title: 'Fait en France',
+                body: "Données françaises, équipe française, hébergement européen. Vos données ne quittent jamais l'Europe.",
+              },
+            ].map(({ icon, title, body }) => (
+              <div key={title} style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '28px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              }}>
+                <div style={{ fontSize: '36px', marginBottom: '16px' }}>{icon}</div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: 800,
+                  color: '#1B4332',
+                  margin: '0 0 10px',
+                }}>
+                  {title}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6B7280',
+                  lineHeight: 1.65,
+                  margin: 0,
+                }}>
+                  {body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. SOURCES DE DONNÉES SECTION */}
+      <section style={{ background: '#fff', padding: '80px 24px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: 800,
+            color: '#1B4332',
+            textAlign: 'center',
+            margin: '0 0 8px',
+          }}>
+            Nos sources de données
+          </h2>
+          <p style={{
+            textAlign: 'center',
+            color: '#6B7280',
+            fontSize: '15px',
+            margin: '0 0 48px',
+          }}>
+            Des données officielles, actualisées quotidiennement
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+          }}>
+            {[
+              {
+                badge: '🏛️',
+                title: 'INSEE / Sirene',
+                desc: 'Statut légal, dirigeants, capital social, forme juridique',
+                link: 'data.gouv.fr →',
+                href: 'https://data.gouv.fr',
+              },
+              {
+                badge: '🌱',
+                title: 'ADEME',
+                desc: 'Certifications RGE — Reconnu Garant de l\'Environnement',
+                link: 'data.ademe.fr →',
+                href: 'https://data.ademe.fr',
+              },
+              {
+                badge: '⚖️',
+                title: 'BODACC',
+                desc: 'Procédures judiciaires, liquidations, redressements',
+                link: 'bodacc.fr →',
+                href: 'https://bodacc.fr',
+              },
+              {
+                badge: '🗺️',
+                title: 'API Géo',
+                desc: 'Données géographiques, communes, départements',
+                link: 'geo.api.gouv.fr →',
+                href: 'https://geo.api.gouv.fr',
+              },
+            ].map(({ badge, title, desc, link, href }) => (
+              <div key={title} style={{
+                background: '#f9fafb',
+                border: '1.5px solid #e5e7eb',
+                borderRadius: '14px',
+                padding: '20px',
+              }}>
+                <div style={{ fontSize: '28px', marginBottom: '12px' }}>{badge}</div>
+                <h3 style={{
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: '#1B4332',
+                  margin: '0 0 8px',
+                }}>
+                  {title}
+                </h3>
+                <p style={{
+                  fontSize: '13px',
+                  color: '#6B7280',
+                  lineHeight: 1.55,
+                  margin: '0 0 12px',
+                }}>
+                  {desc}
+                </p>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '12px',
+                    color: '#52B788',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  {link}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. CTA SECTION */}
+      <section style={{ background: '#1B4332', padding: '72px 24px', textAlign: 'center' }}>
+        <h2 style={{
+          color: '#fff',
+          fontSize: '32px',
+          fontWeight: 800,
+          letterSpacing: '-0.03em',
+          margin: '0 0 12px',
+        }}>
+          Commencez à vous protéger
+        </h2>
+        <p style={{
+          color: 'rgba(216,243,220,0.75)',
+          fontSize: '15px',
+          margin: '0',
+        }}>
+          Vérification 100% gratuite · Résultats en 30 secondes · Données officielles
+        </p>
+        <Link
+          href="/"
+          style={{
+            display: 'inline-block',
+            background: '#fff',
+            color: '#1B4332',
+            fontSize: '16px',
+            fontWeight: 800,
+            padding: '16px 36px',
+            borderRadius: '14px',
+            border: 'none',
+            cursor: 'pointer',
+            marginTop: '28px',
+            textDecoration: 'none',
+          }}
+        >
+          Vérifier un artisan gratuitement →
+        </Link>
       </section>
     </main>
   )
