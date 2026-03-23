@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
 import type { SearchCandidate } from '@/types'
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -468,6 +469,7 @@ function RechercheInner() {
     const isSameVille = ville === villeSelection?.label
     const cp = isSameVille && villeSelection?.type === 'commune' ? (villeSelection.codePostal || '') : ''
     const dept = isSameVille && villeSelection?.type === 'departement' ? (villeSelection.deptCode || '') : ''
+    saveRecent(q, ville)
     router.push(`/recherche?${buildURL({ q, ville, cp, dept })}`)
   }
 
@@ -501,6 +503,26 @@ function RechercheInner() {
 
   const isFiltered = filterRge || !!filterStatut || !!filterAnciennete || !!filterScoreMin
 
+  // Launch search (used by autocomplete work-type click)
+  const launchSearch = (q: string) => {
+    setQueryInput(q)
+    const ville = villeInput.trim()
+    const isSameVille = ville === villeSelection?.label
+    const cp = isSameVille && villeSelection?.type === 'commune' ? (villeSelection.codePostal || '') : ''
+    const dept = isSameVille && villeSelection?.type === 'departement' ? (villeSelection.deptCode || '') : ''
+    saveRecent(q, ville)
+    router.push(`/recherche?${buildURL({ q, ville, cp, dept })}`)
+  }
+
+  // Select a recent search
+  const handleSelectRecent = (q: string, ville: string) => {
+    setQueryInput(q)
+    setVilleInput(ville)
+    setVilleSelection(null)
+    saveRecent(q, ville)
+    router.push(`/recherche?${buildURL({ q, ville, cp: '', dept: '' })}`)
+  }
+
   // Sort results client-side
   const sortedResults = sortBy === 'anciennete'
     ? [...results].sort((a, b) => {
@@ -527,26 +549,13 @@ function RechercheInner() {
           {/* Search form */}
           <form onSubmit={handleSubmit} style={{ marginBottom: '10px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ flex: '2 1 240px', position: 'relative' }}>
-                <Search size={17} style={{
-                  position: 'absolute', left: '14px', top: '50%',
-                  transform: 'translateY(-50%)', color: cv('muted'), pointerEvents: 'none',
-                }} />
-                <input
-                  type="text"
-                  value={queryInput}
-                  onChange={e => setQueryInput(e.target.value)}
-                  placeholder="Nom, SIRET, activité..."
-                  style={{
-                    width: '100%', height: '52px', paddingLeft: '42px', paddingRight: '16px',
-                    border: `2px solid ${cv('border')}`, borderRadius: '12px',
-                    background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
-                    color: cv('text'), outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = cv('accent'))}
-                  onBlur={e => (e.target.style.borderColor = cv('border'))}
-                />
-              </div>
+              <SearchAutocomplete
+                value={queryInput}
+                onChange={v => setQueryInput(v)}
+                villeLabel={villeInput}
+                onSearch={launchSearch}
+                onSelectRecent={handleSelectRecent}
+              />
               <VilleAutocomplete value={villeInput} onChange={handleVilleChange} onSelect={handleVilleSelect} />
               <button
                 type="submit"
