@@ -5,41 +5,81 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-02-25.clover',
 })
 
-export async function POST(req: NextRequest) {
-  const { siret, nom } = await req.json()
-
-  if (!siret) {
-    return NextResponse.json({ error: 'SIRET manquant' }, { status: 400 })
-  }
-
-  // Priorité : variable explicite > hôte de la requête (fiable en prod) > localhost
-  // Note : VERCEL_URL est volontairement exclu — c'est une URL par déploiement qui change à chaque push
+function getBaseUrl(req: NextRequest): string {
   const requestHost = req.headers.get('host')
   const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
-  const baseUrl =
+  return (
     process.env.NEXT_PUBLIC_BASE_URL ||
     (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
+  )
+}
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        price_data: {
-          currency: 'eur',
-          unit_amount: 490,
-          product_data: {
-            name: `Rapport complet — ${nom || siret}`,
-            description: `Vérification approfondie de l'artisan : assurance décennale, avis clients, historique judiciaire.`,
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  const { plan, siret, nom, chantierId } = body
+  const baseUrl = getBaseUrl(req)
+
+  // ── Pack Sérénité — paiement unique 19,90€ ──────────────────────────────
+  if (!plan || plan === 'serenite') {
+    if (!siret && !chantierId) {
+      return NextResponse.json({ error: 'SIRET ou chantierId requis pour le Pack Sérénité' }, { status: 400 })
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: 1990,
+            product_data: {
+              name: 'Pack Sérénité' + (nom ? ` — ${nom}` : ''),
+              description: 'Analyse IA de votre devis PDF + rapport complet artisan + surveillance 6 mois.',
+              images: [],
+            },
           },
+          quantity: 1,
         },
-        quantity: 1,
-      },
-    ],
-    mode: 'payment',
-    success_url: `${baseUrl}/rapport/succes?siret=${siret}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/?q=${encodeURIComponent(nom || siret)}`,
-    metadata: { siret, nom: nom || '' },
-  })
+      ],
+      mode: 'payment',
+      success_url: siret
+        ? `${baseUrl}/artisan/${siret}?pack=serenite&session_id={CHECKOUT_SESSION_ID}`
+        : `${baseUrl}/mes-chantiers?pack=serenite&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: siret
+        ? `${baseUrl}/artisan/${siret}`
+        : `${baseUrl}/pricing`,
+      metadata: { plan: 'serenite', siret: siret || '', nom: nom || '', chantierId: chantierId || '' },
+    })
 
-  return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url })
+  }
+
+  // ── Tranquillité — abonnement 4,90€/mois ────────────────────────────────
+  if (plan === 'tranquillite') {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: 490,
+            recurring: { interval: 'month' },
+            product_data: {
+              name: 'Tranquillité — Verifio',
+              description: 'Analyses illimitées, surveillance illimitée, export PDF, historique complet. Sans engagement.',
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${baseUrl}/mon-espace?plan=tranquillite&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/pricing`,
+      metadata: { plan: 'tranquillite' },
+    })
+
+    return NextResponse.json({ url: session.url })
+  }
+
+  return NextResponse.json({ error: 'Plan inconnu. Valeurs acceptées : serenite, tranquillite' }, { status: 400 })
 }

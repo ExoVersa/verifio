@@ -463,6 +463,21 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 )}
               </div>
             ))}
+            <a
+              href="/pricing"
+              style={{
+                display: 'flex', alignItems: 'center',
+                background: pathname === '/pricing' ? 'var(--color-bg)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                fontSize: '13.5px', fontWeight: 600,
+                color: pathname === '/pricing' ? 'var(--color-accent)' : 'var(--color-text)',
+                textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/pricing' ? 'var(--color-bg)' : 'transparent' }}
+            >
+              💎 Tarifs
+            </a>
           </nav>
 
           {/* ── RIGHT ── */}

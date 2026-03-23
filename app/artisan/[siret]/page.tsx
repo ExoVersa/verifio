@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Search, ShieldCheck } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import ResultCard from '@/components/ResultCard'
 import ShareButton from '@/components/ShareButton'
@@ -16,6 +16,24 @@ export default function ArtisanFichePage() {
   const [result, setResult] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+
+  async function startSerenite() {
+    setCheckoutLoading(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'serenite', siret, nom: result?.nom }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {
+      alert('Erreur Stripe. Réessayez.')
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!siret) return
@@ -93,7 +111,38 @@ export default function ArtisanFichePage() {
 
         {/* Result */}
         {!loading && result && (
-          <ResultCard result={result} />
+          <>
+            <ResultCard result={result} />
+
+            {/* Pack Sérénité CTA */}
+            <div style={{ marginTop: '24px', background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <ShieldCheck size={22} color="#D8F3DC" />
+                </div>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 800, color: '#fff' }}>
+                    🛡️ Vous avez un devis de cet artisan&nbsp;?
+                  </p>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#74C69D', lineHeight: 1.55 }}>
+                    Analysez-le et obtenez un rapport complet + surveillance 6 mois &mdash; <strong style={{ color: '#D8F3DC' }}>19,90&nbsp;€</strong> achat unique.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={startSerenite}
+                  disabled={checkoutLoading}
+                  style={{ flex: 1, minWidth: '200px', padding: '13px 20px', borderRadius: '12px', border: 'none', background: '#52B788', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', opacity: checkoutLoading ? 0.7 : 1 }}
+                >
+                  {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité →'}
+                </button>
+                <a href="/pricing" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '13px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
+                  Voir les offres
+                </a>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </main>

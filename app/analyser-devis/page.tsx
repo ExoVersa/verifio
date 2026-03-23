@@ -195,7 +195,7 @@ export default function AnalyserDevisPage() {
             <LogIn size={32} color="var(--color-muted)" style={{ marginBottom: '12px' }} />
             <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600 }}>Connexion requise</p>
             <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--color-muted)' }}>
-              Créez un compte gratuit pour bénéficier d'une analyse offerte, puis 9,90&nbsp;€ par analyse.
+              Connectez-vous pour analyser votre devis. L&apos;analyse est incluse dans le <strong>Pack Sérénité à 19,90&nbsp;€</strong> (achat unique par chantier).
             </p>
             <Link href="/auth" style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
@@ -345,19 +345,19 @@ export default function AnalyserDevisPage() {
             marginTop: '16px', padding: '20px', borderRadius: '14px',
             border: '1px solid var(--color-border)', background: 'var(--color-surface)', textAlign: 'center',
           }}>
-            <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>Analyse supplémentaire — 9,90&nbsp;€</p>
+            <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>Pack Sérénité — 19,90&nbsp;€</p>
             <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
-              Votre analyse gratuite a déjà été utilisée. Accédez au résultat pour 9,90&nbsp;€.
+              Analyse de devis IA + rapport complet artisan + surveillance 6 mois. Achat unique, valable à vie.
             </p>
             <a
               href={checkoutUrl}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px',
-                borderRadius: '10px', background: 'var(--color-text)', color: 'var(--color-bg)',
+                borderRadius: '10px', background: '#1B4332', color: '#fff',
                 textDecoration: 'none', fontSize: '14px', fontWeight: 700,
               }}
             >
-              Payer 9,90&nbsp;€ et analyser
+              Activer le Pack Sérénité — 19,90&nbsp;€
             </a>
           </div>
         )}

@@ -630,60 +630,63 @@ export default function Home() {
                 Score, statut, RGE, BODACC, dirigeants, synthèse IA — tout sans inscription, sans CB.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                {/* Gratuit */}
-                <div style={{ background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vérification artisan</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', color: '#D8F3DC', fontFamily: 'var(--font-display)' }}>Gratuit</p>
-                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: '#74C69D' }}>Sans inscription · Sans CB · Pour toujours</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
-                    {['Score de confiance /100', 'Statut légal & BODACC', 'Certification RGE ADEME', 'Dirigeants & capital social', 'Synthèse IA personnalisée', 'Checklist documents légaux'].map(f => (
-                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={14} color="#52B788" />
-                        <span style={{ fontSize: '13px', color: '#B7E4C7' }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: '#52B788', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'opacity 0.15s' }}>
-                    Vérifier maintenant →
-                  </button>
-                </div>
-                {/* Analyse devis */}
+                {/* Essentiel gratuit */}
                 <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Analyse de devis IA</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>9,90&nbsp;€</p>
-                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'var(--color-muted)' }}>Par analyse · Résultat en 30 secondes</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
-                    {['Analyse IA de votre PDF de devis', 'Mentions légales obligatoires', 'Prix vs marché (simulateur)', 'Clauses abusives détectées', 'Rapport téléchargeable PDF'].map(f => (
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Essentiel</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>Gratuit</p>
+                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-muted)' }}>Pour toujours · Sans CB</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
+                    {['Score de confiance /100', 'Statut légal & BODACC', 'Certification RGE ADEME', 'Synthèse IA', '1 artisan surveillé'].map(f => (
                       <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={14} color="#166534" />
+                        <CheckCircle2 size={13} color="var(--color-accent)" />
                         <span style={{ fontSize: '13px' }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="/analyser-devis" style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', color: 'var(--color-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', transition: 'background 0.15s' }}>
-                    Analyser mon devis
-                  </a>
+                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+                    Vérifier maintenant →
+                  </button>
                 </div>
-                {/* Espace artisan */}
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)', opacity: 0.8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Espace artisan</p>
-                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: '#fef3c7', color: '#92400e' }}>Bientôt</span>
-                  </div>
-                  <p style={{ margin: '0 0 4px', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>29&nbsp;€<span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-muted)' }}>/mois</span></p>
-                  <p style={{ margin: '0 0 24px', fontSize: '12px', color: 'var(--color-muted)' }}>Pour les artisans · Accès complet</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '24px', flex: 1 }}>
-                    {['Page vitrine vérifiée', 'Répondre aux avis clients', 'Statistiques de visibilité', 'Badge "Vérifié Verifio"', 'Leads qualifiés chantiers'].map(f => (
+                {/* Pack Sérénité */}
+                <div style={{ background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pack Sérénité</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', color: '#D8F3DC', fontFamily: 'var(--font-display)' }}>19,90&nbsp;€</p>
+                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#74C69D' }}>Achat unique par chantier · À vie</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
+                    {['Analyse IA de votre devis PDF', 'Rapport complet artisan', 'Surveillance 6 mois', 'Clauses abusives détectées', 'Rapport téléchargeable'].map(f => (
                       <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={14} color="var(--color-muted)" />
-                        <span style={{ fontSize: '13px', color: 'var(--color-muted)' }}>{f}</span>
+                        <CheckCircle2 size={13} color="#52B788" />
+                        <span style={{ fontSize: '13px', color: '#B7E4C7' }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <button disabled style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '14px', fontWeight: 600, cursor: 'not-allowed', fontFamily: 'var(--font-body)', color: 'var(--color-muted)' }}>
-                    Bientôt disponible
-                  </button>
+                  <a href="/pricing" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#52B788', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                    Découvrir le pack →
+                  </a>
                 </div>
+                {/* Tranquillité */}
+                <div style={{ background: 'var(--color-surface)', border: '2px solid var(--color-accent)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tranquillité</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+                    <p style={{ margin: 0, fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>4,90&nbsp;€</p>
+                    <span style={{ fontSize: '14px', color: 'var(--color-muted)' }}>/mois</span>
+                  </div>
+                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-muted)' }}>Sans engagement · Résiliable</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
+                    {['Analyses illimitées', 'Surveillance illimitée', 'Export PDF carnet', 'Historique complet', 'Support prioritaire'].map(f => (
+                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <CheckCircle2 size={13} color="var(--color-accent)" />
+                        <span style={{ fontSize: '13px' }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <a href="/pricing" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--color-accent)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                    Commencer →
+                  </a>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                <a href="/pricing" style={{ fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', borderBottom: '1px dashed var(--color-border)' }}>Voir le détail complet des offres →</a>
               </div>
             </div>
           </section>
