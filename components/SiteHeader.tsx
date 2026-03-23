@@ -478,6 +478,21 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             >
               💎 Tarifs
             </a>
+            <a
+              href="/espace-artisan"
+              style={{
+                display: 'flex', alignItems: 'center',
+                background: pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                fontSize: '13.5px', fontWeight: 600,
+                color: pathname === '/espace-artisan' ? 'var(--color-accent)' : 'var(--color-text)',
+                textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent' }}
+            >
+              🔨 Espace Artisan
+            </a>
           </nav>
 
           {/* ── RIGHT ── */}
@@ -755,6 +770,23 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 )}
               </div>
             ))}
+
+            {/* Espace Artisan link */}
+            <a
+              href="/espace-artisan"
+              onClick={closeAll}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '13px 12px', borderRadius: '12px', marginBottom: '4px',
+                background: pathname === '/espace-artisan' ? 'var(--color-bg)' : 'none',
+                textDecoration: 'none', color: 'var(--color-text)',
+                fontSize: '15px', fontWeight: 700,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent')}
+            >
+              🔨 Espace Artisan
+            </a>
 
             <div style={{ height: '1px', background: 'var(--color-border)', margin: '16px 0' }} />
 

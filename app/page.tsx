@@ -767,6 +767,7 @@ export default function Home() {
                 <div>
                   <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>À propos</p>
                   {[
+                    { href: '/espace-artisan', label: 'Espace Artisan' },
                     { href: '/a-propos', label: 'Notre mission' },
                     { href: '/contact', label: 'Contact' },
                     { href: '/mentions-legales', label: 'Mentions légales' },

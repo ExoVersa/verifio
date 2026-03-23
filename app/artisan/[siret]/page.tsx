@@ -8,6 +8,13 @@ import ResultCard from '@/components/ResultCard'
 import ShareButton from '@/components/ShareButton'
 import type { SearchResult } from '@/types'
 
+interface ArtisanPublicInfo {
+  verifie: boolean
+  badgeActif: boolean
+  nomEntreprise: string | null
+  description: string | null
+}
+
 export default function ArtisanFichePage() {
   const params = useParams()
   const router = useRouter()
@@ -17,6 +24,7 @@ export default function ArtisanFichePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [artisanPublic, setArtisanPublic] = useState<ArtisanPublicInfo | null>(null)
 
   async function startSerenite() {
     setCheckoutLoading(true)
@@ -39,11 +47,15 @@ export default function ArtisanFichePage() {
     if (!siret) return
     setLoading(true)
     setError(null)
-    fetch(`/api/search?q=${encodeURIComponent(siret)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) setError(data.error)
-        else setResult(data)
+    // Charger simultanément la fiche officielle et le statut Verifio
+    Promise.all([
+      fetch(`/api/search?q=${encodeURIComponent(siret)}`).then(r => r.json()),
+      fetch(`/api/artisan/public?siret=${encodeURIComponent(siret)}`).then(r => r.json()),
+    ])
+      .then(([searchData, publicData]) => {
+        if (searchData.error) setError(searchData.error)
+        else setResult(searchData)
+        if (!publicData.error) setArtisanPublic(publicData as ArtisanPublicInfo)
       })
       .catch(() => setError('Erreur réseau. Vérifiez votre connexion.'))
       .finally(() => setLoading(false))
@@ -113,6 +125,58 @@ export default function ArtisanFichePage() {
         {!loading && result && (
           <>
             <ResultCard result={result} />
+
+            {/* Badge Verifio ou CTA inscription artisan */}
+            {artisanPublic && artisanPublic.verifie && artisanPublic.badgeActif ? (
+              <div style={{
+                marginTop: '16px',
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '14px 18px',
+                background: '#f0fdf4', border: '1px solid #86efac',
+                borderRadius: '14px',
+              }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: '#1B4332',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, fontSize: '16px',
+                }}>
+                  ✓
+                </div>
+                <div>
+                  <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, color: '#14532d' }}>
+                    Artisan vérifié Verifio
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#166534' }}>
+                    L&apos;identité et l&apos;existence légale de cet artisan ont été vérifiées par notre équipe.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              !artisanPublic?.verifie && (
+                <div style={{
+                  marginTop: '16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  flexWrap: 'wrap', gap: '10px',
+                  padding: '12px 16px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '12px',
+                }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
+                    Vous êtes {result.nom}&nbsp;?
+                  </p>
+                  <a
+                    href="/espace-artisan"
+                    style={{
+                      fontSize: '13px', fontWeight: 700, color: '#1B4332',
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Revendiquez votre fiche →
+                  </a>
+                </div>
+              )
+            )}
 
             {/* Pack Sérénité CTA */}
             <div style={{ marginTop: '24px', background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
