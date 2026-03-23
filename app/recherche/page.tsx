@@ -1,97 +1,56 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, AlertTriangle, Filter, X, ChevronDown } from 'lucide-react'
+import { Search, X, ExternalLink } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
-import ShareButton from '@/components/ShareButton'
 import type { SearchCandidate } from '@/types'
 
-/* ── Types de travaux ─────────────────────────────────────── */
-const TRAVAUX_TYPES = [
-  { id: 'plomberie', label: 'Plomberie', keywords: ['plomb', 'sanitaire'] },
-  { id: 'electricite', label: 'Électricité', keywords: ['électr', 'electr'] },
-  { id: 'maconnerie', label: 'Maçonnerie', keywords: ['maçon', 'macon', 'béton', 'beton', 'construct'] },
-  { id: 'charpente', label: 'Charpente', keywords: ['charpen'] },
-  { id: 'couverture', label: 'Couverture', keywords: ['couver', 'toiture', 'toit'] },
-  { id: 'isolation', label: 'Isolation', keywords: ['isol'] },
-  { id: 'menuiserie', label: 'Menuiserie', keywords: ['menuiser'] },
-  { id: 'peinture', label: 'Peinture', keywords: ['peint', 'décor', 'decor'] },
-  { id: 'carrelage', label: 'Carrelage', keywords: ['carrel', 'revêtem'] },
-  { id: 'chauffage', label: 'Chauffage', keywords: ['chauf', 'pomp', 'therm'] },
-  { id: 'climatisation', label: 'Climatisation', keywords: ['clim', 'frigori', 'froid'] },
-  { id: 'serrurerie', label: 'Serrurerie', keywords: ['serr', 'metal', 'métal'] },
+/* ─── Types ─────────────────────────────────────────────────── */
+type CandidateResult = SearchCandidate & { rge?: boolean }
+type SortBy = 'pertinence' | 'anciennete'
+
+/* ─── Constants ─────────────────────────────────────────────── */
+const TRAVAUX = [
+  { id: 'plomberie',     label: 'Plomberie',     kw: 'plombier' },
+  { id: 'electricite',   label: 'Électricité',   kw: 'électricien' },
+  { id: 'maconnerie',    label: 'Maçonnerie',    kw: 'maçon' },
+  { id: 'charpente',     label: 'Charpente',     kw: 'charpentier' },
+  { id: 'couverture',    label: 'Couverture',    kw: 'couvreur' },
+  { id: 'isolation',     label: 'Isolation',     kw: 'isolation' },
+  { id: 'menuiserie',    label: 'Menuiserie',    kw: 'menuisier' },
+  { id: 'peinture',      label: 'Peinture',      kw: 'peintre' },
+  { id: 'carrelage',     label: 'Carrelage',     kw: 'carreleur' },
+  { id: 'chauffage',     label: 'Chauffage',     kw: 'chauffagiste' },
+  { id: 'climatisation', label: 'Climatisation', kw: 'climaticien' },
+  { id: 'serrurerie',    label: 'Serrurerie',    kw: 'serrurier' },
 ]
 
-/* ── Candidate card ──────────────────────────────────────── */
-function CandidateCard({ c, onClick }: { c: SearchCandidate; onClick: () => void }) {
-  const isActif = c.statut === 'actif'
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-        borderRadius: '14px', padding: '16px 20px', cursor: 'pointer',
-        transition: 'box-shadow 0.15s, border-color 0.15s',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(27,67,50,0.10)'
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)', lineHeight: 1.3 }}>
-            {c.nom}
-          </span>
-          <span style={{
-            fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px',
-            background: isActif ? '#dcfce7' : '#fee2e2',
-            color: isActif ? '#166534' : '#991b1b',
-          }}>
-            {isActif ? '● ACTIF' : '● FERMÉ'}
-          </span>
-          {c.formeJuridique && (
-            <span style={{ fontSize: '11px', color: 'var(--color-muted)', background: 'var(--color-neutral-bg)', padding: '2px 7px', borderRadius: '8px' }}>
-              {c.formeJuridique}
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {(c.ville || c.codePostal) && (
-            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>
-              📍 {c.codePostal} {c.ville}
-            </span>
-          )}
-          {c.activite && (
-            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>
-              🏷 {c.activite}
-            </span>
-          )}
-          {c.dateCreation && (
-            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>
-              📅 {new Date(c.dateCreation).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}
-            </span>
-          )}
-        </div>
-      </div>
-      <div style={{ flexShrink: 0, color: 'var(--color-muted)' }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </div>
-    </div>
-  )
-}
+const POPULAR = [
+  'Plombier Paris', 'Électricien Lyon', 'Couvreur Bordeaux',
+  'Maçon Marseille', 'Menuisier Toulouse', 'Carreleur Nantes',
+]
 
-/* ── Ville autocomplete ──────────────────────────────────── */
-interface GeoCommune { nom: string; codeDepartement: string }
+const RAYON_OPTIONS = [
+  { v: '5', label: '5 km' },
+  { v: '10', label: '10 km' },
+  { v: '25', label: '25 km' },
+  { v: '50', label: '50 km' },
+  { v: '100', label: '100 km' },
+]
+
+/* ─── CSS shorthand ─────────────────────────────────────────── */
+const cv = (name: string) => `var(--color-${name})`
+
+/* ─── VilleAutocomplete ─────────────────────────────────────── */
+interface GeoCommune { nom: string; codeDepartement: string; codesPostaux: string[] }
 interface GeoDept { nom: string; code: string }
+interface VilleSelection {
+  label: string
+  type: 'commune' | 'departement'
+  codePostal?: string
+  deptCode?: string
+}
 
 function VilleAutocomplete({
   value,
@@ -100,7 +59,7 @@ function VilleAutocomplete({
 }: {
   value: string
   onChange: (v: string) => void
-  onSelect: (type: 'commune' | 'departement', label: string, code: string) => void
+  onSelect: (sel: VilleSelection) => void
 }) {
   const [communes, setCommunes] = useState<GeoCommune[]>([])
   const [depts, setDepts] = useState<GeoDept[]>([])
@@ -115,7 +74,7 @@ function VilleAutocomplete({
       try {
         const q = encodeURIComponent(value)
         const [r1, r2] = await Promise.all([
-          fetch(`https://geo.api.gouv.fr/communes?nom=${q}&limit=5&fields=nom,codeDepartement`),
+          fetch(`https://geo.api.gouv.fr/communes?nom=${q}&limit=5&fields=nom,codeDepartement,codesPostaux`),
           fetch(`https://geo.api.gouv.fr/departements?nom=${q}&limit=3&fields=nom,code`),
         ])
         const [c, d] = await Promise.all([r1.json(), r2.json()])
@@ -132,45 +91,38 @@ function VilleAutocomplete({
   }, [value])
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+    const onMD = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onMD)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onMD); document.removeEventListener('keydown', onKey) }
   }, [])
 
-  const select = (type: 'commune' | 'departement', label: string, code: string) => {
-    onChange(label)
-    onSelect(type, label, code)
-    setOpen(false)
-    setCommunes([]); setDepts([])
+  const select = (sel: VilleSelection) => {
+    onChange(sel.label); onSelect(sel); setOpen(false); setCommunes([]); setDepts([])
   }
 
-  const groupHeaderStyle: React.CSSProperties = {
-    padding: '6px 16px 4px',
-    fontSize: '10px', fontWeight: 700, color: 'var(--color-muted)',
-    textTransform: 'uppercase', letterSpacing: '0.08em',
-    background: 'var(--color-bg)',
-  }
-
-  const itemStyle: React.CSSProperties = {
+  const rowStyle = (last: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: '8px',
-    width: '100%', padding: '9px 16px',
-    background: 'none', border: 'none',
-    cursor: 'pointer', textAlign: 'left',
-    fontFamily: 'var(--font-body)', fontSize: '14px',
-    color: 'var(--color-text)', transition: 'background 0.1s',
-  }
+    width: '100%', padding: '9px 14px',
+    background: 'none', border: 'none', cursor: 'pointer',
+    textAlign: 'left', fontFamily: 'var(--font-body)',
+    fontSize: '14px', color: cv('text'),
+    borderBottom: last ? 'none' : `1px solid ${cv('border')}`,
+  })
+
+  const groupHeader = (hasBorder: boolean): React.CSSProperties => ({
+    padding: '6px 14px 4px', fontSize: '10px', fontWeight: 700,
+    color: cv('muted'), textTransform: 'uppercase', letterSpacing: '0.08em',
+    background: '#f9fafb',
+    borderTop: hasBorder ? `1px solid ${cv('border')}` : 'none',
+  })
 
   return (
     <div ref={wrapperRef} style={{ flex: '1 1 160px', position: 'relative' }}>
-      <span style={{
-        position: 'absolute', left: '14px', top: '28px',
-        transform: 'translateY(-50%)', fontSize: '16px',
-        pointerEvents: 'none', zIndex: 1,
-      }}>
+      <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', pointerEvents: 'none', zIndex: 1 }}>
         📍
       </span>
       <input
@@ -180,55 +132,51 @@ function VilleAutocomplete({
         placeholder="Ville ou département"
         autoComplete="off"
         style={{
-          width: '100%', height: '56px', paddingLeft: '40px', paddingRight: '16px',
-          border: '2px solid var(--color-border)', borderRadius: '14px',
+          width: '100%', height: '52px', paddingLeft: '40px', paddingRight: '16px',
+          border: `2px solid ${cv('border')}`, borderRadius: '12px',
           background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
-          color: 'var(--color-text)', outline: 'none',
-          transition: 'border-color 0.15s', boxSizing: 'border-box',
+          color: cv('text'), outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box',
         }}
-        onFocus={e => {
-          e.target.style.borderColor = 'var(--color-accent)'
-          if (communes.length > 0 || depts.length > 0) setOpen(true)
-        }}
-        onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+        onFocus={e => { e.target.style.borderColor = cv('accent'); if (communes.length > 0 || depts.length > 0) setOpen(true) }}
+        onBlur={e => (e.target.style.borderColor = cv('border'))}
       />
       {open && (communes.length > 0 || depts.length > 0) && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-          background: 'white', border: '1px solid var(--color-border)',
-          borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          zIndex: 200, overflow: 'hidden', maxHeight: '300px', overflowY: 'auto',
+          background: 'white', border: `1px solid ${cv('border')}`,
+          borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          zIndex: 300, overflow: 'hidden',
         }}>
           {communes.length > 0 && (
             <>
-              <div style={groupHeaderStyle}>Villes</div>
+              <div style={groupHeader(false)}>🏙 Villes</div>
               {communes.map((c, i) => (
-                <button key={`c${i}`} type="button" onMouseDown={() => select('commune', c.nom, c.codeDepartement)}
-                  style={{ ...itemStyle, borderBottom: i < communes.length - 1 ? '1px solid var(--color-border)' : 'none' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
+                <button key={`c${i}`} type="button"
+                  onMouseDown={() => select({ label: c.nom, type: 'commune', codePostal: c.codesPostaux?.[0] })}
+                  style={rowStyle(i === communes.length - 1 && depts.length === 0)}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  <span style={{ fontSize: '13px', flexShrink: 0 }}>📍</span>
+                  <span>📍</span>
                   <span style={{ fontWeight: 600, flex: 1 }}>{c.nom}</span>
-                  <span style={{ color: 'var(--color-muted)', fontSize: '12px' }}>({c.codeDepartement})</span>
+                  <span style={{ color: cv('muted'), fontSize: '12px' }}>({c.codeDepartement})</span>
                 </button>
               ))}
             </>
           )}
           {depts.length > 0 && (
             <>
-              <div style={{ ...groupHeaderStyle, borderTop: communes.length > 0 ? '1px solid var(--color-border)' : 'none' }}>
-                Départements
-              </div>
+              <div style={groupHeader(communes.length > 0)}>🗺 Départements</div>
               {depts.map((d, i) => (
-                <button key={`d${i}`} type="button" onMouseDown={() => select('departement', d.nom, d.code)}
-                  style={{ ...itemStyle, borderBottom: i < depts.length - 1 ? '1px solid var(--color-border)' : 'none' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
+                <button key={`d${i}`} type="button"
+                  onMouseDown={() => select({ label: d.nom, type: 'departement', deptCode: d.code })}
+                  style={rowStyle(i === depts.length - 1)}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  <span style={{ fontSize: '13px', flexShrink: 0 }}>🗺️</span>
+                  <span>🗺️</span>
                   <span style={{ fontWeight: 600, flex: 1 }}>{d.nom}</span>
-                  <span style={{ color: 'var(--color-muted)', fontSize: '12px' }}>({d.code})</span>
+                  <span style={{ color: cv('muted'), fontSize: '12px' }}>({d.code})</span>
                 </button>
               ))}
             </>
@@ -239,303 +187,395 @@ function VilleAutocomplete({
   )
 }
 
-/* ── Inner component (uses useSearchParams) ──────────────── */
+/* ─── CandidateCard ─────────────────────────────────────────── */
+function CandidateCard({ c }: { c: CandidateResult }) {
+  const router = useRouter()
+  const isActif = c.statut === 'actif'
+  const age = c.dateCreation
+    ? Math.floor((Date.now() - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 3600 * 1000))
+    : null
+
+  return (
+    <div
+      onClick={() => router.push(`/artisan/${c.siret}`)}
+      style={{
+        background: cv('surface'), border: `1px solid ${cv('border')}`,
+        borderRadius: '14px', padding: '16px 20px', cursor: 'pointer',
+        transition: 'box-shadow 0.15s, border-color 0.15s, transform 0.12s',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = cv('accent')
+        el.style.boxShadow = '0 4px 20px rgba(27,67,50,0.12)'
+        el.style.transform = 'translateY(-1px)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = cv('border')
+        el.style.boxShadow = 'none'
+        el.style.transform = 'none'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Name + badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-display)', color: cv('text'), lineHeight: 1.2 }}>
+              {c.nom}
+            </span>
+            <span style={{
+              fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', flexShrink: 0,
+              background: isActif ? '#dcfce7' : '#fee2e2',
+              color: isActif ? '#166534' : '#991b1b',
+            }}>
+              {isActif ? '● ACTIF' : '● FERMÉ'}
+            </span>
+            {c.rge && (
+              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: '#d1fae5', color: '#065f46', flexShrink: 0 }}>
+                🌿 RGE
+              </span>
+            )}
+          </div>
+
+          {/* Chips: forme juridique + activité */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '7px' }}>
+            {c.formeJuridique && (
+              <span style={{ fontSize: '11px', color: cv('muted'), background: '#f3f4f6', padding: '2px 8px', borderRadius: '8px' }}>
+                {c.formeJuridique}
+              </span>
+            )}
+            {c.activite && (
+              <span style={{
+                fontSize: '11px', color: cv('muted'), background: '#f3f4f6', padding: '2px 8px', borderRadius: '8px',
+                maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {c.activite}
+              </span>
+            )}
+          </div>
+
+          {/* Location + age */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {(c.ville || c.codePostal) && (
+              <span style={{ fontSize: '12px', color: cv('muted') }}>📍 {c.codePostal} {c.ville}</span>
+            )}
+            {age !== null && (
+              <span style={{ fontSize: '12px', color: cv('muted') }}>🏗 {age} an{age > 1 ? 's' : ''} d&apos;activité</span>
+            )}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: cv('accent'), whiteSpace: 'nowrap', paddingTop: '2px' }}>
+          Voir la fiche <ExternalLink size={12} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── SkeletonCard ──────────────────────────────────────────── */
+function SkeletonCard() {
+  return (
+    <div style={{ background: cv('surface'), border: `1px solid ${cv('border')}`, borderRadius: '14px', padding: '16px 20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="skeleton" style={{ height: '20px', width: '200px', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ height: '18px', width: '52px', borderRadius: '10px' }} />
+        </div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <div className="skeleton" style={{ height: '16px', width: '56px', borderRadius: '8px' }} />
+          <div className="skeleton" style={{ height: '16px', width: '160px', borderRadius: '8px' }} />
+        </div>
+        <div className="skeleton" style={{ height: '14px', width: '110px', borderRadius: '6px' }} />
+      </div>
+    </div>
+  )
+}
+
+/* ─── Chip button ────────────────────────────────────────────── */
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: '4px 12px', borderRadius: '20px', border: '1px solid',
+        fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+        fontFamily: 'var(--font-body)', transition: 'all 0.12s',
+        ...(active
+          ? { background: cv('accent'), color: '#fff', borderColor: cv('accent') }
+          : { background: 'transparent', color: cv('muted'), borderColor: cv('border') }),
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+/* ─── RechercheInner ─────────────────────────────────────────── */
 function RechercheInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Read URL params
   const qParam = searchParams.get('q') || ''
   const villeParam = searchParams.get('ville') || ''
-  const statutParam = (searchParams.get('statut') || 'actif') as 'tous' | 'actif' | 'fermé'
-  const ancienneteParam = searchParams.get('anciennete') || 'tous'
-  const sortParam = (searchParams.get('sort') || 'pertinence') as 'pertinence' | 'anciennete'
-  const typesParam = searchParams.get('types') || ''
-  const rgeParam = searchParams.get('rge') === '1'
-  const rayonParam = searchParams.get('rayon') || '25'
+  const cpParam = searchParams.get('cp') || ''
   const deptParam = searchParams.get('dept') || ''
+  const rgeParam = searchParams.get('rge') === 'true'
+  const statutParam = searchParams.get('statut') || '' // 'A' | 'F' | ''
+  const ancienneteParam = searchParams.get('anciennete') || ''
+  const scoreminParam = searchParams.get('score_min') || ''
+  const rayonParam = searchParams.get('rayon') || '25'
 
-  // Form state (local, not yet submitted)
+  // Form local state (typed values, not yet submitted)
   const [queryInput, setQueryInput] = useState(qParam)
   const [villeInput, setVilleInput] = useState(villeParam)
+  const [villeSelection, setVilleSelection] = useState<VilleSelection | null>(
+    cpParam ? { label: villeParam, type: 'commune', codePostal: cpParam }
+    : deptParam ? { label: villeParam, type: 'departement', deptCode: deptParam }
+    : null
+  )
 
-  // Filter state
-  const [filterStatut, setFilterStatut] = useState<'tous' | 'actif' | 'fermé'>(statutParam)
-  const [filterAnciennete, setFilterAnciennete] = useState(ancienneteParam)
-  const [sortBy, setSortBy] = useState<'pertinence' | 'anciennete'>(sortParam)
-  const [selectedTravaux, setSelectedTravaux] = useState<string[]>(typesParam ? typesParam.split(',').filter(Boolean) : [])
+  // Filter UI state (mirrors URL, drives updateFilters calls)
   const [filterRge, setFilterRge] = useState(rgeParam)
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filterStatut, setFilterStatut] = useState(statutParam)
+  const [filterAnciennete, setFilterAnciennete] = useState(ancienneteParam)
+  const [filterScoreMin, setFilterScoreMin] = useState(scoreminParam)
   const [rayon, setRayon] = useState(rayonParam)
-  const [deptCode, setDeptCode] = useState(deptParam)
-  const [filterMode, setFilterMode] = useState<'ville' | 'dept'>(deptParam ? 'dept' : 'ville')
+  const [sortBy, setSortBy] = useState<SortBy>('pertinence')
 
   // Results state
-  const [candidates, setCandidates] = useState<SearchCandidate[]>([])
+  const [results, setResults] = useState<CandidateResult[]>([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [hasError, setHasError] = useState(false)
   const [hasMore, setHasMore] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [retryKey, setRetryKey] = useState(0)
 
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const hasQuery = !!(qParam || cpParam || deptParam)
 
-  // Sync local inputs when URL params change
+  // Sync form inputs when URL changes (e.g. browser back)
   useEffect(() => { setQueryInput(qParam) }, [qParam])
   useEffect(() => { setVilleInput(villeParam) }, [villeParam])
+  useEffect(() => { setFilterRge(rgeParam) }, [rgeParam])
+  useEffect(() => { setFilterStatut(statutParam) }, [statutParam])
+  useEffect(() => { setFilterAnciennete(ancienneteParam) }, [ancienneteParam])
+  useEffect(() => { setFilterScoreMin(scoreminParam) }, [scoreminParam])
 
-  // Update URL when filters change
-  const buildParams = useCallback((overrides: Record<string, string> = {}) => {
-    const params = new URLSearchParams()
-    const q = overrides.q ?? qParam
-    const ville = overrides.ville ?? villeParam
-    const st = overrides.statut ?? filterStatut
-    const an = overrides.anciennete ?? filterAnciennete
-    const so = overrides.sort ?? sortBy
-    const ty = overrides.types ?? selectedTravaux.join(',')
-    const rg = overrides.rge ?? (filterRge ? '1' : '')
-    const ry = overrides.rayon ?? rayon
-    const dp = overrides.dept ?? deptCode
-    if (q) params.set('q', q)
-    if (ville.trim()) params.set('ville', ville.trim())
-    if (st !== 'actif') params.set('statut', st)
-    if (an !== 'tous') params.set('anciennete', an)
-    if (so !== 'pertinence') params.set('sort', so)
-    if (ty) params.set('types', ty)
-    if (rg) params.set('rge', rg)
-    if (ry !== '25') params.set('rayon', ry)
-    if (dp) params.set('dept', dp)
-    return params.toString()
-  }, [qParam, villeParam, filterStatut, filterAnciennete, sortBy, selectedTravaux, filterRge, rayon, deptCode])
-
-  const updateURL = useCallback((overrides: Record<string, string> = {}) => {
-    router.replace(`/recherche?${buildParams(overrides)}`, { scroll: false })
-  }, [router, buildParams])
-
-  // Fetch when qParam changes
+  // Main search effect — triggered by URL params change
   useEffect(() => {
-    if (!qParam || qParam.length < 2) { setCandidates([]); return }
+    if (!qParam && !cpParam && !deptParam) {
+      setResults([]); setTotal(0); setHasMore(false); setCurrentPage(1); setHasError(false)
+      return
+    }
+
+    const controller = new AbortController()
     setLoading(true)
-    setError(null)
-    setCandidates([])
-    setCurrentPage(1)
+    setHasError(false)
+    setResults([])
     setHasMore(false)
-    setTotalCount(0)
+    setCurrentPage(1)
 
-    fetch(`/api/search-list?q=${encodeURIComponent(qParam)}&page=1`)
-      .then(res => res.json())
+    const params = new URLSearchParams()
+    if (qParam) params.set('q', qParam)
+    if (cpParam) params.set('code_postal', cpParam)
+    if (deptParam) params.set('departement', deptParam)
+    if (rgeParam) params.set('rge', '1')
+    if (statutParam) params.set('statut', statutParam)
+    if (ancienneteParam) params.set('anciennete', ancienneteParam)
+    params.set('page', '1')
+
+    fetch(`/api/recherche?${params}`, { signal: controller.signal })
+      .then(r => r.json())
       .then(data => {
-        if (data.isExact) {
-          router.push(`/artisan/${data.siret}`)
-          return
-        }
-        if (data.error) {
-          setError(data.error)
-        } else {
-          setCandidates(data.candidates || [])
-          setHasMore(data.hasMore ?? false)
-          setTotalCount(data.total ?? 0)
-        }
+        if (data.isExact) { router.push(`/artisan/${data.siret}`); return }
+        if (data.error) { setHasError(true); return }
+        setResults(data.results || [])
+        setTotal(data.total || 0)
+        setHasMore(data.hasMore ?? false)
+        setCurrentPage(1)
       })
-      .catch(() => setError('Erreur réseau. Vérifiez votre connexion.'))
+      .catch((e: unknown) => { if ((e as Error).name !== 'AbortError') setHasError(true) })
       .finally(() => setLoading(false))
-  }, [qParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loadingMore || loading) return
-    setLoadingMore(true)
+    return () => controller.abort()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qParam, cpParam, deptParam, rgeParam, statutParam, ancienneteParam, retryKey])
+
+  // Load more handler
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
     const nextPage = currentPage + 1
+    setLoadingMore(true)
+
+    const params = new URLSearchParams()
+    if (qParam) params.set('q', qParam)
+    if (cpParam) params.set('code_postal', cpParam)
+    if (deptParam) params.set('departement', deptParam)
+    if (rgeParam) params.set('rge', '1')
+    if (statutParam) params.set('statut', statutParam)
+    if (ancienneteParam) params.set('anciennete', ancienneteParam)
+    params.set('page', String(nextPage))
+
     try {
-      const res = await fetch(`/api/search-list?q=${encodeURIComponent(qParam)}&page=${nextPage}`)
+      const res = await fetch(`/api/recherche?${params}`)
       const data = await res.json()
-      if (!data.error && data.candidates) {
-        setCandidates(prev => [...prev, ...data.candidates])
+      if (!data.error) {
+        setResults(prev => [...prev, ...(data.results || [])])
         setCurrentPage(nextPage)
-        setHasMore(data.hasMore)
+        setHasMore(data.hasMore ?? false)
       }
     } catch { /* silent */ }
     finally { setLoadingMore(false) }
-  }, [hasMore, loadingMore, loading, currentPage, qParam])
+  }, [loadingMore, hasMore, currentPage, qParam, cpParam, deptParam, rgeParam, statutParam, ancienneteParam])
 
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) loadMore()
-    }, { threshold: 0.1 })
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [loadMore])
+  // Build URL helper
+  const buildURL = (overrides: Record<string, string> = {}) => {
+    const p = new URLSearchParams()
+    const q = overrides.q ?? qParam
+    const ville = overrides.ville ?? villeParam
+    const cp = overrides.cp ?? cpParam
+    const dept = overrides.dept ?? deptParam
+    const rge = overrides.rge ?? (filterRge ? 'true' : '')
+    const statut = overrides.statut ?? filterStatut
+    const anciennete = overrides.anciennete ?? filterAnciennete
+    const score = overrides.score_min ?? filterScoreMin
+    const ry = overrides.rayon ?? rayon
+    if (q) p.set('q', q)
+    if (ville) p.set('ville', ville)
+    if (cp) p.set('cp', cp)
+    if (dept) p.set('dept', dept)
+    if (rge) p.set('rge', rge)
+    if (statut) p.set('statut', statut)
+    if (anciennete) p.set('anciennete', anciennete)
+    if (score) p.set('score_min', score)
+    if (ry !== '25') p.set('rayon', ry)
+    return p.toString()
+  }
 
-  const filteredCandidates = useMemo(() => {
-    let list = candidates
+  const updateFilters = (overrides: Record<string, string>) => {
+    router.replace(`/recherche?${buildURL(overrides)}`, { scroll: false })
+  }
 
-    if (filterStatut !== 'tous') list = list.filter(c => c.statut === filterStatut)
+  // Form submit
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!queryInput.trim() && !villeInput.trim()) return
+    const q = queryInput.trim()
+    const ville = villeInput.trim()
+    const isSameVille = ville === villeSelection?.label
+    const cp = isSameVille && villeSelection?.type === 'commune' ? (villeSelection.codePostal || '') : ''
+    const dept = isSameVille && villeSelection?.type === 'departement' ? (villeSelection.deptCode || '') : ''
+    router.push(`/recherche?${buildURL({ q, ville, cp, dept })}`)
+  }
 
-    // Ville/département client-side filter
-    if (filterMode === 'dept' && deptCode) {
-      list = list.filter(c => c.codePostal?.startsWith(deptCode))
-    } else {
-      const v = villeParam.trim().toLowerCase()
-      if (v) {
-        list = list.filter(c => {
-          const villeMatch = c.ville?.toLowerCase().includes(v)
-          const cpMatch = c.codePostal?.startsWith(v)
-          return villeMatch || cpMatch
-        })
-      }
-    }
+  // Chip click → toggle keyword in query and auto-search
+  const handleChipClick = (kw: string) => {
+    const isActive = queryInput.toLowerCase().includes(kw.toLowerCase())
+    const newQ = isActive
+      ? queryInput.replace(new RegExp(`\\b${kw}\\b`, 'gi'), '').replace(/\s+/g, ' ').trim()
+      : queryInput ? `${queryInput} ${kw}` : kw
+    setQueryInput(newQ)
+    const ville = villeInput.trim()
+    const isSameVille = ville === villeSelection?.label
+    const cp = isSameVille && villeSelection?.type === 'commune' ? (villeSelection.codePostal || '') : ''
+    const dept = isSameVille && villeSelection?.type === 'departement' ? (villeSelection.deptCode || '') : ''
+    router.push(`/recherche?${buildURL({ q: newQ, ville, cp, dept })}`)
+  }
 
-    // Type de travaux filter (match on activite)
-    if (selectedTravaux.length > 0) {
-      list = list.filter(c => {
-        if (!c.activite) return false
-        const act = c.activite.toLowerCase()
-        return selectedTravaux.some(typeId => {
-          const t = TRAVAUX_TYPES.find(t => t.id === typeId)
-          return t ? t.keywords.some(kw => act.includes(kw)) : false
-        })
-      })
-    }
+  const handleVilleChange = (v: string) => {
+    setVilleInput(v)
+    if (!v) setVilleSelection(null)
+  }
 
-    // Ancienneté filter
-    if (filterAnciennete !== 'tous') {
-      const now = Date.now()
-      list = list.filter(c => {
-        if (!c.dateCreation) return false
-        const years = (now - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-        return years >= Number(filterAnciennete)
-      })
-    }
+  const handleVilleSelect = (sel: VilleSelection) => {
+    setVilleSelection(sel)
+  }
 
-    if (sortBy === 'anciennete') {
-      list = [...list].sort((a, b) => {
+  const resetFilters = () => {
+    setFilterRge(false); setFilterStatut(''); setFilterAnciennete(''); setFilterScoreMin('')
+    updateFilters({ rge: '', statut: '', anciennete: '', score_min: '' })
+  }
+
+  const isFiltered = filterRge || !!filterStatut || !!filterAnciennete || !!filterScoreMin
+
+  // Sort results client-side
+  const sortedResults = sortBy === 'anciennete'
+    ? [...results].sort((a, b) => {
         if (!a.dateCreation) return 1
         if (!b.dateCreation) return -1
         return new Date(a.dateCreation).getTime() - new Date(b.dateCreation).getTime()
       })
-    }
-    return list
-  }, [candidates, filterStatut, villeParam, selectedTravaux, filterAnciennete, sortBy, filterMode, deptCode])
-
-  const hasActiveFilters = filterStatut !== 'actif' || filterAnciennete !== 'tous' || selectedTravaux.length > 0 || filterRge
-
-  const handleVilleSelect = useCallback((type: 'commune' | 'departement', label: string, code: string) => {
-    if (type === 'departement') {
-      setDeptCode(code)
-      setFilterMode('dept')
-    } else {
-      setDeptCode('')
-      setFilterMode('ville')
-    }
-  }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!queryInput.trim()) return
-    const params = buildParams({ q: queryInput.trim(), ville: villeInput.trim() })
-    router.push(`/recherche?${params}`)
-  }
-
-  const handleSelectCandidate = (siret: string) => router.push(`/artisan/${siret}`)
-
-  const toggleTravaux = (id: string) => {
-    const next = selectedTravaux.includes(id)
-      ? selectedTravaux.filter(t => t !== id)
-      : [...selectedTravaux, id]
-    setSelectedTravaux(next)
-    updateURL({ types: next.join(',') })
-  }
-
-  const resetFilters = () => {
-    setFilterStatut('actif')
-    setFilterAnciennete('tous')
-    setSelectedTravaux([])
-    setFilterRge(false)
-    setRayon('25')
-    setDeptCode('')
-    setFilterMode('ville')
-    updateURL({ statut: 'actif', anciennete: 'tous', types: '', rge: '', rayon: '', dept: '' })
-  }
-
-  const hasResults = !loading && candidates.length > 0
-  const hasQuery = !!qParam
+    : results
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: cv('bg') }}>
       <SiteHeader />
 
-      {/* ── Page header ── */}
+      {/* ── Sticky search section ── */}
       <div style={{
-        background: 'var(--color-surface)',
-        borderBottom: '1px solid var(--color-border)',
-        padding: '32px 24px 0',
+        position: 'sticky', top: 0, zIndex: 100,
+        background: cv('surface'),
+        borderBottom: `1px solid ${cv('border')}`,
+        padding: '16px 24px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       }}>
-        <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '880px', margin: '0 auto' }}>
+
+          {/* Page title (only on empty state) */}
           {!hasQuery && (
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <h1 style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 'clamp(24px, 4vw, 36px)',
-                color: 'var(--color-text)',
-                margin: '0 0 8px',
-                lineHeight: 1.2,
+                fontFamily: 'var(--font-display)', fontWeight: 800,
+                fontSize: 'clamp(22px, 4vw, 32px)', color: cv('text'),
+                margin: '0 0 6px', lineHeight: 1.2,
               }}>
                 Trouver et vérifier un artisan
               </h1>
-              <p style={{ margin: 0, fontSize: '16px', color: 'var(--color-muted)', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '15px', color: cv('muted') }}>
                 Recherchez parmi les entreprises du bâtiment vérifiées sur les données officielles
               </p>
             </div>
           )}
 
-          {/* ── Search bar ── */}
-          <form onSubmit={handleSearch} style={{ marginBottom: '20px' }}>
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              flexWrap: 'wrap',
-            }}>
-              {/* Query field */}
+          {/* Line 1 — Main search bar */}
+          <form onSubmit={handleSubmit} style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <div style={{ flex: '2 1 240px', position: 'relative' }}>
-                <Search
-                  size={18}
-                  style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-muted)', pointerEvents: 'none' }}
-                />
+                <Search size={17} style={{
+                  position: 'absolute', left: '14px', top: '50%',
+                  transform: 'translateY(-50%)', color: cv('muted'), pointerEvents: 'none',
+                }} />
                 <input
                   type="text"
                   value={queryInput}
                   onChange={e => setQueryInput(e.target.value)}
-                  placeholder="Nom d'artisan, SIRET, activité..."
+                  placeholder="Nom, SIRET, activité..."
                   style={{
-                    width: '100%', height: '56px', paddingLeft: '44px', paddingRight: '16px',
-                    border: '2px solid var(--color-border)', borderRadius: '14px',
+                    width: '100%', height: '52px', paddingLeft: '42px', paddingRight: '16px',
+                    border: `2px solid ${cv('border')}`, borderRadius: '12px',
                     background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
-                    color: 'var(--color-text)', outline: 'none',
-                    transition: 'border-color 0.15s',
-                    boxSizing: 'border-box',
+                    color: cv('text'), outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box',
                   }}
-                  onFocus={e => (e.target.style.borderColor = 'var(--color-accent)')}
-                  onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+                  onFocus={e => (e.target.style.borderColor = cv('accent'))}
+                  onBlur={e => (e.target.style.borderColor = cv('border'))}
                 />
               </div>
-              {/* Ville field with autocomplete */}
-              <VilleAutocomplete value={villeInput} onChange={setVilleInput} onSelect={handleVilleSelect} />
-              {/* Submit button */}
+              <VilleAutocomplete value={villeInput} onChange={handleVilleChange} onSelect={handleVilleSelect} />
               <button
                 type="submit"
                 style={{
-                  height: '56px', padding: '0 24px',
-                  background: 'var(--color-accent)', color: 'white',
-                  border: 'none', borderRadius: '14px',
+                  height: '52px', padding: '0 22px',
+                  background: cv('accent'), color: 'white', border: 'none', borderRadius: '12px',
                   fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  whiteSpace: 'nowrap',
+                  fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0,
                   transition: 'opacity 0.15s',
-                  flexShrink: 0,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
                 Rechercher →
@@ -543,268 +583,290 @@ function RechercheInner() {
             </div>
           </form>
 
-          {/* ── Rayon de recherche ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: 'var(--color-muted)', fontWeight: 600 }}>Dans un rayon de :</span>
-            {[
-              { v: '10', label: '10 km' },
-              { v: '25', label: '25 km' },
-              { v: '50', label: '50 km' },
-              { v: '100', label: '100 km' },
-              { v: '0', label: 'France entière' },
-            ].map(opt => (
-              <button
-                key={opt.v}
-                type="button"
-                onClick={() => { setRayon(opt.v); updateURL({ rayon: opt.v }) }}
-                style={{
-                  padding: '3px 10px', borderRadius: '20px', border: '1px solid',
-                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  ...(rayon === opt.v
-                    ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' }
-                    : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }),
-                }}
+          {/* Line 2 — Travaux chips */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            {TRAVAUX.map(t => (
+              <Chip
+                key={t.id}
+                active={queryInput.toLowerCase().includes(t.kw.toLowerCase())}
+                onClick={() => handleChipClick(t.kw)}
               >
-                {opt.label}
-              </button>
+                {t.label}
+              </Chip>
             ))}
           </div>
 
-          {/* ── Filters toggle (mobile) ── */}
-          <button
-            onClick={() => setFiltersOpen(o => !o)}
-            className="filters-toggle-mobile"
-            style={{
-              display: 'none',
-              alignItems: 'center', gap: '6px',
-              background: 'none', border: '1px solid var(--color-border)',
-              borderRadius: '10px', padding: '8px 14px',
-              fontSize: '13px', fontWeight: 600,
-              color: 'var(--color-text)', cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              marginBottom: '12px',
-            }}
-          >
-            <Filter size={14} />
-            Filtres {hasActiveFilters && <span style={{ background: 'var(--color-accent)', color: 'white', borderRadius: '100px', padding: '0 6px', fontSize: '11px', fontWeight: 700 }}>{selectedTravaux.length + (filterStatut !== 'actif' ? 1 : 0) + (filterAnciennete !== 'tous' ? 1 : 0) + (filterRge ? 1 : 0)}</span>}
-            <ChevronDown size={14} style={{ transform: filtersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-          </button>
+          {/* Line 3 — Secondary filters */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* RGE */}
+            <Chip
+              active={filterRge}
+              onClick={() => { const n = !filterRge; setFilterRge(n); updateFilters({ rge: n ? 'true' : '' }) }}
+            >
+              🌿 RGE uniquement
+            </Chip>
 
-          {/* ── Filters panel ── */}
-          <div className={`filters-panel${filtersOpen ? ' open' : ''}`} style={{ paddingBottom: '16px' }}>
-              {/* Type de travaux chips */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                {TRAVAUX_TYPES.map(t => {
-                  const active = selectedTravaux.includes(t.id)
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => toggleTravaux(t.id)}
-                      style={{
-                        padding: '5px 12px', borderRadius: '20px', border: '1px solid',
-                        fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                        fontFamily: 'var(--font-body)',
-                        transition: 'all 0.12s',
-                        ...(active
-                          ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' }
-                          : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }),
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  )
-                })}
-              </div>
+            {/* Statut */}
+            <Chip
+              active={filterStatut === 'A'}
+              onClick={() => { const n = filterStatut === 'A' ? '' : 'A'; setFilterStatut(n); updateFilters({ statut: n }) }}
+            >
+              ● Actifs seulement
+            </Chip>
 
-              {/* Row 2: RGE, Statut, Ancienneté, Sort, Reset */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {/* RGE toggle */}
+            {/* Ancienneté */}
+            <select
+              value={filterAnciennete}
+              onChange={e => { setFilterAnciennete(e.target.value); updateFilters({ anciennete: e.target.value }) }}
+              style={{
+                padding: '4px 10px', borderRadius: '20px',
+                border: `1px solid ${filterAnciennete ? cv('accent') : cv('border')}`,
+                background: filterAnciennete ? '#ecfdf5' : 'transparent',
+                color: filterAnciennete ? cv('accent') : cv('muted'),
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', outline: 'none',
+              }}
+            >
+              <option value="">Ancienneté</option>
+              <option value="2">+ 2 ans</option>
+              <option value="5">+ 5 ans</option>
+              <option value="10">+ 10 ans</option>
+            </select>
+
+            {/* Score min */}
+            <select
+              value={filterScoreMin}
+              onChange={e => { setFilterScoreMin(e.target.value); updateFilters({ score_min: e.target.value }) }}
+              style={{
+                padding: '4px 10px', borderRadius: '20px',
+                border: `1px solid ${filterScoreMin ? cv('accent') : cv('border')}`,
+                background: filterScoreMin ? '#ecfdf5' : 'transparent',
+                color: filterScoreMin ? cv('accent') : cv('muted'),
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', outline: 'none',
+              }}
+            >
+              <option value="">Score min</option>
+              <option value="50">Score ≥ 50</option>
+              <option value="70">Score ≥ 70</option>
+              <option value="85">Score ≥ 85</option>
+            </select>
+
+            {/* Rayon — only when ville selected */}
+            {villeSelection && (
+              <select
+                value={rayon}
+                onChange={e => { setRayon(e.target.value); updateFilters({ rayon: e.target.value }) }}
+                style={{
+                  padding: '4px 10px', borderRadius: '20px',
+                  border: `1px solid ${cv('border')}`,
+                  background: 'transparent', color: cv('muted'),
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', outline: 'none',
+                }}
+              >
+                {RAYON_OPTIONS.map(r => <option key={r.v} value={r.v}>{r.label}</option>)}
+              </select>
+            )}
+
+            {/* Separator + Reset */}
+            {isFiltered && (
+              <>
+                <span style={{ color: cv('border'), fontSize: '16px', lineHeight: 1 }}>|</span>
                 <button
-                  onClick={() => { setFilterRge(r => !r); updateURL({ rge: filterRge ? '' : '1' }) }}
+                  type="button"
+                  onClick={resetFilters}
                   style={{
-                    padding: '5px 12px', borderRadius: '20px', border: '1px solid',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    fontFamily: 'var(--font-body)',
-                    ...(filterRge
-                      ? { background: '#d1fae5', color: '#065f46', borderColor: '#6ee7b7' }
-                      : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }),
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 10px', borderRadius: '20px',
+                    border: `1px solid ${cv('border')}`, background: 'transparent',
+                    color: cv('muted'), fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-body)',
                   }}
                 >
-                  🌿 RGE uniquement
+                  <X size={12} /> Réinitialiser
                 </button>
-
-                {/* Statut */}
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  {(['actif', 'tous', 'fermé'] as const).map(s => (
-                    <button key={s} onClick={() => { setFilterStatut(s); updateURL({ statut: s }) }}
-                      style={{
-                        padding: '5px 10px', borderRadius: '20px', border: '1px solid',
-                        fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                        fontFamily: 'var(--font-body)',
-                        ...(filterStatut === s
-                          ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' }
-                          : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }),
-                      }}
-                    >
-                      {s === 'actif' ? '🟢 Actifs' : s === 'tous' ? 'Tous' : '🔴 Fermés'}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Ancienneté */}
-                <select
-                  value={filterAnciennete}
-                  onChange={e => { setFilterAnciennete(e.target.value); updateURL({ anciennete: e.target.value }) }}
-                  style={{
-                    padding: '5px 10px', borderRadius: '20px',
-                    border: `1px solid ${filterAnciennete !== 'tous' ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                    background: filterAnciennete !== 'tous' ? 'var(--color-accent-light)' : 'transparent',
-                    color: filterAnciennete !== 'tous' ? 'var(--color-accent)' : 'var(--color-muted)',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    fontFamily: 'var(--font-body)', outline: 'none',
-                  }}
-                >
-                  <option value="tous">Ancienneté</option>
-                  <option value="2">+ 2 ans</option>
-                  <option value="5">+ 5 ans</option>
-                  <option value="10">+ 10 ans</option>
-                </select>
-
-                {/* Sort */}
-                <select
-                  value={sortBy}
-                  onChange={e => { setSortBy(e.target.value as 'pertinence' | 'anciennete'); updateURL({ sort: e.target.value }) }}
-                  style={{
-                    padding: '5px 10px', borderRadius: '20px',
-                    border: '1px solid var(--color-border)',
-                    background: 'transparent', color: 'var(--color-muted)',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    fontFamily: 'var(--font-body)', outline: 'none',
-                  }}
-                >
-                  <option value="pertinence">Pertinence</option>
-                  <option value="anciennete">Ancienneté</option>
-                </select>
-
-                {/* Reset */}
-                {hasActiveFilters && (
-                  <button
-                    onClick={resetFilters}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      padding: '5px 10px', borderRadius: '20px',
-                      border: '1px solid var(--color-border)',
-                      background: 'transparent', color: 'var(--color-muted)',
-                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'var(--font-body)',
-                    }}
-                  >
-                    <X size={12} /> Réinitialiser
-                  </button>
-                )}
-
-                {/* Share */}
-                {hasQuery && (
-                  <ShareButton
-                    url={typeof window !== 'undefined' ? window.location.href : ''}
-                    nom={qParam}
-                    label="Partager"
-                    compact
-                  />
-                )}
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
+      </div>
 
-      {/* ── Results ── */}
-      <div style={{ maxWidth: '860px', margin: '0 auto', padding: '20px 24px 80px' }}>
+      {/* ── Results section ── */}
+      <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 80px' }}>
 
-        {/* Error */}
-        {error && (
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '16px', background: 'var(--color-danger-bg)', borderRadius: '14px', border: '1px solid var(--color-danger-border)', marginBottom: '16px' }}>
-            <AlertTriangle size={18} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 2 }} />
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-danger)' }}>{error}</p>
+        {/* Initial state */}
+        {!hasQuery && !loading && (
+          <div style={{ textAlign: 'center', padding: '56px 16px' }}>
+            <div style={{ fontSize: '52px', marginBottom: '16px' }}>🔍</div>
+            <p style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: cv('text'), fontFamily: 'var(--font-display)' }}>
+              Qui cherchez-vous ?
+            </p>
+            <p style={{ margin: '0 0 28px', fontSize: '14px', color: cv('muted') }}>
+              Entrez le nom d&apos;un artisan, son SIRET, ou sélectionnez un type de travaux ci-dessus.
+            </p>
+            <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: 600, color: cv('muted'), textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Recherches populaires
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {POPULAR.map(s => {
+                const parts = s.split(' ')
+                const kw = parts[0]
+                const ville = parts.slice(1).join(' ')
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setQueryInput(kw); setVilleInput(ville); setVilleSelection(null)
+                      router.push(`/recherche?${buildURL({ q: kw, ville, cp: '', dept: '' })}`)
+                    }}
+                    style={{
+                      padding: '7px 16px', borderRadius: '20px',
+                      border: `1px solid ${cv('border')}`, background: 'white',
+                      fontSize: '13px', color: cv('text'), cursor: 'pointer',
+                      fontFamily: 'var(--font-body)', fontWeight: 500, transition: 'border-color 0.12s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = cv('accent'))}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = cv('border'))}
+                  >
+                    {s}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '60px 0', textAlign: 'center' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--color-accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(27,67,50,0.15)' }}>
-              <Search size={22} color="var(--color-accent)" style={{ animation: 'spin 1.5s linear infinite' }} />
-            </div>
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' }}>Recherche en cours…</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
+        )}
+
+        {/* Error state */}
+        {hasError && !loading && (
+          <div style={{ textAlign: 'center', padding: '56px 16px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+            <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: cv('text') }}>
+              Impossible de charger les résultats
+            </p>
+            <p style={{ margin: '0 0 24px', fontSize: '14px', color: cv('muted') }}>
+              Vérifiez votre connexion et réessayez.
+            </p>
+            <button
+              type="button"
+              onClick={() => setRetryKey(k => k + 1)}
+              style={{
+                padding: '10px 24px', borderRadius: '12px',
+                background: cv('accent'), color: 'white', border: 'none',
+                fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
+              }}
+            >
+              Réessayer
+            </button>
           </div>
         )}
 
         {/* Results list */}
-        {!loading && candidates.length > 0 && (
+        {!loading && !hasError && sortedResults.length > 0 && (
           <>
-            <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--color-muted)' }}>
-              <strong style={{ color: 'var(--color-text)' }}>{totalCount.toLocaleString('fr-FR')}</strong>
-              {' '}entreprise{totalCount > 1 ? 's' : ''} trouvée{totalCount > 1 ? 's' : ''} pour{' '}
-              <strong style={{ color: 'var(--color-text)' }}>« {qParam} »</strong>
-              {filteredCandidates.length < candidates.length && (
-                <span style={{ color: 'var(--color-accent)' }}> — {filteredCandidates.length} après filtres</span>
-              )}
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: cv('muted') }}>
+                <strong style={{ color: cv('text') }}>{total.toLocaleString('fr-FR')}</strong>
+                {' '}entreprise{total > 1 ? 's' : ''} trouvée{total > 1 ? 's' : ''}
+                {qParam && <> pour <strong style={{ color: cv('text') }}>« {qParam} »</strong></>}
+              </p>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortBy)}
+                style={{
+                  padding: '4px 10px', borderRadius: '10px',
+                  border: `1px solid ${cv('border')}`, background: 'white',
+                  color: cv('muted'), fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none',
+                }}
+              >
+                <option value="pertinence">Pertinence</option>
+                <option value="anciennete">Ancienneté</option>
+              </select>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filteredCandidates.map(c => (
-                <CandidateCard key={c.siret} c={c} onClick={() => handleSelectCandidate(c.siret)} />
-              ))}
+              {sortedResults.map(c => <CandidateCard key={c.siret} c={c} />)}
             </div>
 
-            <div ref={sentinelRef} style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {loadingMore && (
-                <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2.5px solid var(--color-border)', borderTopColor: 'var(--color-accent)' }} className="spin" />
-              )}
-            </div>
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '28px' }}>
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  style={{
+                    padding: '12px 36px', borderRadius: '12px',
+                    border: `1px solid ${cv('border')}`,
+                    background: loadingMore ? '#f9fafb' : 'white',
+                    color: loadingMore ? cv('muted') : cv('text'),
+                    fontSize: '14px', fontWeight: 600,
+                    cursor: loadingMore ? 'default' : 'pointer',
+                    fontFamily: 'var(--font-body)', transition: 'border-color 0.15s',
+                  }}
+                  onMouseEnter={e => { if (!loadingMore) e.currentTarget.style.borderColor = cv('accent') }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = cv('border') }}
+                >
+                  {loadingMore ? 'Chargement…' : 'Charger plus de résultats'}
+                </button>
+              </div>
+            )}
           </>
         )}
 
-        {/* Empty state — no query */}
-        {!loading && !error && !qParam && (
-          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <p style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
-              Qui cherchez-vous ?
+        {/* Empty state */}
+        {!loading && !hasError && hasQuery && results.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '56px 16px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔎</div>
+            <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: cv('text') }}>
+              Aucun artisan trouvé pour cette recherche
             </p>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
-              Entrez le nom d&apos;un artisan, son SIRET ou son activité pour démarrer.
+            <p style={{ margin: '0 0 24px', fontSize: '14px', color: cv('muted') }}>
+              Essayez avec le SIRET directement ou élargissez votre zone de recherche.
             </p>
-          </div>
-        )}
-
-        {/* Empty state — query but no results */}
-        {!loading && !error && qParam && candidates.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>
-              Aucun résultat pour « {qParam} »
-            </p>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
-              Essayez avec un SIRET ou un nom différent.
-            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setVilleInput(''); setVilleSelection(null)
+                router.push(`/recherche?${buildURL({ ville: '', cp: '', dept: '' })}`)
+              }}
+              style={{
+                padding: '10px 24px', borderRadius: '12px',
+                border: `1px solid ${cv('accent')}`, background: 'white',
+                color: cv('accent'), fontSize: '14px', fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'var(--font-body)',
+              }}
+            >
+              Élargir la recherche
+            </button>
           </div>
         )}
       </div>
 
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
-        @media (max-width: 640px) {
-          .filters-toggle-mobile { display: flex !important; }
-          .filters-panel { display: none; }
-          .filters-panel.open { display: block; }
+        .skeleton {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
       `}</style>
     </main>
   )
 }
 
-/* ── Wrapped with Suspense ── */
+/* ─── Page wrapper with Suspense ─────────────────────────────── */
 export default function RecherchePage() {
   return (
     <Suspense fallback={
