@@ -89,6 +89,117 @@ function CandidateCard({ c, onClick }: { c: SearchCandidate; onClick: () => void
   )
 }
 
+/* ── Ville autocomplete ──────────────────────────────────── */
+interface GeoCommune { nom: string; codeDepartement: string }
+
+function VilleAutocomplete({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [suggestions, setSuggestions] = useState<GeoCommune[]>([])
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (value.length < 2) { setSuggestions([]); setOpen(false); return }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(value)}&limit=8&fields=nom,codeDepartement`
+        )
+        const data = await res.json()
+        const list: GeoCommune[] = Array.isArray(data) ? data : []
+        setSuggestions(list)
+        setOpen(list.length > 0)
+      } catch {
+        setSuggestions([])
+      }
+    }, 250)
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [value])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const select = (nom: string) => {
+    onChange(nom)
+    setOpen(false)
+    setSuggestions([])
+  }
+
+  return (
+    <div ref={wrapperRef} style={{ flex: '1 1 160px', position: 'relative' }}>
+      <span style={{
+        position: 'absolute', left: '14px', top: '50%',
+        transform: 'translateY(-50%)', fontSize: '16px',
+        pointerEvents: 'none', zIndex: 1,
+      }}>
+        📍
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Ville ou département"
+        autoComplete="off"
+        style={{
+          width: '100%', height: '56px', paddingLeft: '40px', paddingRight: '16px',
+          border: '2px solid var(--color-border)', borderRadius: '14px',
+          background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
+          color: 'var(--color-text)', outline: 'none',
+          transition: 'border-color 0.15s',
+          boxSizing: 'border-box',
+        }}
+        onFocus={e => {
+          e.target.style.borderColor = 'var(--color-accent)'
+          if (suggestions.length > 0) setOpen(true)
+        }}
+        onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+      />
+      {open && suggestions.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+          background: 'white', border: '1px solid var(--color-border)',
+          borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          zIndex: 200, overflow: 'hidden',
+          maxHeight: '280px', overflowY: 'auto',
+        }}>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onMouseDown={() => select(s.nom)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                width: '100%', padding: '10px 16px',
+                background: 'none', border: 'none',
+                borderBottom: i < suggestions.length - 1 ? '1px solid var(--color-border)' : 'none',
+                cursor: 'pointer', textAlign: 'left',
+                fontFamily: 'var(--font-body)', fontSize: '14px',
+                color: 'var(--color-text)', transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              <span style={{ fontSize: '13px', flexShrink: 0 }}>📍</span>
+              <span style={{ fontWeight: 600, flex: 1 }}>{s.nom}</span>
+              <span style={{ color: 'var(--color-muted)', fontSize: '12px', flexShrink: 0 }}>
+                ({s.codeDepartement})
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Inner component (uses useSearchParams) ──────────────── */
 function RechercheInner() {
   const router = useRouter()
@@ -344,28 +455,8 @@ function RechercheInner() {
                   onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
                 />
               </div>
-              {/* Ville field */}
-              <div style={{ flex: '1 1 160px', position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', pointerEvents: 'none' }}>
-                  📍
-                </span>
-                <input
-                  type="text"
-                  value={villeInput}
-                  onChange={e => setVilleInput(e.target.value)}
-                  placeholder="Ville ou département"
-                  style={{
-                    width: '100%', height: '56px', paddingLeft: '40px', paddingRight: '16px',
-                    border: '2px solid var(--color-border)', borderRadius: '14px',
-                    background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
-                    color: 'var(--color-text)', outline: 'none',
-                    transition: 'border-color 0.15s',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = 'var(--color-accent)')}
-                  onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
-                />
-              </div>
+              {/* Ville field with autocomplete */}
+              <VilleAutocomplete value={villeInput} onChange={setVilleInput} />
               {/* Submit button */}
               <button
                 type="submit"
