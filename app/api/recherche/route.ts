@@ -13,10 +13,10 @@ function fj(code: string): string {
   return FORMES_JURIDIQUES[code] || code
 }
 
-async function checkRge(siren: string): Promise<boolean> {
+async function checkRge(siret: string): Promise<boolean> {
   try {
     const res = await fetch(
-      `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?q=${siren}&size=1`,
+      `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?q=${siret}&size=1`,
       { next: { revalidate: 86400 } }
     )
     if (!res.ok) return false
@@ -84,48 +84,43 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    let candidates: SearchCandidate[] = rawResults.map((e: any) => {
+    // Build base candidates from INSEE data
+    const baseData = rawResults.map((e: any) => {
       const siege = e.siege || {}
-      const statut: 'actif' | 'fermé' = siege.etat_administratif === 'A' ? 'actif' : 'fermé'
-      const dateCreation: string | undefined = siege.date_creation || e.date_creation || undefined
-      const rgeFlag: boolean = Boolean(e.complements?.est_rge)
-      const dirigeantsRaw: unknown[] = Array.isArray(e.dirigeants) ? e.dirigeants : []
-      const { total: score } = calculateScore({
-        statut,
-        rge: rgeFlag,
-        dateCreation,
-        dirigeants: dirigeantsRaw,
-        // bodacc not available in list search — defaults to no-procedure (15 pts)
-      })
       return {
         siret: siege.siret || e.siret || '',
         siren: e.siren || '',
         nom: e.nom_complet || e.nom_raison_sociale || '',
-        statut,
+        statut: (siege.etat_administratif === 'A' ? 'actif' : 'fermé') as 'actif' | 'fermé',
         formeJuridique: fj(e.nature_juridique || ''),
         formeJuridiqueCode: e.nature_juridique || '',
         ville: siege.libelle_commune || '',
         codePostal: siege.code_postal || '',
         codeNaf: siege.activite_principale || e.activite_principale || '',
         activite: siege.libelle_activite_principale || e.libelle_activite_principale || '',
-        dateCreation,
-        rge: rgeFlag,
-        score,
+        dateCreation: (siege.date_creation || e.date_creation || undefined) as string | undefined,
+        dirigeantsRaw: Array.isArray(e.dirigeants) ? e.dirigeants as unknown[] : [],
       }
     })
 
-    // RGE filter via ADEME (authoritative check — est_rge may miss some)
-    if (rge && candidates.length > 0) {
-      const checks = await Promise.allSettled(candidates.map((c) => checkRge(c.siren)))
-      candidates = candidates
-        .map((c, i) => {
-          const isRge = checks[i].status === 'fulfilled' && (checks[i] as PromiseFulfilledResult<boolean>).value
-          if (!isRge) return null
-          // If ADEME confirms RGE but est_rge was false, bump score by RGE bonus (20 pts)
-          const scoreAdj = !c.rge ? Math.min(100, (c.score ?? 0) + 20) : (c.score ?? 0)
-          return { ...c, rge: true, score: scoreAdj }
-        })
-        .filter(Boolean) as SearchCandidate[]
+    // ADEME RGE check for all results (parallel, cached 24h — authoritative source)
+    const rgeChecks = await Promise.allSettled(baseData.map((c) => checkRge(c.siret)))
+
+    let candidates: SearchCandidate[] = baseData.map((c, i) => {
+      const isRge = rgeChecks[i].status === 'fulfilled' && (rgeChecks[i] as PromiseFulfilledResult<boolean>).value
+      const { total: score } = calculateScore({
+        statut: c.statut,
+        rge: isRge,
+        dateCreation: c.dateCreation,
+        dirigeants: c.dirigeantsRaw,
+        // bodacc not available in list search — defaults to no-procedure (15 pts)
+      })
+      return { siret: c.siret, siren: c.siren, nom: c.nom, statut: c.statut, formeJuridique: c.formeJuridique, formeJuridiqueCode: c.formeJuridiqueCode, ville: c.ville, codePostal: c.codePostal, codeNaf: c.codeNaf, activite: c.activite, dateCreation: c.dateCreation, rge: isRge, score }
+    })
+
+    // RGE filter: keep only certified companies
+    if (rge) {
+      candidates = candidates.filter((c) => c.rge)
     }
 
     const hasMore = page * perPage < total
