@@ -145,7 +145,7 @@ function VilleAutocomplete({
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
           background: 'white', border: `1px solid ${cv('border')}`,
           borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          zIndex: 300, overflow: 'hidden',
+          zIndex: 20, overflow: 'hidden',
         }}>
           {communes.length > 0 && (
             <>
@@ -518,7 +518,7 @@ function RechercheInner() {
 
       {/* ── Sticky search section ── */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 100,
+        position: 'sticky', top: 0, zIndex: 10,
         background: cv('surface'),
         borderBottom: `1px solid ${cv('border')}`,
         padding: '16px 24px',

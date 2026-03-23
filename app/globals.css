@@ -316,3 +316,7 @@ main {
 .header-scrolled {
   box-shadow: 0 1px 12px rgba(0,0,0,0.08);
 }
+
+/* ── Z-index hierarchy globale ── */
+/* Barres de recherche sticky dans les pages (jamais au-dessus du header) */
+.sticky-search { z-index: 10 !important; }
