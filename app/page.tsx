@@ -97,7 +97,7 @@ function HeroSearch() {
             type="text"
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="Nom de l&apos;artisan ou SIRET..."
+            placeholder="Nom de l'artisan, SIRET, ville..."
             style={{
               flex: 1,
               border: 'none',

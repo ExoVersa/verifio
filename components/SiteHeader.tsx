@@ -419,7 +419,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
         <header
           style={{
             padding: '0 24px',
-            height: '60px',
+            height: '72px',
             borderBottom: '1px solid var(--color-border)',
             background: 'var(--color-surface)',
             display: 'flex',
@@ -1052,7 +1052,7 @@ function LogoContent() {
         />
       </svg>
       <div>
-        <p className="font-display" style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1B4332', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+        <p className="font-display" style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1B4332', letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: 'var(--font-display)' }}>
           Verifio
         </p>
         <p style={{ margin: 0, fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>
