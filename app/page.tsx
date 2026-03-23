@@ -70,11 +70,7 @@ function HeroSearch() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
-    if (results.length === 1) {
-      router.push(`/artisan/${results[0].siret}`)
-    } else {
-      router.push(`/artisan/${encodeURIComponent(query.trim())}`)
-    }
+    router.push(`/recherche?q=${encodeURIComponent(query.trim())}`)
   }
 
   function handleSuggestion(tag: string) {

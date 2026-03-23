@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, use } from 'react'
+import { useState, useEffect, useRef, use, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, AlertCircle, CheckCircle2, Clock, Plus, Calendar,
@@ -719,7 +719,7 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
 }
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
-export default function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -929,5 +929,13 @@ export default function ChantierDetailPage({ params }: { params: Promise<{ id: s
         {tab === 'documents' && <DocumentsTab chantier={chantier} documents={documents} onRefresh={loadAll} />}
       </div>
     </main>
+  )
+}
+
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={null}>
+      <ChantierDetailPage params={params} />
+    </Suspense>
   )
 }
