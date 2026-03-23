@@ -277,6 +277,10 @@ export default function ArtisanFichePage() {
   const [tvacopied, setTvaCopied] = useState(false)
   const [showAllEtab, setShowAllEtab] = useState(false)
   const [showAllRGE, setShowAllRGE] = useState(false)
+  const [showBodaccList, setShowBodaccList] = useState(false)
+  const [showAllBodacc, setShowAllBodacc] = useState(false)
+  const [financialData, setFinancialData] = useState<Record<string, unknown> | null>(null)
+  const [financialLoading, setFinancialLoading] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -344,6 +348,16 @@ export default function ArtisanFichePage() {
               .finally(() => setEtablissementsLoading(false))
           }
         }
+        // Fetch financial data (INPI cascade)
+        if (searchData.siren) {
+          setFinancialLoading(true)
+          fetch(`/api/financial?siren=${encodeURIComponent(searchData.siren)}`)
+            .then(r => r.json())
+            .then(d => { if (d?.data) setFinancialData(d.data) })
+            .catch(() => {})
+            .finally(() => setFinancialLoading(false))
+        }
+
         if (!publicData.error) setArtisanPublic(publicData as ArtisanPublicInfo)
       })
       .catch(() => setError('Erreur réseau. Vérifiez votre connexion.'))
@@ -439,6 +453,29 @@ export default function ArtisanFichePage() {
     color: '#6b7280',
     fontSize: '14px',
   }
+
+  // ── BODACC helpers ──────────────────────────────────────
+  function getBodaccTypeLabel(a: { famille: string; type: string }): string {
+    const f = a.famille?.toUpperCase() ?? ''
+    const t = a.type?.toLowerCase() ?? ''
+    if (f === 'PROCEDURE_COLLECTIVE' || t.includes('liquidation') || t.includes('redressement') || t.includes('sauvegarde')) return 'Procédure collective'
+    if (f === 'BILAN' || f === 'DEPOT_COMPTES' || t.includes('dépôt') || t.includes('bilan')) return 'Dépôt de comptes'
+    if (f === 'VENTE' || t.includes('vente') || t.includes('cession')) return 'Vente / Cession'
+    return a.type || 'Modification'
+  }
+  function getBodaccBadgeStyle(label: string): React.CSSProperties {
+    if (label === 'Procédure collective') return { background: '#fef2f2', color: '#dc2626' }
+    if (label === 'Dépôt de comptes') return { background: '#f0fdf4', color: '#15803d' }
+    if (label === 'Vente / Cession') return { background: '#f5f5f5', color: '#6b7280' }
+    return { background: '#f0f4ff', color: '#3730a3' }
+  }
+  const bodaccSorted = [...(bodacc.annonces ?? [])].sort((a, b) => {
+    const da = new Date(a.date).getTime()
+    const db = new Date(b.date).getTime()
+    return isNaN(da) || isNaN(db) ? 0 : db - da
+  })
+  const BODACC_PAGE = 10
+  const bodaccVisible = showAllBodacc ? bodaccSorted : bodaccSorted.slice(0, BODACC_PAGE)
 
   // ── RGE display helpers ──────────────────────────────────
   const RGE_DOMAINS: Record<string, string> = {
@@ -744,17 +781,45 @@ export default function ArtisanFichePage() {
                 {/* ── Card 2 — Santé financière ── */}
                 <div style={cardStyle}>
                   <h3 style={cardTitleStyle}>💰 Santé financière</h3>
-                  <div style={{
-                    background: '#f9fafb', border: '1px solid #e5e7eb',
-                    borderRadius: '12px', padding: '16px 20px',
-                  }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
-                      Comptes non publiés
-                    </p>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
-                      Les comptes de cette entreprise ne sont pas publics, ce qui est tout à fait normal pour un artisan indépendant. Les micro-entreprises et auto-entrepreneurs ne sont pas tenus de déposer leurs comptes.
-                    </p>
-                  </div>
+
+                  {financialLoading ? (
+                    <div style={{ color: '#9ca3af', fontSize: '13px' }}>Vérification des données financières…</div>
+                  ) : financialData ? (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px 20px' }}>
+                      <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 600, color: '#15803d' }}>
+                        ✓ Données disponibles
+                      </p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#166534', lineHeight: 1.6 }}>
+                        Des informations financières ont été trouvées pour cette entreprise.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px 20px' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                        Comptes non publiés
+                      </p>
+                      <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
+                        Cette entreprise ne publie pas ses comptes annuels. Pour vérifier sa solidité financière, vous pouvez :
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <a
+                          href="https://www.infogreffe.fr/recherche-kbis"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#1B4332', fontWeight: 600, textDecoration: 'none', background: '#f0fdf4', borderRadius: '8px', padding: '8px 12px', border: '1px solid #86efac' }}
+                        >
+                          📄 Demander un extrait Kbis à l&apos;artisan
+                        </a>
+                        <a
+                          href="#section-bodacc"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#374151', fontWeight: 600, textDecoration: 'none', background: '#f5f5f5', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e5e7eb' }}
+                        >
+                          📋 Consulter les annonces BODACC ci-dessous
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   {result.capitalSocial ? (
                     <div style={{ marginTop: '12px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #86efac' }}>
                       <p style={{ margin: 0, fontSize: '13px', color: '#15803d' }}>
@@ -762,6 +827,14 @@ export default function ArtisanFichePage() {
                       </p>
                     </div>
                   ) : null}
+
+                  {result.effectif && result.effectif !== 'Non renseigné' && (
+                    <div style={{ marginTop: '12px', padding: '12px 16px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#1d4ed8' }}>
+                        👥 Effectifs déclarés : <strong>{result.effectif}</strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* ── Card 3 — Établissements ── */}
@@ -939,7 +1012,7 @@ export default function ArtisanFichePage() {
                   const cats = categorizeBodacc(bodacc.annonces ?? [])
                   const hasProcedure = bodacc.procedureCollective || cats.proceduresCollectives.length > 0
                   return (
-                    <div style={cardStyle}>
+                    <div id="section-bodacc" style={cardStyle}>
                       <h3 style={cardTitleStyle}>⚖️ Procédures BODACC</h3>
 
                       {/* Compteur synthèse */}
@@ -996,12 +1069,68 @@ export default function ArtisanFichePage() {
                           ✓ Dépôt de comptes publié — cette entreprise est transparente sur sa gestion.
                         </div>
                       )}
+
+                      {/* Accordéon détail toutes annonces */}
+                      {bodaccSorted.length > 0 && (
+                        <div style={{ marginTop: '16px' }}>
+                          <button
+                            onClick={() => setShowBodaccList(!showBodaccList)}
+                            style={{
+                              width: '100%', textAlign: 'left', background: 'none', border: '1px solid #e5e7eb',
+                              borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
+                              fontSize: '13px', fontWeight: 600, color: '#374151',
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                              fontFamily: 'var(--font-body)',
+                            }}
+                          >
+                            <span>Voir les {bodaccSorted.length} annonce{bodaccSorted.length > 1 ? 's' : ''}</span>
+                            <span style={{ transition: 'transform 0.2s', display: 'inline-block', transform: showBodaccList ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                          </button>
+
+                          {showBodaccList && (
+                            <div style={{ marginTop: '8px' }}>
+                              {bodaccVisible.map((a, i) => {
+                                const label = getBodaccTypeLabel(a)
+                                const badge = getBodaccBadgeStyle(label)
+                                return (
+                                  <div key={i} style={{
+                                    padding: '10px 14px', borderRadius: '10px', marginBottom: '6px',
+                                    background: '#f9fafb', border: '1px solid #e5e7eb',
+                                    fontSize: '13px', color: '#374151',
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontWeight: 600, color: '#111827' }}>{a.date ? formatDate(a.date) : '—'}</span>
+                                      <span style={{ ...badge, fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{label}</span>
+                                    </div>
+                                    {a.details && <p style={{ margin: '0 0 2px', fontSize: '12px', color: '#6b7280' }}>{a.details}</p>}
+                                    {a.tribunal && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>📍 {a.tribunal}</p>}
+                                  </div>
+                                )
+                              })}
+                              {bodaccSorted.length > BODACC_PAGE && (
+                                <button
+                                  onClick={() => setShowAllBodacc(!showAllBodacc)}
+                                  style={{
+                                    width: '100%', background: 'none', border: '1px dashed #d1d5db',
+                                    borderRadius: '8px', padding: '8px', cursor: 'pointer',
+                                    fontSize: '13px', color: '#6b7280', fontFamily: 'var(--font-body)',
+                                  }}
+                                >
+                                  {showAllBodacc
+                                    ? 'Réduire'
+                                    : `Voir les ${bodaccSorted.length - BODACC_PAGE} annonces suivantes`}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })()}
 
                 {/* ── Card 5 — Checklist avant signature ── */}
-                <div style={{
+                <div id="section-checklist" style={{
                   background: '#F8F4EF',
                   borderRadius: '12px',
                   padding: '20px',

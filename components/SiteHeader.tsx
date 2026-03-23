@@ -501,6 +501,21 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               💎 Tarifs
             </a>
             <a
+              href="/a-propos"
+              style={{
+                display: 'flex', alignItems: 'center',
+                background: pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                fontSize: '13.5px', fontWeight: 600,
+                color: pathname === '/a-propos' ? 'var(--color-accent)' : 'var(--color-text)',
+                textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent' }}
+            >
+              À propos
+            </a>
+            <a
               href="/espace-artisan"
               style={{
                 display: 'flex', alignItems: 'center',
@@ -856,6 +871,23 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 )}
               </div>
             ))}
+
+            {/* À propos link */}
+            <a
+              href="/a-propos"
+              onClick={closeAll}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '13px 12px', borderRadius: '12px', marginBottom: '4px',
+                background: pathname === '/a-propos' ? 'var(--color-bg)' : 'none',
+                textDecoration: 'none', color: 'var(--color-text)',
+                fontSize: '15px', fontWeight: 700,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent')}
+            >
+              À propos
+            </a>
 
             {/* Espace Artisan link */}
             <a

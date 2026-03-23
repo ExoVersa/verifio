@@ -633,7 +633,7 @@ export default function HomePage() {
             </div>
             <div>
               <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Produit</h4>
-              {[{ label: 'Rechercher un artisan', href: '/recherche' }, { label: 'Tarifs', href: '/pricing' }, { label: 'Espace artisan', href: '/espace-artisan' }, { label: 'Contact', href: '/contact' }].map(({ label, href }) => (
+              {[{ label: 'Rechercher un artisan', href: '/recherche' }, { label: 'Tarifs', href: '/pricing' }, { label: 'À propos', href: '/a-propos' }, { label: 'Espace artisan', href: '/espace-artisan' }, { label: 'Contact', href: '/contact' }].map(({ label, href }) => (
                 <div key={label} style={{ marginBottom: '8px' }}>
                   <a href={href} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
