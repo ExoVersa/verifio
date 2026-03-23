@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'contact@verifio.fr'
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com'
 
   try {
     // Vérification admin

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'contact@verifio.fr'
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com'
 
   try {
     // Vérification admin : récupérer le JWT depuis l'Authorization header

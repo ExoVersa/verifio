@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'contact@verifio.fr'
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com'
 
   try {
     // Vérification admin

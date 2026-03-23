@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     // 4. Email de notification admin
     await resend.emails.send({
       from: 'Verifio <onboarding@resend.dev>',
-      to: process.env.ADMIN_EMAIL || 'contact@verifio.fr',
+      to: process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com',
       subject: `Nouvelle inscription artisan — ${nomEntreprise}`,
       html: `
 <!DOCTYPE html>
