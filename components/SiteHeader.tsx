@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
   ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin, HardHat,
-  AlertTriangle, Euro, History, Bell, Shield,
+  AlertTriangle, Euro, History, Bell, Shield, ShieldCheck, LayoutDashboard, FileText,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -263,6 +263,7 @@ function MegaMenuPanel({
 export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const pathname = usePathname()
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [isArtisan, setIsArtisan] = useState(false)
   const [survCount, setSurvCount] = useState(0)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -276,15 +277,33 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
-      if (data.user?.email) loadSurvCount(data.user.email)
+      if (data.user) {
+        loadSurvCount(data.user.email!)
+        checkArtisan(data.user.id)
+      }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
-      if (session?.user?.email) loadSurvCount(session.user.email)
-      else setSurvCount(0)
+      if (session?.user) {
+        loadSurvCount(session.user.email!)
+        checkArtisan(session.user.id)
+      } else {
+        setSurvCount(0)
+        setIsArtisan(false)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  async function checkArtisan(userId: string) {
+    const { data } = await supabase
+      .from('artisans')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('statut', 'verifie')
+      .maybeSingle()
+    setIsArtisan(!!data)
+  }
 
   async function loadSurvCount(email: string) {
     const { count } = await supabase
@@ -365,7 +384,11 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
     { href: '/', Icon: Search, label: 'Rechercher' },
     { href: '/simulateur-prix', Icon: Calculator, label: 'Analyser' },
     { href: '/guide-chantier', Icon: Shield, label: 'Protéger' },
-    { href: user ? '/mon-espace' : '/auth', Icon: User, label: 'Mon espace' },
+    {
+      href: isArtisan ? '/artisan/dashboard' : (user ? '/mon-espace' : '/auth'),
+      Icon: isArtisan ? LayoutDashboard : User,
+      label: isArtisan ? 'Dashboard' : 'Mon espace',
+    },
   ]
 
   return (
@@ -499,140 +522,204 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <div className="nav-desktop">
               {user ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {/* Bell */}
-                  <a
-                    href="/mon-espace?tab=surveillances"
-                    style={{
-                      position: 'relative',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '36px', height: '36px', borderRadius: '50%',
-                      background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-                      color: 'var(--color-text)', textDecoration: 'none',
-                      transition: 'background 0.15s',
-                    }}
-                    title="Mes surveillances"
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-border)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
-                  >
-                    <Bell size={16} />
-                    {survCount > 0 && (
-                      <span style={{
-                        position: 'absolute', top: '-3px', right: '-3px',
-                        width: '16px', height: '16px', borderRadius: '50%',
-                        background: 'var(--color-accent)', color: '#fff',
-                        fontSize: '9px', fontWeight: 800,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: '2px solid var(--color-surface)',
-                      }}>
-                        {survCount > 9 ? '9+' : survCount}
-                      </span>
-                    )}
-                  </a>
+                isArtisan ? (
+                  /* ── ARTISAN VÉRIFIÉ ── */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* Badge vérifié */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '5px 10px', borderRadius: '20px',
+                      background: '#f0fdf4', border: '1px solid #86efac',
+                    }}>
+                      <ShieldCheck size={13} color="#16a34a" />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#15803d' }}>Artisan vérifié</span>
+                    </div>
 
-                  {/* Avatar + user menu */}
-                  <div style={{ position: 'relative' }}>
-                    <button
-                      onClick={toggleUserMenu}
+                    {/* CTA espace artisan */}
+                    <a
+                      href="/artisan/dashboard"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        background: userMenuOpen ? 'var(--color-bg)' : 'transparent',
-                        border: `1px solid ${userMenuOpen ? 'var(--color-border)' : 'transparent'}`,
-                        borderRadius: '10px', cursor: 'pointer', padding: '4px 10px 4px 4px',
-                        fontFamily: 'var(--font-body)', transition: 'all 0.15s',
+                        fontSize: '13px', fontWeight: 700, color: '#fff',
+                        textDecoration: 'none', padding: '8px 14px', borderRadius: '9px',
+                        background: '#1B4332', display: 'flex', alignItems: 'center', gap: '5px',
+                        transition: 'opacity 0.15s',
                       }}
+                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
+                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                     >
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '50%',
-                        background: '#1B4332', color: '#D8F3DC',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '12px', fontWeight: 700, flexShrink: 0,
-                      }}>
-                        {initials}
-                      </div>
-                      <ChevronDown
-                        size={12}
+                      Mon espace artisan →
+                    </a>
+
+                    {/* Avatar artisan */}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={toggleUserMenu}
                         style={{
-                          color: 'var(--color-muted)', transition: 'transform 0.2s',
-                          transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          background: userMenuOpen ? 'var(--color-bg)' : 'transparent',
+                          border: `1px solid ${userMenuOpen ? 'var(--color-border)' : 'transparent'}`,
+                          borderRadius: '10px', cursor: 'pointer', padding: '4px 8px 4px 4px',
+                          fontFamily: 'var(--font-body)', transition: 'all 0.15s',
                         }}
-                      />
-                    </button>
-
-                    {userMenuOpen && (
-                      <div style={{
-                        position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-                        borderRadius: '16px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
-                        padding: '6px', minWidth: '220px', zIndex: 200,
-                      }}>
+                      >
                         <div style={{
-                          padding: '10px 12px 12px',
-                          borderBottom: '1px solid var(--color-border)',
-                          marginBottom: '4px',
+                          width: '32px', height: '32px', borderRadius: '50%',
+                          background: '#1B4332', color: '#D8F3DC',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', fontWeight: 700, flexShrink: 0,
                         }}>
-                          <div style={{
-                            width: '38px', height: '38px', borderRadius: '50%',
-                            background: '#1B4332', color: '#D8F3DC',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '14px', fontWeight: 700, marginBottom: '8px',
-                          }}>
-                            {initials}
-                          </div>
-                          <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Connecté en tant que</p>
-                          <p style={{
-                            margin: '2px 0 0', fontSize: '13px', fontWeight: 600,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {user.email}
-                          </p>
+                          {initials}
                         </div>
+                        <ChevronDown size={12} style={{ color: 'var(--color-muted)', transition: 'transform 0.2s', transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                      </button>
 
-                        {[
-                          { href: '/mon-espace', label: 'Mon espace', Icon: User },
-                          { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
-                          { href: '/mon-espace?tab=surveillances', label: `Mes surveillances${survCount > 0 ? ` (${survCount})` : ''}`, Icon: Bell },
-                        ].map(({ href, label, Icon }) => (
-                          <a
-                            key={href}
-                            href={href}
-                            onClick={closeAll}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '10px',
-                              padding: '9px 12px', borderRadius: '10px',
-                              textDecoration: 'none', color: 'var(--color-text)',
-                              fontSize: '13px', fontWeight: 500, transition: 'background 0.12s',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                          >
-                            <Icon size={14} color="var(--color-muted)" />
-                            {label}
-                          </a>
-                        ))}
-
-                        <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
-                        <button
-                          onClick={() => { supabase.auth.signOut(); closeAll() }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '10px',
-                            padding: '9px 12px', borderRadius: '10px',
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            color: '#dc2626', fontSize: '13px', fontWeight: 500,
-                            fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left',
-                            transition: 'background 0.12s',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          <LogOut size={14} />
-                          Se déconnecter
-                        </button>
-                      </div>
-                    )}
+                      {userMenuOpen && (
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                          borderRadius: '16px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+                          padding: '6px', minWidth: '220px', zIndex: 200,
+                        }}>
+                          <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid var(--color-border)', marginBottom: '4px' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1B4332', color: '#D8F3DC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                              {initials}
+                            </div>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Artisan vérifié</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                          </div>
+                          {[
+                            { href: '/artisan/dashboard', label: 'Mon dashboard', Icon: LayoutDashboard },
+                            { href: '/artisan/dashboard?tab=devis', label: 'Mes devis', Icon: FileText },
+                            { href: `/artisan/dashboard?tab=profil`, label: 'Mon profil public', Icon: User },
+                          ].map(({ href, label, Icon }) => (
+                            <a key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                              <Icon size={14} color="var(--color-muted)" />{label}
+                            </a>
+                          ))}
+                          <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
+                          <button onClick={() => { supabase.auth.signOut(); closeAll() }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left', transition: 'background 0.12s' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                            <LogOut size={14} />Se déconnecter
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* ── PARTICULIER CONNECTÉ ── */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Bell */}
+                    <a
+                      href="/mon-espace?tab=surveillances"
+                      style={{
+                        position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                        color: 'var(--color-text)', textDecoration: 'none',
+                        transition: 'background 0.15s',
+                      }}
+                      title="Mes surveillances"
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-border)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                    >
+                      <Bell size={16} />
+                      {survCount > 0 && (
+                        <span style={{
+                          position: 'absolute', top: '-3px', right: '-3px',
+                          width: '16px', height: '16px', borderRadius: '50%',
+                          background: 'var(--color-accent)', color: '#fff',
+                          fontSize: '9px', fontWeight: 800,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: '2px solid var(--color-surface)',
+                        }}>
+                          {survCount > 9 ? '9+' : survCount}
+                        </span>
+                      )}
+                    </a>
+
+                    {/* Avatar + user menu */}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={toggleUserMenu}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          background: userMenuOpen ? 'var(--color-bg)' : 'transparent',
+                          border: `1px solid ${userMenuOpen ? 'var(--color-border)' : 'transparent'}`,
+                          borderRadius: '10px', cursor: 'pointer', padding: '4px 10px 4px 4px',
+                          fontFamily: 'var(--font-body)', transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '50%',
+                          background: '#1B4332', color: '#D8F3DC',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', fontWeight: 700, flexShrink: 0,
+                        }}>
+                          {initials}
+                        </div>
+                        <ChevronDown size={12} style={{ color: 'var(--color-muted)', transition: 'transform 0.2s', transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                      </button>
+
+                      {userMenuOpen && (
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                          borderRadius: '16px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+                          padding: '6px', minWidth: '220px', zIndex: 200,
+                        }}>
+                          <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid var(--color-border)', marginBottom: '4px' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1B4332', color: '#D8F3DC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                              {initials}
+                            </div>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Connecté en tant que</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                          </div>
+                          {[
+                            { href: '/mon-espace', label: 'Mon espace', Icon: User },
+                            { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
+                            { href: '/mon-espace?tab=surveillances', label: `Mes surveillances${survCount > 0 ? ` (${survCount})` : ''}`, Icon: Bell },
+                          ].map(({ href, label, Icon }) => (
+                            <a key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                              <Icon size={14} color="var(--color-muted)" />{label}
+                            </a>
+                          ))}
+                          <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
+                          <button onClick={() => { supabase.auth.signOut(); closeAll() }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left', transition: 'background 0.12s' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                            <LogOut size={14} />Se déconnecter
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CTA vérifier artisan */}
+                    <a
+                      href="/"
+                      style={{
+                        fontSize: '13px', fontWeight: 700, color: '#fff',
+                        textDecoration: 'none', padding: '8px 16px', borderRadius: '9px',
+                        background: '#1B4332',
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        transition: 'opacity 0.15s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                    >
+                      Vérifier un artisan →
+                    </a>
+                  </div>
+                )
               ) : (
+                /* ── NON CONNECTÉ ── */
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <a
                     href="/auth"
@@ -807,18 +894,30 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     {initials}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Connecté</p>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>
+                      {isArtisan ? 'Artisan vérifié' : 'Connecté'}
+                    </p>
                     <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user.email}
                     </p>
                   </div>
+                  {isArtisan && (
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '20px', background: '#f0fdf4', border: '1px solid #86efac' }}>
+                      <ShieldCheck size={12} color="#16a34a" />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803d' }}>Vérifié</span>
+                    </div>
+                  )}
                 </div>
 
-                {[
+                {(isArtisan ? [
+                  { href: '/artisan/dashboard', label: 'Mon dashboard', Icon: LayoutDashboard },
+                  { href: '/artisan/dashboard?tab=devis', label: 'Mes devis', Icon: FileText },
+                  { href: '/artisan/dashboard?tab=profil', label: 'Mon profil public', Icon: User },
+                ] : [
                   { href: '/mon-espace', label: 'Mon espace', Icon: User },
                   { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
                   { href: '/mon-espace?tab=surveillances', label: 'Mes surveillances', Icon: Bell },
-                ].map(({ href, label, Icon }) => (
+                ]).map(({ href, label, Icon }) => (
                   <a
                     key={href}
                     href={href}
