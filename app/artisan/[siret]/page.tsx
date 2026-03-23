@@ -440,6 +440,33 @@ export default function ArtisanFichePage() {
     fontSize: '14px',
   }
 
+  // ── RGE display helpers ──────────────────────────────────
+  const RGE_DOMAINS: Record<string, string> = {
+    'architecte': 'Architecture',
+    'cnoa': 'Conseil National de l\'Ordre des Architectes',
+    'qualibat': 'Qualibat',
+    'qualifelec': 'Qualifelec',
+    'qualipac': 'QualiPAC',
+    'qualisol': 'QualiSOL',
+    'qualit-enr': 'Qualit\'ENR',
+    'certibat': 'Certibat',
+    'acqualif': 'ACQualif',
+    'afnor': 'AFNOR Certification',
+    'promotelec': 'Promotelec',
+    'eco-artisan': 'Eco Artisan',
+    'label-flamme-verte': 'Flamme Verte',
+    'handibat': 'Handibat',
+  }
+  const mapRGEDomain = (d: string) => {
+    const key = d.toLowerCase().trim()
+    return RGE_DOMAINS[key] ?? (key.charAt(0).toUpperCase() + key.slice(1))
+  }
+  const rgeData = result?.rge
+  const rgeDomainesUniques = rgeData ? [...new Set(rgeData.domaines.map(mapRGEDomain))] : []
+  const rgeOrganismesUniques = rgeData ? [...new Set(rgeData.organismes.map(mapRGEDomain))] : []
+  const RGE_MAX = 5
+  const rgeVisibleDomaines = showAllRGE ? rgeDomainesUniques : rgeDomainesUniques.slice(0, RGE_MAX)
+
   return (
     <main style={{ minHeight: '100vh', background: '#F8F4EF', fontFamily: 'var(--font-body)' }}>
       <SiteHeader />
@@ -818,69 +845,36 @@ export default function ArtisanFichePage() {
                 <div style={cardStyle}>
                   <h3 style={cardTitleStyle}>🌿 Certifications RGE</h3>
                   {rge.certifie ? (
-                    (() => {
-                      const RGE_DOMAINS: Record<string, string> = {
-                        'architecte': 'Architecture',
-                        'cnoa': 'Conseil National de l\'Ordre des Architectes',
-                        'qualibat': 'Qualibat',
-                        'qualifelec': 'Qualifelec',
-                        'qualipac': 'QualiPAC',
-                        'qualisol': 'QualiSOL',
-                        'qualit-enr': 'Qualit\'ENR',
-                        'certibat': 'Certibat',
-                        'acqualif': 'ACQualif',
-                        'afnor': 'AFNOR Certification',
-                        'promotelec': 'Promotelec',
-                        'eco-artisan': 'Eco Artisan',
-                        'label-flamme-verte': 'Flamme Verte',
-                        'handibat': 'Handibat',
-                      }
-                      const mapDomain = (d: string) => {
-                        const key = d.toLowerCase().trim()
-                        if (RGE_DOMAINS[key]) return RGE_DOMAINS[key]
-                        return key.charAt(0).toUpperCase() + key.slice(1)
-                      }
-                      const domainesUniques = [...new Set(rge.domaines.map(mapDomain))]
-                      const organismesUniques = [...new Set(rge.organismes.map(o => {
-                        const key = o.toLowerCase().trim()
-                        return RGE_DOMAINS[key] ?? (key.charAt(0).toUpperCase() + key.slice(1))
-                      }))]
-                      const MAX_VISIBLE = 5
-                      const showMore = domainesUniques.length > MAX_VISIBLE
-                      const visibleDomaines = showMore && !showAllRGE ? domainesUniques.slice(0, MAX_VISIBLE) : domainesUniques
-                      return (
-                        <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '20px' }}>
-                          <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d' }}>
-                            ✓ Certifié RGE — Travaux éligibles aux aides de l&apos;État
-                          </p>
-                          {domainesUniques.length > 0 && (
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
-                              {visibleDomaines.map((d, i) => (
-                                <span key={i} style={{ background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px' }}>
-                                  ✓ {d}
-                                </span>
-                              ))}
-                              {showMore && (
-                                <button
-                                  onClick={() => setShowAllRGE(!showAllRGE)}
-                                  style={{ background: '#1B4332', color: 'white', border: 'none', borderRadius: '20px', fontSize: '12px', fontWeight: 700, padding: '4px 10px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                                >
-                                  {showAllRGE ? 'Réduire' : `+${domainesUniques.length - MAX_VISIBLE}`}
-                                </button>
-                              )}
-                            </div>
+                    <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '20px' }}>
+                      <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d' }}>
+                        ✓ Certifié RGE — Travaux éligibles aux aides de l&apos;État
+                      </p>
+                      {rgeDomainesUniques.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+                          {rgeVisibleDomaines.map((d, i) => (
+                            <span key={i} style={{ background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px' }}>
+                              ✓ {d}
+                            </span>
+                          ))}
+                          {rgeDomainesUniques.length > RGE_MAX && (
+                            <button
+                              onClick={() => setShowAllRGE(!showAllRGE)}
+                              style={{ background: '#1B4332', color: 'white', border: 'none', borderRadius: '20px', fontSize: '12px', fontWeight: 700, padding: '4px 10px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                            >
+                              {showAllRGE ? 'Réduire' : `+${rgeDomainesUniques.length - RGE_MAX}`}
+                            </button>
                           )}
-                          {organismesUniques.length > 0 && (
-                            <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534' }}>
-                              Certifié par : <strong>{organismesUniques[0]}</strong>
-                            </p>
-                          )}
-                          <a href="/calculateur-aides" style={{ display: 'inline-block', border: '1.5px solid #16a34a', color: '#16a34a', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                            Calculer mes aides →
-                          </a>
                         </div>
-                      )
-                    })()
+                      )}
+                      {rgeOrganismesUniques.length > 0 && (
+                        <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534' }}>
+                          Certifié par : <strong>{rgeOrganismesUniques[0]}</strong>
+                        </p>
+                      )}
+                      <a href="/calculateur-aides" style={{ display: 'inline-block', border: '1.5px solid #16a34a', color: '#16a34a', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                        Calculer mes aides →
+                      </a>
+                    </div>
                   ) : (
                     <div style={{
                       background: '#f9fafb',
