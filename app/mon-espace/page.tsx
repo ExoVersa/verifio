@@ -810,6 +810,7 @@ function MonEspaceInner() {
   const [chantiers, setChantiers] = useState<ChantierWithStats[]>([])
   const [surveillances, setSurveillances] = useState<Surveillance[]>([])
   const [searches, setSearches] = useState<SearchRecord[]>([])
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -863,7 +864,16 @@ function MonEspaceInner() {
   }
 
   async function stopSurveillance(id: string) {
-    await supabase.from('surveillances').delete().eq('id', id)
+    const { error } = await supabase
+      .from('surveillances')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user?.id ?? '')
+    if (error) {
+      setToast('Erreur lors de la suppression. Réessayez.')
+      setTimeout(() => setToast(null), 4000)
+      return
+    }
     setSurveillances(prev => prev.filter(s => s.id !== id))
   }
 
@@ -910,6 +920,18 @@ function MonEspaceInner() {
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
+
+      {/* Toast d'erreur */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)',
+          background: '#1a1a1a', color: '#fff', padding: '12px 20px', borderRadius: '10px',
+          fontSize: '14px', fontWeight: 500, zIndex: 1000,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        }}>
+          {toast}
+        </div>
+      )}
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px 80px' }}>
 
