@@ -283,7 +283,7 @@ async function fetchEntreprise(query: string) {
 
 async function fetchRGE(siret: string) {
   try {
-    const url = `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?siret=${siret}&size=10`
+    const url = `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?q=${siret}&q_fields=siret&size=10`
     const res = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       next: { revalidate: 3600 },
