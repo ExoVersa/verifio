@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 
 export default function AssistantJuridiquePage() {
   const [email, setEmail] = useState('')
@@ -15,7 +15,6 @@ export default function AssistantJuridiquePage() {
     if (!email) return
     setLoading(true)
     try {
-      const supabase = createClient()
       await supabase.from('waitlist').insert({ email, feature: 'juridique' })
     } catch {
       // Table might not exist yet — show success anyway
