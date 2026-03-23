@@ -17,9 +17,10 @@ interface ArtisanPublicInfo {
 
 /* ─── Helpers ───────────────────────────────────────────── */
 function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean)
+  const words = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return (words[0][0] + words[1][0]).toUpperCase()
+  return ((words[0]?.[0] ?? '') + (words[1]?.[0] ?? '')).toUpperCase() || '?'
 }
 
 function formatDate(dateStr: string | undefined): string {
@@ -57,7 +58,7 @@ function ScoreCard({
     { label: 'Statut légal', value: result.statut === 'actif' ? 25 : 0, max: 25 },
     { label: 'Certifications', value: result.rge?.certifie ? 18 : 10, max: 20 },
     { label: 'Ancienneté', value: Math.min(20, Math.floor(getYears(result.dateCreation) * 1.5)), max: 20 },
-    { label: 'Dirigeants', value: result.dirigeants?.length > 0 ? 16 : 8, max: 20 },
+    { label: 'Dirigeants', value: (result.dirigeants?.length ?? 0) > 0 ? 16 : 8, max: 20 },
     { label: 'Procédures', value: result.bodacc?.procedureCollective ? 0 : 15, max: 15 },
   ]
 
@@ -493,9 +494,9 @@ export default function ArtisanFichePage() {
                       <ShieldCheck size={18} />
                       Certifié RGE — Travaux éligibles aux aides État
                     </div>
-                    {result.rge.domaines?.length > 0 && (
+                    {(result.rge?.domaines?.length ?? 0) > 0 && (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                        {result.rge.domaines.map((d, i) => (
+                        {(result.rge?.domaines || []).map((d, i) => (
                           <span key={i} style={{
                             background: '#E8F5EE', color: '#1B4332',
                             borderRadius: '20px', padding: '4px 12px',
@@ -531,11 +532,11 @@ export default function ArtisanFichePage() {
               </InfoCard>
 
               {/* Dirigeants */}
-              {result.dirigeants && result.dirigeants.length > 0 && (
+              {(result.dirigeants?.length ?? 0) > 0 && (
                 <InfoCard>
                   <SectionTitle>👤 Dirigeants</SectionTitle>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {result.dirigeants.map((d, i) => (
+                    {(result.dirigeants || []).map((d, i) => (
                       <div key={i} style={{
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '12px 16px',
@@ -550,7 +551,7 @@ export default function ArtisanFichePage() {
                           flexShrink: 0,
                           fontFamily: 'var(--font-display)',
                         }}>
-                          {getInitials(`${d.prenoms || ''} ${d.nom}`)}
+                          {getInitials(`${d.prenoms || ''} ${d.nom || ''}`)}
                         </div>
                         <div>
                           <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
@@ -593,11 +594,11 @@ export default function ArtisanFichePage() {
                       fontSize: '13px', fontWeight: 700,
                       marginBottom: '16px',
                     }}>
-                      ⚠ {result.bodacc.annonces?.length || 1} procédure(s) détectée(s)
+                      ⚠ {result.bodacc?.annonces?.length || 1} procédure(s) détectée(s)
                     </div>
-                    {result.bodacc.annonces?.length > 0 && (
+                    {(result.bodacc?.annonces?.length ?? 0) > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {result.bodacc.annonces.slice(0, 5).map((a, i) => (
+                        {(result.bodacc?.annonces || []).slice(0, 5).map((a, i) => (
                           <div key={i} style={{
                             padding: '10px 14px',
                             background: '#fef2f2',
