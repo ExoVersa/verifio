@@ -99,7 +99,7 @@ function HeroSearch() {
         <div style={{
           position: 'absolute', top: '76px', left: 0, right: 0,
           background: 'white', borderRadius: '16px',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.15)', zIndex: 50, overflow: 'hidden',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.15)', zIndex: 20, overflow: 'hidden',
         }}>
           {results.map((r, i) => (
             <button key={r.siret} onClick={() => router.push(`/artisan/${r.siret}`)}

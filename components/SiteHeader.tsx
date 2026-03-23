@@ -395,7 +395,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       {/* ── STICKY WRAPPER (top bar + header) ── */}
       <div
         ref={headerRef}
-        style={{ position: 'sticky', top: 0, zIndex: 50 }}
+        style={{ position: 'sticky', top: 0, zIndex: 100 }}
       >
         {/* ── TOP BAR ── */}
         <div style={{
