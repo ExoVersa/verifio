@@ -12,7 +12,7 @@ import type { DevisAnalysis, SearchResult } from '@/types'
 import DevisAnalysisCard from '@/components/DevisAnalysisCard'
 import SiteHeader from '@/components/SiteHeader'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 Mo
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 Mo (cohérent avec le serveur)
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 
 export default function AnalyserDevisPage() {
@@ -27,9 +27,7 @@ export default function AnalyserDevisPage() {
   const [analysis, setAnalysis] = useState<DevisAnalysis | null>(null)
   const [company, setCompany] = useState<SearchResult | null>(null)
   const [requiresPayment, setRequiresPayment] = useState(false)
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
-  const [paidSession, setPaidSession] = useState<string | null>(null)
-  const [justPaid, setJustPaid] = useState(false)
+  const [limitReached, setLimitReached] = useState<{ plan: string; message: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -39,21 +37,6 @@ export default function AnalyserDevisPage() {
       setUser(session?.user ?? null)
     })
     return () => subscription.unsubscribe()
-  }, [])
-
-  // Détection du retour Stripe
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const sessionId = params.get('session_id')
-    if (sessionId) {
-      localStorage.setItem('devis_session_id', sessionId)
-      setPaidSession(sessionId)
-      setJustPaid(true)
-      window.history.replaceState({}, '', '/analyser-devis')
-    } else {
-      const stored = localStorage.getItem('devis_session_id')
-      if (stored) setPaidSession(stored)
-    }
   }, [])
 
   const handleFile = useCallback((f: File) => {
@@ -67,7 +50,7 @@ export default function AnalyserDevisPage() {
       return
     }
     if (f.size > MAX_FILE_SIZE) {
-      setFileError('Fichier trop volumineux (max 10 Mo).')
+      setFileError('Fichier trop volumineux (max 5 Mo). Un vrai devis artisan fait rarement plus de 3-4 pages.')
       return
     }
     setFile(f)
@@ -93,6 +76,7 @@ export default function AnalyserDevisPage() {
     setError(null)
     setAnalysis(null)
     setRequiresPayment(false)
+    setLimitReached(null)
 
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
@@ -108,25 +92,20 @@ export default function AnalyserDevisPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ fileBase64, mimeType: file.type, sessionId: paidSession || undefined }),
+        body: JSON.stringify({ fileBase64, mimeType: file.type }),
       })
 
       const data = await res.json()
 
       if (data.requiresPayment) {
-        setCheckoutUrl(data.checkoutUrl)
         setRequiresPayment(true)
+      } else if (data.limitReached) {
+        setLimitReached({ plan: data.plan, message: data.message })
       } else if (data.error) {
         setError(data.error)
       } else {
         setAnalysis(data.analysis)
         setCompany(data.company || null)
-        // Purger la session payée après utilisation
-        if (paidSession) {
-          localStorage.removeItem('devis_session_id')
-          setPaidSession(null)
-          setJustPaid(false)
-        }
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
       }
     } catch {
@@ -143,6 +122,7 @@ export default function AnalyserDevisPage() {
     setFileError(null)
     setAnalysis(null)
     setRequiresPayment(false)
+    setLimitReached(null)
     setError(null)
   }
 
@@ -169,20 +149,33 @@ export default function AnalyserDevisPage() {
           </p>
         </div>
 
-        {/* Bannière paiement confirmé */}
-        {justPaid && (
-          <div style={{
-            display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '14px 16px',
-            borderRadius: '12px', background: 'var(--color-safe-bg)',
-            border: '1px solid color-mix(in srgb, var(--color-safe) 30%, transparent)', marginBottom: '24px',
-          }}>
-            <CheckCircle2 size={18} color="var(--color-safe)" style={{ flexShrink: 0 }} />
-            <div>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-safe)' }}>Paiement confirmé !</p>
-              <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--color-muted)' }}>
-                Déposez votre devis ci-dessous pour lancer l'analyse.
-              </p>
-            </div>
+        {/* Bloc plan requis */}
+        {requiresPayment && (
+          <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '16px', background: '#1B4332', textAlign: 'center' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#D8F3DC' }}>Plan requis pour analyser un devis</p>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#74C69D', lineHeight: 1.55 }}>
+              L&apos;analyse de devis est incluse dans le Pack Sérénité (19,90&nbsp;€ achat unique) ou l&apos;abonnement Tranquillité (4,90&nbsp;€/mois).
+            </p>
+            <a href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '10px', background: '#52B788', color: '#fff', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
+              Voir les offres →
+            </a>
+          </div>
+        )}
+
+        {/* Bloc limite atteinte */}
+        {limitReached && (
+          <div style={{ marginBottom: '24px', padding: '20px', borderRadius: '16px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: 'var(--color-text)' }}>
+              {limitReached.plan === 'serenite' ? '🔒 Analyse déjà utilisée' : '⏳ Limite mensuelle atteinte'}
+            </p>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+              {limitReached.message}
+            </p>
+            {limitReached.plan === 'serenite' && (
+              <a href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', background: '#1B4332', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 700 }}>
+                Protéger un nouveau chantier →
+              </a>
+            )}
           </div>
         )}
 
@@ -324,7 +317,6 @@ export default function AnalyserDevisPage() {
             <>
               <FileSearch size={18} />
               Analyser mon devis
-              {!justPaid && user && <span style={{ fontSize: '12px', fontWeight: 500, opacity: 0.7 }}>· 1ère analyse gratuite</span>}
             </>
           )}
         </button>
@@ -339,28 +331,6 @@ export default function AnalyserDevisPage() {
           </div>
         )}
 
-        {/* Paiement requis */}
-        {requiresPayment && checkoutUrl && (
-          <div style={{
-            marginTop: '16px', padding: '20px', borderRadius: '14px',
-            border: '1px solid var(--color-border)', background: 'var(--color-surface)', textAlign: 'center',
-          }}>
-            <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>Pack Sérénité — 19,90&nbsp;€</p>
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
-              Analyse de devis IA + rapport complet artisan + surveillance 6 mois. Achat unique, valable à vie.
-            </p>
-            <a
-              href={checkoutUrl}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px',
-                borderRadius: '10px', background: '#1B4332', color: '#fff',
-                textDecoration: 'none', fontSize: '14px', fontWeight: 700,
-              }}
-            >
-              Activer le Pack Sérénité — 19,90&nbsp;€
-            </a>
-          </div>
-        )}
 
         {/* Résultats */}
         <div ref={resultsRef}>

@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 Mo
+const MAX_PAGES = 10
+const MAX_MONTHLY_TRANQUILLITE = 20
+const ABUSE_THRESHOLD_PER_HOUR = 5
+
 const SYSTEM_PROMPT = `Tu es un expert juridique français spécialisé dans les contrats de travaux. Analyse ce devis et retourne UNIQUEMENT un JSON valide sans markdown ni backticks :
 {
   "score": number (0-100),
@@ -30,97 +35,142 @@ Vérifie obligatoirement ces mentions légales (tableau de 9 éléments dans cet
 Signale comme suspect si : devis vague, acompte > 30%, absence de décennale, pression temporelle ("offre valable 24h"), prix anormalement bas ou élevés, coordonnées incomplètes.
 Score : 80-100 = conforme, 50-79 = vigilance, 0-49 = suspect.`
 
+/** Estime le nombre de pages d'un PDF via regex sur le binaire */
+function estimatePdfPages(pdfBytes: Buffer): number {
+  const str = pdfBytes.toString('latin1')
+  // /Type /Page (sans 's') = une page dans l'arbre de pages PDF
+  const matches = str.match(/\/Type\s*\/Page[^s]/g)
+  return matches ? matches.length : 0
+}
+
+function getBaseUrl(req: NextRequest): string {
+  const host = req.headers.get('host')
+  const proto = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https')
+  return process.env.NEXT_PUBLIC_BASE_URL || (host ? `${proto}://${host}` : 'http://localhost:3000')
+}
+
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const token = authHeader?.replace('Bearer ', '')
+  // ── 1. Authentification ──────────────────────────────────────────────────
+  const token = req.headers.get('authorization')?.replace('Bearer ', '')
+  if (!token) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-  if (!token) {
-    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-  }
-
-  const supabase = createClient(
+  const userSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  )
+  const serviceSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Session invalide' }, { status: 401 })
+  const { data: { user }, error: authError } = await userSupabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: 'Session invalide' }, { status: 401 })
+
+  // ── 2. Vérifier le plan actif ────────────────────────────────────────────
+  const { data: activePlan } = await serviceSupabase
+    .from('user_plans')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('actif', true)
+    .in('plan', ['serenite', 'tranquillite'])
+    .order('date_achat', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!activePlan) {
+    return NextResponse.json({
+      requiresPayment: true,
+      message: 'L\'analyse de devis est incluse dans le Pack Sérénité (19,90€ achat unique) ou l\'abonnement Tranquillité (4,90€/mois).',
+    }, { status: 402 })
   }
 
+  // ── 3. Limites par plan ──────────────────────────────────────────────────
+  if (activePlan.plan === 'serenite') {
+    if (activePlan.devis_analyse_used) {
+      return NextResponse.json({
+        limitReached: true,
+        plan: 'serenite',
+        message: 'Vous avez déjà utilisé votre analyse pour cet achat. Vous avez un nouveau devis ? Achetez un nouveau Pack Sérénité.',
+      }, { status: 429 })
+    }
+  } else if (activePlan.plan === 'tranquillite') {
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { count: monthCount } = await serviceSupabase
+      .from('analyses_devis')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('plan', 'tranquillite')
+      .gte('created_at', startOfMonth.toISOString())
+
+    if ((monthCount ?? 0) >= MAX_MONTHLY_TRANQUILLITE) {
+      const nextMonth = new Date(startOfMonth)
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+      const renewDate = nextMonth.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      return NextResponse.json({
+        limitReached: true,
+        plan: 'tranquillite',
+        message: `Vous avez atteint votre limite de ${MAX_MONTHLY_TRANQUILLITE} analyses ce mois-ci. Votre quota se renouvelle le ${renewDate}.`,
+        renewDate: nextMonth.toISOString(),
+      }, { status: 429 })
+    }
+  }
+
+  // ── 4. Détection d'abus (>5 analyses en <1h) ────────────────────────────
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const { count: recentCount } = await serviceSupabase
+    .from('analyses_devis')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', oneHourAgo)
+
+  if ((recentCount ?? 0) >= ABUSE_THRESHOLD_PER_HOUR) {
+    // Logger l'alerte (silencieux si table absente)
+    await serviceSupabase.from('alertes_abus').insert({
+      user_id: user.id,
+      type: 'analyses_excessives',
+      details: { count_last_hour: recentCount, threshold: ABUSE_THRESHOLD_PER_HOUR },
+    }).then(() => {})
+    return NextResponse.json({
+      error: 'Trop de requêtes. Vous avez atteint la limite horaire. Réessayez dans une heure.',
+    }, { status: 429 })
+  }
+
+  // ── 5. Valider le fichier ────────────────────────────────────────────────
   const body = await req.json()
-  const { fileBase64, mimeType, sessionId } = body
+  const { fileBase64, mimeType } = body
 
   if (!fileBase64 || !mimeType) {
     return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
   }
 
-  // Vérifier le quota gratuit
-  const { data: existingAnalyses } = await supabase
-    .from('devis_analyses')
-    .select('id')
-    .eq('user_id', user.id)
-    .limit(1)
+  const fileBytes = Buffer.from(fileBase64, 'base64')
+  const fileSizeBytes = fileBytes.length
 
-  const hasFreeQuota = !existingAnalyses || existingAnalyses.length === 0
+  if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+    return NextResponse.json({
+      error: `Votre devis dépasse la taille autorisée (5 Mo). Un vrai devis artisan fait rarement plus de 3-4 pages.`,
+    }, { status: 400 })
+  }
 
-  // Vérifier le paiement Stripe si sessionId fourni
-  const { default: Stripe } = await import('stripe')
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
-
-  let isPaidAnalysis = false
-  if (sessionId && !hasFreeQuota) {
-    try {
-      const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
-      if (stripeSession.payment_status === 'paid') {
-        const { data: usedSession } = await supabase
-          .from('devis_analyses')
-          .select('id')
-          .eq('stripe_session_id', sessionId)
-          .limit(1)
-        if (!usedSession || usedSession.length === 0) {
-          isPaidAnalysis = true
-        }
-      }
-    } catch {
-      // Session Stripe invalide
+  let pagesCount = 0
+  if (mimeType === 'application/pdf') {
+    pagesCount = estimatePdfPages(fileBytes)
+    if (pagesCount > MAX_PAGES && pagesCount > 0) {
+      return NextResponse.json({
+        error: `Votre devis dépasse la limite de ${MAX_PAGES} pages (${pagesCount} pages détectées). Un vrai devis artisan fait rarement plus de 3-4 pages.`,
+      }, { status: 400 })
     }
   }
 
-  // Bloquer et créer le checkout si ni gratuit ni payé
-  if (!hasFreeQuota && !isPaidAnalysis) {
-    const requestHost = req.headers.get('host')
-    const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
-
-    const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          unit_amount: 990,
-          product_data: {
-            name: 'Analyse de devis IA — ArtisanCheck',
-            description: 'Analyse complète : mentions légales, alertes, recommandations personnalisées.',
-          },
-        },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      success_url: `${baseUrl}/analyser-devis?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/analyser-devis`,
-    })
-
-    return NextResponse.json({ requiresPayment: true, checkoutUrl: checkoutSession.url })
-  }
-
-  // Analyser avec Claude
+  // ── 6. Appel Claude Haiku ────────────────────────────────────────────────
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'Service IA non configuré' }, { status: 503 })
   }
 
-  // ── Appel Claude
   let rawText = ''
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
@@ -137,56 +187,62 @@ export async function POST(req: NextRequest) {
         }
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1500,
       system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
-        content: [
-          fileContent,
-          { type: 'text', text: 'Analyse ce devis et retourne le JSON demandé.' },
-        ],
+        content: [fileContent, { type: 'text', text: 'Analyse ce devis et retourne le JSON demandé.' }],
       }],
     })
 
     rawText = message.content[0].type === 'text' ? message.content[0].text : ''
-    console.log('[analyser-devis] Claude raw response (first 300):', rawText.slice(0, 300))
   } catch (err: any) {
-    console.error('[analyser-devis] Erreur appel Claude:', err?.message || err)
+    console.error('[analyser-devis] Erreur Claude:', err?.message)
     return NextResponse.json({ error: `Erreur IA : ${err?.message || 'Appel Claude échoué'}` }, { status: 500 })
   }
 
-  // ── Parse JSON
+  // ── Parse JSON ───────────────────────────────────────────────────────────
   let analysis: any
   try {
     const jsonText = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
     analysis = JSON.parse(jsonText)
-  } catch (err: any) {
-    console.error('[analyser-devis] Erreur JSON.parse. Réponse brute:', rawText)
-    return NextResponse.json({ error: `Réponse IA invalide. Réessayez ou changez de fichier.` }, { status: 500 })
+  } catch {
+    console.error('[analyser-devis] JSON.parse failed. Raw:', rawText.slice(0, 300))
+    return NextResponse.json({ error: 'Réponse IA invalide. Réessayez ou changez de fichier.' }, { status: 500 })
   }
 
-  // ── Croiser avec la fiche entreprise si SIRET trouvé
+  // ── Croiser avec fiche entreprise si SIRET trouvé ────────────────────────
   let company = null
   if (analysis.siret_trouve) {
     try {
-      const requestHost = req.headers.get('host')
-      const requestProto = req.headers.get('x-forwarded-proto') || (requestHost?.includes('localhost') ? 'http' : 'https')
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (requestHost ? `${requestProto}://${requestHost}` : 'http://localhost:3000')
+      const baseUrl = getBaseUrl(req)
       const searchRes = await fetch(`${baseUrl}/api/search?q=${encodeURIComponent(analysis.siret_trouve)}`)
       if (searchRes.ok) company = await searchRes.json()
     } catch { /* ignore */ }
   }
 
-  // ── Enregistrer en base (erreur silencieuse si table absente)
-  const { error: insertError } = await supabase.from('devis_analyses').insert({
+  // ── 7. Logger l'analyse ──────────────────────────────────────────────────
+  await serviceSupabase.from('analyses_devis').insert({
     user_id: user.id,
-    paid: !hasFreeQuota,
-    stripe_session_id: sessionId || null,
-    verdict: analysis.verdict,
-    score: analysis.score,
+    stripe_payment_id: activePlan.stripe_payment_id || null,
+    plan: activePlan.plan,
+    pages_pdf: pagesCount,
+    taille_pdf_bytes: fileSizeBytes,
+  }).then(({ error }) => {
+    if (error) console.warn('[analyser-devis] Log insert failed:', error.message)
   })
-  if (insertError) console.warn('[analyser-devis] Insert Supabase échoué (table absente ?):', insertError.message)
+
+  // ── 8. Marquer sérénité comme utilisée ──────────────────────────────────
+  if (activePlan.plan === 'serenite') {
+    await serviceSupabase
+      .from('user_plans')
+      .update({ devis_analyse_used: true })
+      .eq('id', activePlan.id)
+      .then(({ error }) => {
+        if (error) console.warn('[analyser-devis] Update devis_analyse_used failed:', error.message)
+      })
+  }
 
   return NextResponse.json({ analysis, company })
 }
