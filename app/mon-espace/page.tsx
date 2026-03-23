@@ -868,7 +868,7 @@ function MonEspaceInner() {
       .from('surveillances')
       .delete()
       .eq('id', id)
-      .eq('user_id', user?.id ?? '')
+      .eq('email', user?.email ?? '')
     if (error) {
       setToast('Erreur lors de la suppression. Réessayez.')
       setTimeout(() => setToast(null), 4000)
