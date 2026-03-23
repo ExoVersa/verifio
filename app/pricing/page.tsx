@@ -187,8 +187,8 @@ export default function PricingPage() {
 
         {/* Pro link */}
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
-          <Link href="/pricing-pro" style={{ fontSize: '14px', color: 'var(--color-muted)', textDecoration: 'none', borderBottom: '1px dashed var(--color-border)' }}>
-            Voir les offres professionnelles (artisans) →
+          <Link href="/espace-artisan" style={{ fontSize: '14px', color: 'var(--color-muted)', textDecoration: 'none', borderBottom: '1px dashed var(--color-border)' }}>
+            Voir les offres artisans →
           </Link>
         </div>
       </section>
