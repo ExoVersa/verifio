@@ -926,10 +926,18 @@ export default function HomePage() {
               <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Produit
               </h4>
-              {['Rechercher un artisan', 'Tarifs', 'Espace artisan', 'API'].map(link => (
-                <div key={link} style={{ marginBottom: '8px' }}>
-                  <a href="/" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}>
-                    {link}
+              {[
+                { label: 'Rechercher un artisan', href: '/recherche' },
+                { label: 'Tarifs', href: '/pricing' },
+                { label: 'Espace artisan', href: '/espace-artisan' },
+                { label: 'Contact', href: '/contact' },
+              ].map(({ label, href }) => (
+                <div key={label} style={{ marginBottom: '8px' }}>
+                  <a href={href} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+                  >
+                    {label}
                   </a>
                 </div>
               ))}
@@ -938,10 +946,17 @@ export default function HomePage() {
               <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Légal
               </h4>
-              {['CGU', 'Politique de confidentialité', 'Mentions légales'].map(link => (
-                <div key={link} style={{ marginBottom: '8px' }}>
-                  <a href="/" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}>
-                    {link}
+              {[
+                { label: 'CGU', href: '/cgu' },
+                { label: 'Politique de confidentialité', href: '/politique-confidentialite' },
+                { label: 'Mentions légales', href: '/mentions-legales' },
+              ].map(({ label, href }) => (
+                <div key={label} style={{ marginBottom: '8px' }}>
+                  <a href={href} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+                  >
+                    {label}
                   </a>
                 </div>
               ))}

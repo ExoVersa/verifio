@@ -41,11 +41,11 @@ const NAV_MENUS: NavMenu[] = [
     id: 'verifier',
     emoji: '🔍',
     label: 'Vérifier',
-    ctaHref: '/',
+    ctaHref: '/recherche',
     ctaLabel: 'Vérifier un artisan',
     stat: { value: '26 000', label: 'arnaques signalées en 2024', tip: 'Vérifiez avant de signer' },
     items: [
-      { href: '/', Icon: Search, label: 'Rechercher un artisan', desc: 'Vérifiez SIRET, certifications et alertes légales' },
+      { href: '/recherche', Icon: Search, label: 'Rechercher un artisan', desc: 'Vérifiez SIRET, certifications et alertes légales' },
       { href: '/comparer', Icon: ArrowLeftRight, label: 'Comparer des artisans', desc: 'Confrontez 2 ou 3 profils côte à côte' },
       { href: '/trouver-artisan', Icon: MapPin, label: 'Trouver un artisan près de moi', desc: 'Artisans certifiés RGE près de chez vous' },
     ],
@@ -703,7 +703,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
 
                     {/* CTA vérifier artisan */}
                     <a
-                      href="/"
+                      href="/recherche"
                       style={{
                         fontSize: '13px', fontWeight: 700, color: '#fff',
                         textDecoration: 'none', padding: '8px 16px', borderRadius: '9px',
@@ -731,7 +731,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     Se connecter
                   </a>
                   <a
-                    href="/"
+                    href="/recherche"
                     style={{
                       fontSize: '13px', fontWeight: 700, color: '#fff',
                       textDecoration: 'none', padding: '8px 16px', borderRadius: '9px',
