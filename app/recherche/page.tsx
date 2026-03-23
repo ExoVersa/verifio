@@ -11,24 +11,22 @@ type CandidateResult = SearchCandidate & { rge?: boolean }
 type SortBy = 'pertinence' | 'anciennete'
 
 /* ─── Constants ─────────────────────────────────────────────── */
-const TRAVAUX = [
-  { id: 'plomberie',     label: 'Plomberie',     kw: 'plombier' },
-  { id: 'electricite',   label: 'Électricité',   kw: 'électricien' },
-  { id: 'maconnerie',    label: 'Maçonnerie',    kw: 'maçon' },
-  { id: 'charpente',     label: 'Charpente',     kw: 'charpentier' },
-  { id: 'couverture',    label: 'Couverture',    kw: 'couvreur' },
-  { id: 'isolation',     label: 'Isolation',     kw: 'isolation' },
-  { id: 'menuiserie',    label: 'Menuiserie',    kw: 'menuisier' },
-  { id: 'peinture',      label: 'Peinture',      kw: 'peintre' },
-  { id: 'carrelage',     label: 'Carrelage',     kw: 'carreleur' },
-  { id: 'chauffage',     label: 'Chauffage',     kw: 'chauffagiste' },
-  { id: 'climatisation', label: 'Climatisation', kw: 'climaticien' },
-  { id: 'serrurerie',    label: 'Serrurerie',    kw: 'serrurier' },
+const QUICK_ACTIONS = [
+  { emoji: '🔧', label: 'Plombier',      kw: 'plombier' },
+  { emoji: '⚡', label: 'Électricien',   kw: 'électricien' },
+  { emoji: '🧱', label: 'Maçon',         kw: 'maçon' },
+  { emoji: '🏠', label: 'Couvreur',      kw: 'couvreur' },
+  { emoji: '🌡️', label: 'Chauffagiste',  kw: 'chauffagiste' },
+  { emoji: '🪟', label: 'Menuisier',     kw: 'menuisier' },
+  { emoji: '🎨', label: 'Peintre',       kw: 'peintre' },
+  { emoji: '🪵', label: 'Charpentier',   kw: 'charpentier' },
+  { emoji: '❄️', label: 'Climatisation', kw: 'climaticien' },
 ]
 
 const POPULAR = [
-  'Plombier Paris', 'Électricien Lyon', 'Couvreur Bordeaux',
-  'Maçon Marseille', 'Menuisier Toulouse', 'Carreleur Nantes',
+  { label: 'Plombier Paris',     kw: 'Plombier',    ville: 'Paris' },
+  { label: 'Électricien Lyon',   kw: 'Électricien', ville: 'Lyon' },
+  { label: 'Maçon Bordeaux',     kw: 'Maçon',       ville: 'Bordeaux' },
 ]
 
 const RAYON_OPTIONS = [
@@ -526,23 +524,7 @@ function RechercheInner() {
       }}>
         <div style={{ maxWidth: '880px', margin: '0 auto' }}>
 
-          {/* Page title (only on empty state) */}
-          {!hasQuery && (
-            <div style={{ marginBottom: '16px' }}>
-              <h1 style={{
-                fontFamily: 'var(--font-display)', fontWeight: 800,
-                fontSize: 'clamp(22px, 4vw, 32px)', color: cv('text'),
-                margin: '0 0 6px', lineHeight: 1.2,
-              }}>
-                Trouver et vérifier un artisan
-              </h1>
-              <p style={{ margin: 0, fontSize: '15px', color: cv('muted') }}>
-                Recherchez parmi les entreprises du bâtiment vérifiées sur les données officielles
-              </p>
-            </div>
-          )}
-
-          {/* Line 1 — Main search bar */}
+          {/* Search form */}
           <form onSubmit={handleSubmit} style={{ marginBottom: '10px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <div style={{ flex: '2 1 240px', position: 'relative' }}>
@@ -583,96 +565,85 @@ function RechercheInner() {
             </div>
           </form>
 
-          {/* Line 2 — Travaux chips */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-            {TRAVAUX.map(t => (
+          {/* Filter bar — only visible when a search is active */}
+          {hasQuery && (
+            <div style={{
+              display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center',
+              marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${cv('border')}`,
+            }}>
+              {/* RGE */}
               <Chip
-                key={t.id}
-                active={queryInput.toLowerCase().includes(t.kw.toLowerCase())}
-                onClick={() => handleChipClick(t.kw)}
+                active={filterRge}
+                onClick={() => { const n = !filterRge; setFilterRge(n); updateFilters({ rge: n ? 'true' : '' }) }}
               >
-                {t.label}
+                🌿 RGE
               </Chip>
-            ))}
-          </div>
 
-          {/* Line 3 — Secondary filters */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* RGE */}
-            <Chip
-              active={filterRge}
-              onClick={() => { const n = !filterRge; setFilterRge(n); updateFilters({ rge: n ? 'true' : '' }) }}
-            >
-              🌿 RGE uniquement
-            </Chip>
+              {/* Statut */}
+              <Chip
+                active={filterStatut === 'A'}
+                onClick={() => { const n = filterStatut === 'A' ? '' : 'A'; setFilterStatut(n); updateFilters({ statut: n }) }}
+              >
+                ● Actifs
+              </Chip>
 
-            {/* Statut */}
-            <Chip
-              active={filterStatut === 'A'}
-              onClick={() => { const n = filterStatut === 'A' ? '' : 'A'; setFilterStatut(n); updateFilters({ statut: n }) }}
-            >
-              ● Actifs seulement
-            </Chip>
-
-            {/* Ancienneté */}
-            <select
-              value={filterAnciennete}
-              onChange={e => { setFilterAnciennete(e.target.value); updateFilters({ anciennete: e.target.value }) }}
-              style={{
-                padding: '4px 10px', borderRadius: '20px',
-                border: `1px solid ${filterAnciennete ? cv('accent') : cv('border')}`,
-                background: filterAnciennete ? '#ecfdf5' : 'transparent',
-                color: filterAnciennete ? cv('accent') : cv('muted'),
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'var(--font-body)', outline: 'none',
-              }}
-            >
-              <option value="">Ancienneté</option>
-              <option value="2">+ 2 ans</option>
-              <option value="5">+ 5 ans</option>
-              <option value="10">+ 10 ans</option>
-            </select>
-
-            {/* Score min */}
-            <select
-              value={filterScoreMin}
-              onChange={e => { setFilterScoreMin(e.target.value); updateFilters({ score_min: e.target.value }) }}
-              style={{
-                padding: '4px 10px', borderRadius: '20px',
-                border: `1px solid ${filterScoreMin ? cv('accent') : cv('border')}`,
-                background: filterScoreMin ? '#ecfdf5' : 'transparent',
-                color: filterScoreMin ? cv('accent') : cv('muted'),
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'var(--font-body)', outline: 'none',
-              }}
-            >
-              <option value="">Score min</option>
-              <option value="50">Score ≥ 50</option>
-              <option value="70">Score ≥ 70</option>
-              <option value="85">Score ≥ 85</option>
-            </select>
-
-            {/* Rayon — only when ville selected */}
-            {villeSelection && (
+              {/* Ancienneté */}
               <select
-                value={rayon}
-                onChange={e => { setRayon(e.target.value); updateFilters({ rayon: e.target.value }) }}
+                value={filterAnciennete}
+                onChange={e => { setFilterAnciennete(e.target.value); updateFilters({ anciennete: e.target.value }) }}
                 style={{
                   padding: '4px 10px', borderRadius: '20px',
-                  border: `1px solid ${cv('border')}`,
-                  background: 'transparent', color: cv('muted'),
+                  border: `1px solid ${filterAnciennete ? cv('accent') : cv('border')}`,
+                  background: filterAnciennete ? '#ecfdf5' : 'transparent',
+                  color: filterAnciennete ? cv('accent') : cv('muted'),
                   fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                   fontFamily: 'var(--font-body)', outline: 'none',
                 }}
               >
-                {RAYON_OPTIONS.map(r => <option key={r.v} value={r.v}>{r.label}</option>)}
+                <option value="">Ancienneté ▾</option>
+                <option value="2">+ 2 ans</option>
+                <option value="5">+ 5 ans</option>
+                <option value="10">+ 10 ans</option>
               </select>
-            )}
 
-            {/* Separator + Reset */}
-            {isFiltered && (
-              <>
-                <span style={{ color: cv('border'), fontSize: '16px', lineHeight: 1 }}>|</span>
+              {/* Score min */}
+              <select
+                value={filterScoreMin}
+                onChange={e => { setFilterScoreMin(e.target.value); updateFilters({ score_min: e.target.value }) }}
+                style={{
+                  padding: '4px 10px', borderRadius: '20px',
+                  border: `1px solid ${filterScoreMin ? cv('accent') : cv('border')}`,
+                  background: filterScoreMin ? '#ecfdf5' : 'transparent',
+                  color: filterScoreMin ? cv('accent') : cv('muted'),
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', outline: 'none',
+                }}
+              >
+                <option value="">Score ▾</option>
+                <option value="50">Score ≥ 50</option>
+                <option value="70">Score ≥ 70</option>
+                <option value="85">Score ≥ 85</option>
+              </select>
+
+              {/* Rayon */}
+              {villeSelection && (
+                <select
+                  value={rayon}
+                  onChange={e => { setRayon(e.target.value); updateFilters({ rayon: e.target.value }) }}
+                  style={{
+                    padding: '4px 10px', borderRadius: '20px',
+                    border: `1px solid ${cv('border')}`,
+                    background: 'transparent', color: cv('muted'),
+                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', outline: 'none',
+                  }}
+                >
+                  {RAYON_OPTIONS.map(r => <option key={r.v} value={r.v}>Rayon {r.label} ▾</option>)}
+                </select>
+              )}
+
+              {/* Reset */}
+              {isFiltered && (
                 <button
                   type="button"
                   onClick={resetFilters}
@@ -686,9 +657,16 @@ function RechercheInner() {
                 >
                   <X size={12} /> Réinitialiser
                 </button>
-              </>
-            )}
-          </div>
+              )}
+
+              {/* Count — pushed to the right */}
+              {!loading && total > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: '12px', color: cv('muted'), whiteSpace: 'nowrap' }}>
+                  <strong style={{ color: cv('text') }}>{total.toLocaleString('fr-FR')}</strong> résultat{total > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -697,43 +675,80 @@ function RechercheInner() {
 
         {/* Initial state */}
         {!hasQuery && !loading && (
-          <div style={{ textAlign: 'center', padding: '56px 16px' }}>
-            <div style={{ fontSize: '52px', marginBottom: '16px' }}>🔍</div>
-            <p style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: cv('text'), fontFamily: 'var(--font-display)' }}>
-              Qui cherchez-vous ?
-            </p>
-            <p style={{ margin: '0 0 28px', fontSize: '14px', color: cv('muted') }}>
-              Entrez le nom d&apos;un artisan, son SIRET, ou sélectionnez un type de travaux ci-dessus.
-            </p>
-            <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: 600, color: cv('muted'), textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Recherches populaires
-            </p>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {POPULAR.map(s => {
-                const parts = s.split(' ')
-                const kw = parts[0]
-                const ville = parts.slice(1).join(' ')
-                return (
+          <div style={{ padding: '40px 0 80px' }}>
+            {/* Quick action grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '12px',
+              marginBottom: '32px',
+            }}>
+              {QUICK_ACTIONS.map(({ emoji, label, kw }) => (
+                <button
+                  key={kw}
+                  type="button"
+                  onClick={() => {
+                    setQueryInput(kw)
+                    const url = buildURL({ q: kw })
+                    router.push(`/recherche?${url}`)
+                  }}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: '8px', padding: '20px 12px',
+                    background: cv('surface'), border: `1px solid ${cv('border')}`,
+                    borderRadius: '16px', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget
+                    el.style.borderColor = cv('accent')
+                    el.style.boxShadow = '0 4px 16px rgba(27,67,50,0.1)'
+                    el.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget
+                    el.style.borderColor = cv('border')
+                    el.style.boxShadow = 'none'
+                    el.style.transform = 'none'
+                  }}
+                >
+                  <span style={{ fontSize: '28px', lineHeight: 1 }}>{emoji}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: cv('text') }}>{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Popular searches — discrete text line */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '12px', color: cv('muted'), flexShrink: 0 }}>Recherches populaires :</span>
+              {POPULAR.map((p, i) => (
+                <span key={p.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {i > 0 && <span style={{ color: cv('border') }}>·</span>}
                   <button
-                    key={s}
                     type="button"
                     onClick={() => {
-                      setQueryInput(kw); setVilleInput(ville); setVilleSelection(null)
-                      router.push(`/recherche?${buildURL({ q: kw, ville, cp: '', dept: '' })}`)
+                      setQueryInput(p.kw); setVilleInput(p.ville); setVilleSelection(null)
+                      router.push(`/recherche?${buildURL({ q: p.kw, ville: p.ville, cp: '', dept: '' })}`)
                     }}
                     style={{
-                      padding: '7px 16px', borderRadius: '20px',
-                      border: `1px solid ${cv('border')}`, background: 'white',
-                      fontSize: '13px', color: cv('text'), cursor: 'pointer',
-                      fontFamily: 'var(--font-body)', fontWeight: 500, transition: 'border-color 0.12s',
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontSize: '12px', color: cv('muted'), fontFamily: 'var(--font-body)',
+                      textDecoration: 'underline', textDecorationColor: 'transparent',
+                      transition: 'color 0.12s, text-decoration-color 0.12s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = cv('accent'))}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = cv('border'))}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = cv('accent')
+                      e.currentTarget.style.textDecorationColor = cv('accent')
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = cv('muted')
+                      e.currentTarget.style.textDecorationColor = 'transparent'
+                    }}
                   >
-                    {s}
+                    {p.label}
                   </button>
-                )
-              })}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -772,12 +787,7 @@ function RechercheInner() {
         {/* Results list */}
         {!loading && !hasError && sortedResults.length > 0 && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: cv('muted') }}>
-                <strong style={{ color: cv('text') }}>{total.toLocaleString('fr-FR')}</strong>
-                {' '}entreprise{total > 1 ? 's' : ''} trouvée{total > 1 ? 's' : ''}
-                {qParam && <> pour <strong style={{ color: cv('text') }}>« {qParam} »</strong></>}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortBy)}
@@ -788,8 +798,8 @@ function RechercheInner() {
                   cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none',
                 }}
               >
-                <option value="pertinence">Pertinence</option>
-                <option value="anciennete">Ancienneté</option>
+                <option value="pertinence">Trier : Pertinence</option>
+                <option value="anciennete">Trier : Ancienneté</option>
               </select>
             </div>
 
