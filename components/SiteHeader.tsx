@@ -47,7 +47,6 @@ const NAV_MENUS: NavMenu[] = [
     items: [
       { href: '/recherche', Icon: Search, label: 'Rechercher un artisan', desc: 'Vérifiez SIRET, certifications et alertes légales' },
       { href: '/comparer', Icon: ArrowLeftRight, label: 'Comparer des artisans', desc: 'Confrontez 2 ou 3 profils côte à côte' },
-      { href: '/recherche', Icon: MapPin, label: 'Trouver un artisan RGE', desc: 'Filtrez par type de travaux, ville et certification' },
     ],
   },
   {

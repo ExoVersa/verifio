@@ -388,30 +388,27 @@ function RechercheInner() {
           </form>
 
           {/* ── Filters toggle (mobile) ── */}
-          {hasResults && (
-            <button
-              onClick={() => setFiltersOpen(o => !o)}
-              className="filters-toggle-mobile"
-              style={{
-                display: 'none',
-                alignItems: 'center', gap: '6px',
-                background: 'none', border: '1px solid var(--color-border)',
-                borderRadius: '10px', padding: '8px 14px',
-                fontSize: '13px', fontWeight: 600,
-                color: 'var(--color-text)', cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-                marginBottom: '12px',
-              }}
-            >
-              <Filter size={14} />
-              Filtres {hasActiveFilters && <span style={{ background: 'var(--color-accent)', color: 'white', borderRadius: '100px', padding: '0 6px', fontSize: '11px', fontWeight: 700 }}>{selectedTravaux.length + (filterStatut !== 'actif' ? 1 : 0) + (filterAnciennete !== 'tous' ? 1 : 0) + (filterRge ? 1 : 0)}</span>}
-              <ChevronDown size={14} style={{ transform: filtersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-          )}
+          <button
+            onClick={() => setFiltersOpen(o => !o)}
+            className="filters-toggle-mobile"
+            style={{
+              display: 'none',
+              alignItems: 'center', gap: '6px',
+              background: 'none', border: '1px solid var(--color-border)',
+              borderRadius: '10px', padding: '8px 14px',
+              fontSize: '13px', fontWeight: 600,
+              color: 'var(--color-text)', cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              marginBottom: '12px',
+            }}
+          >
+            <Filter size={14} />
+            Filtres {hasActiveFilters && <span style={{ background: 'var(--color-accent)', color: 'white', borderRadius: '100px', padding: '0 6px', fontSize: '11px', fontWeight: 700 }}>{selectedTravaux.length + (filterStatut !== 'actif' ? 1 : 0) + (filterAnciennete !== 'tous' ? 1 : 0) + (filterRge ? 1 : 0)}</span>}
+            <ChevronDown size={14} style={{ transform: filtersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
 
           {/* ── Filters panel ── */}
-          {hasResults && (
-            <div className={`filters-panel${filtersOpen ? ' open' : ''}`} style={{ paddingBottom: '16px' }}>
+          <div className={`filters-panel${filtersOpen ? ' open' : ''}`} style={{ paddingBottom: '16px' }}>
               {/* Type de travaux chips */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                 {TRAVAUX_TYPES.map(t => {
@@ -534,9 +531,8 @@ function RechercheInner() {
                 )}
               </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
       {/* ── Results ── */}
       <div style={{ maxWidth: '860px', margin: '0 auto', padding: '20px 24px 80px' }}>
