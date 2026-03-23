@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import SiteHeader from '@/components/SiteHeader'
+import { calculateScore } from '@/lib/score'
 
 interface CompanyResult {
   nom_complet: string
@@ -40,22 +41,14 @@ interface SearchResult {
 }
 
 function computeScore(company: CompanyResult): number {
-  let score = 0
   const actif = company.etat_administratif === 'A' || company.siege?.etat_administratif === 'A'
-  if (actif) score += 25
-  if (company.complements?.est_rge) score += 20
-  const dateStr = company.date_creation || company.siege?.date_creation
-  if (dateStr) {
-    const created = new Date(dateStr)
-    const now = new Date()
-    const ageYears = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-    if (ageYears > 10) score += 20
-    else if (ageYears > 3) score += 14
-    else score += 7
-  }
-  if (company.dirigeants && company.dirigeants.length > 0) score += 20
-  score += 15
-  return Math.min(score, 100)
+  return calculateScore({
+    statut: actif ? 'actif' : 'fermé',
+    rge: company.complements?.est_rge ?? false,
+    dateCreation: company.date_creation || company.siege?.date_creation,
+    dirigeants: company.dirigeants ?? [],
+    // bodacc not available from autocomplete API → defaults apply
+  }).total
 }
 
 function getAgeYears(dateStr?: string): number | null {

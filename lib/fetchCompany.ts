@@ -1,4 +1,5 @@
-import type { SearchResult, Alert, BodaccInfo, BodaccAnnonce, Dirigeant } from '@/types'
+import type { SearchResult, Alert, BodaccInfo, BodaccAnnonce, Dirigeant, RGEInfo } from '@/types'
+import { calculateScore } from '@/lib/score'
 
 const FORMES_JURIDIQUES: Record<string, string> = {
   '1000': 'Entrepreneur individuel',
@@ -371,79 +372,7 @@ function parseDirigeants(raw: any[]): Dirigeant[] {
   }))
 }
 
-function calculateScore(
-  entreprise: any,
-  rgeData: any,
-  bodacc: BodaccInfo
-): { score: number; alerts: Alert[] } {
-  let score = 50
-  const alerts: Alert[] = []
-
-  if (entreprise.etat_administratif === 'A') {
-    score += 15
-  } else {
-    score -= 30
-    alerts.push({ type: 'danger', message: 'Entreprise fermée ou en cessation d\'activité' })
-  }
-
-  const dateCreation = entreprise.date_creation
-  if (dateCreation) {
-    const years = (Date.now() - new Date(dateCreation).getTime()) / (1000 * 60 * 60 * 24 * 365)
-    if (years < 1) {
-      score -= 15
-      alerts.push({ type: 'warn', message: 'Entreprise très récente (créée il y a moins d\'un an)' })
-    } else if (years >= 3) {
-      score += 10
-    }
-  }
-
-  const capital = entreprise.capital_social
-  if (capital !== undefined && capital !== null) {
-    if (capital < 1000) {
-      alerts.push({ type: 'warn', message: `Capital social très faible (${capital.toLocaleString('fr-FR')} €)` })
-      score -= 5
-    } else if (capital >= 10000) {
-      score += 5
-    }
-  }
-
-  const rgeLines = rgeData?.results || rgeData?.data || []
-  if (rgeLines.length > 0) {
-    score += 15
-    const domaines = [...new Set(rgeLines.map((r: any) => r.domaine || r.domaine_travaux).filter(Boolean))]
-    alerts.push({ type: 'safe', message: `Certifié RGE — ${domaines.length} domaine(s) : ${(domaines as string[]).slice(0, 2).join(', ')}` })
-  }
-
-  const naf = entreprise.activite_principale || ''
-  if (naf.startsWith('41') || naf.startsWith('42') || naf.startsWith('43')) score += 5
-
-  if (bodacc.procedureCollective) {
-    score -= 20
-    alerts.push({ type: 'danger', message: `Procédure collective détectée : ${bodacc.typeProcedure || 'redressement/liquidation'}` })
-  }
-
-  if (bodacc.changementDirigeantRecent) {
-    score -= 10
-    alerts.push({ type: 'warn', message: 'Changement de dirigeant dans les 6 derniers mois' })
-  }
-
-  const tranche = entreprise.tranche_effectif_salarie
-  if (tranche && TRANCHES_GT5.includes(tranche)) {
-    score += 5
-  }
-
-  score = Math.max(0, Math.min(100, score))
-
-  if (score >= 70) {
-    alerts.unshift({ type: 'safe', message: 'Profil globalement rassurant' })
-  } else if (score >= 45) {
-    alerts.unshift({ type: 'warn', message: 'Quelques points de vigilance' })
-  } else {
-    alerts.unshift({ type: 'danger', message: 'Profil à risque — vérifiez avant de signer' })
-  }
-
-  return { score, alerts }
-}
+/* calculateScore is now imported from lib/score.ts (single source of truth) */
 
 export async function fetchCompany(query: string): Promise<SearchResult> {
   const data = await fetchEntreprise(query)
@@ -463,7 +392,51 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
     siren ? fetchBODACC(siren) : Promise.resolve(emptyBodacc()),
   ])
 
-  const { score, alerts } = calculateScore({ ...e, ...siege }, rgeData, bodacc)
+  // Build RGEInfo for the canonical score function
+  const rgeLines = rgeData?.results || rgeData?.data || []
+  const rgeInfo: RGEInfo = {
+    certifie: rgeLines.length > 0,
+    domaines: rgeLines.map((r: any) => r.domaine || r.domaine_travaux).filter(Boolean),
+    organismes: rgeLines.map((r: any) => r.organisme).filter(Boolean),
+  }
+  const dirigeants = parseDirigeants(e.dirigeants || [])
+
+  // Score via canonical function (same as /recherche and /comparer)
+  const { total: score } = calculateScore({
+    statut: siege.etat_administratif === 'A' ? 'actif' : 'fermé',
+    rge: rgeInfo,
+    dateCreation: siege.date_creation || e.date_creation,
+    dirigeants,
+    bodacc,
+  })
+
+  // Build alerts
+  const alerts: Alert[] = []
+  if (siege.etat_administratif !== 'A') {
+    alerts.push({ type: 'danger', message: "Entreprise fermée ou en cessation d'activité" })
+  }
+  const dateStr = siege.date_creation || e.date_creation
+  if (dateStr) {
+    const yrs = (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24 * 365)
+    if (yrs < 1) alerts.push({ type: 'warn', message: "Entreprise très récente (créée il y a moins d'un an)" })
+  }
+  const capital = e.capital_social
+  if (capital !== undefined && capital !== null && capital < 1000) {
+    alerts.push({ type: 'warn', message: `Capital social très faible (${capital.toLocaleString('fr-FR')} €)` })
+  }
+  if (rgeInfo.certifie) {
+    const domaines = [...new Set(rgeInfo.domaines)] as string[]
+    alerts.push({ type: 'safe', message: `Certifié RGE — ${domaines.length} domaine(s) : ${domaines.slice(0, 2).join(', ')}` })
+  }
+  if (bodacc.procedureCollective) {
+    alerts.push({ type: 'danger', message: `Procédure collective détectée : ${bodacc.typeProcedure || 'redressement/liquidation'}` })
+  }
+  if (bodacc.changementDirigeantRecent) {
+    alerts.push({ type: 'warn', message: 'Changement de dirigeant dans les 6 derniers mois' })
+  }
+  if (score >= 70) alerts.unshift({ type: 'safe', message: 'Profil globalement rassurant' })
+  else if (score >= 45) alerts.unshift({ type: 'warn', message: 'Quelques points de vigilance' })
+  else alerts.unshift({ type: 'danger', message: 'Profil à risque — vérifiez avant de signer' })
 
   // Convention collective
   const cc: string | undefined =
@@ -507,12 +480,8 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
     effectif: TRANCHES[siege.tranche_effectif_salarie || e.tranche_effectif_salarie] || undefined,
     score,
     alerts,
-    rge: {
-      certifie: (rgeData?.results || rgeData?.data || []).length > 0,
-      domaines: (rgeData?.results || rgeData?.data || []).map((r: any) => r.domaine || r.domaine_travaux).filter(Boolean),
-      organismes: (rgeData?.results || rgeData?.data || []).map((r: any) => r.organisme).filter(Boolean),
-    },
-    dirigeants: parseDirigeants(e.dirigeants || []),
+    rge: rgeInfo,
+    dirigeants,
     bodacc,
     successionInfo: { cessionDetectee, cessionRecente },
     autresResultats: results.slice(1, 4).map((r: any) => ({

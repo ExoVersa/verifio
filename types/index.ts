@@ -75,6 +75,9 @@ export interface SearchCandidate {
   codeNaf: string
   activite: string
   dateCreation?: string
+  rge?: boolean
+  /** Score pré-calculé côté serveur via lib/score.ts calculateScore */
+  score?: number
 }
 
 export interface SearchResult {

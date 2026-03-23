@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { X, ExternalLink } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
-import { calculateScore, scoreColor, scoreBg } from '@/lib/score'
+import { scoreColor, scoreBg } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -195,12 +195,8 @@ function CandidateCard({ c }: { c: CandidateResult }) {
     ? Math.floor((Date.now() - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null
 
-  const { total: score } = calculateScore({
-    statut: c.statut,
-    rge: c.rge ?? false,
-    dateCreation: c.dateCreation,
-    // dirigeants & bodacc not available in search results → defaults used
-  })
+  // Score pre-computed server-side by /api/recherche using lib/score.ts (same function as artisan page)
+  const score = c.score ?? 0
   const color = scoreColor(score)
   const bg = scoreBg(score)
 

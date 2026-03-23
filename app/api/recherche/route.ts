@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { calculateScore } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
 
 const FORMES_JURIDIQUES: Record<string, string> = {
@@ -83,32 +84,48 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    let candidates: (SearchCandidate & { rge?: boolean })[] = rawResults.map((e: any) => {
+    let candidates: SearchCandidate[] = rawResults.map((e: any) => {
       const siege = e.siege || {}
+      const statut: 'actif' | 'fermé' = siege.etat_administratif === 'A' ? 'actif' : 'fermé'
+      const dateCreation: string | undefined = siege.date_creation || e.date_creation || undefined
+      const rgeFlag: boolean = Boolean(e.complements?.est_rge)
+      const dirigeantsRaw: unknown[] = Array.isArray(e.dirigeants) ? e.dirigeants : []
+      const { total: score } = calculateScore({
+        statut,
+        rge: rgeFlag,
+        dateCreation,
+        dirigeants: dirigeantsRaw,
+        // bodacc not available in list search — defaults to no-procedure (15 pts)
+      })
       return {
         siret: siege.siret || e.siret || '',
         siren: e.siren || '',
         nom: e.nom_complet || e.nom_raison_sociale || '',
-        statut: siege.etat_administratif === 'A' ? 'actif' : 'fermé',
+        statut,
         formeJuridique: fj(e.nature_juridique || ''),
         formeJuridiqueCode: e.nature_juridique || '',
         ville: siege.libelle_commune || '',
         codePostal: siege.code_postal || '',
         codeNaf: siege.activite_principale || e.activite_principale || '',
         activite: siege.libelle_activite_principale || e.libelle_activite_principale || '',
-        dateCreation: siege.date_creation || e.date_creation || undefined,
+        dateCreation,
+        rge: rgeFlag,
+        score,
       }
     })
 
-    // RGE filter via ADEME (parallel checks)
+    // RGE filter via ADEME (authoritative check — est_rge may miss some)
     if (rge && candidates.length > 0) {
       const checks = await Promise.allSettled(candidates.map((c) => checkRge(c.siren)))
       candidates = candidates
-        .map((c, i) => ({
-          ...c,
-          rge: checks[i].status === 'fulfilled' && (checks[i] as PromiseFulfilledResult<boolean>).value,
-        }))
-        .filter((c) => c.rge)
+        .map((c, i) => {
+          const isRge = checks[i].status === 'fulfilled' && (checks[i] as PromiseFulfilledResult<boolean>).value
+          if (!isRge) return null
+          // If ADEME confirms RGE but est_rge was false, bump score by RGE bonus (20 pts)
+          const scoreAdj = !c.rge ? Math.min(100, (c.score ?? 0) + 20) : (c.score ?? 0)
+          return { ...c, rge: true, score: scoreAdj }
+        })
+        .filter(Boolean) as SearchCandidate[]
     }
 
     const hasMore = page * perPage < total
