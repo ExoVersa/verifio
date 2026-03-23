@@ -6,6 +6,7 @@ import { ArrowLeft, Search, ShieldCheck, MapPin } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import ShareButton from '@/components/ShareButton'
 import type { SearchResult } from '@/types'
+import { dirigeantSlug } from '@/lib/dirigeant'
 
 interface ArtisanPublicInfo {
   verifie: boolean
@@ -553,7 +554,21 @@ export default function ArtisanFichePage() {
                         </div>
                         <div>
                           <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
-                            {d.prenoms ? `${d.prenoms} ` : ''}{d.nom}
+                            <a
+                              href={`/dirigeant/${dirigeantSlug(d.nom, d.prenoms)}`}
+                              style={{
+                                color: '#1B4332',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                                fontSize: '14px',
+                                borderBottom: '1px solid transparent',
+                                transition: 'border-color 0.15s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.borderBottomColor = '#1B4332')}
+                              onMouseLeave={(e) => (e.currentTarget.style.borderBottomColor = 'transparent')}
+                            >
+                              {d.prenoms ? `${d.prenoms} ${d.nom}` : d.nom}
+                            </a>
                           </p>
                           <p style={{ margin: 0, fontSize: '12px', color: '#8A8A8A' }}>
                             {d.qualite}
