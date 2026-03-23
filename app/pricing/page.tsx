@@ -99,8 +99,8 @@ export default function PricingPage() {
           </div>
 
           {/* ── Pack Sérénité ── */}
-          <div style={{ background: '#1B4332', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', transform: 'scale(1.03)', transformOrigin: 'center top', zIndex: 1 }}>
-            <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#52B788', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '20px', letterSpacing: '0.04em' }}>
+          <div style={{ background: '#1B4332', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', position: 'relative', transform: 'scale(1.03)', transformOrigin: 'center top', zIndex: 1, marginTop: '32px' }}>
+            <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: '#52B788', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '20px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
               LE PLUS POPULAIRE
             </div>
             <div style={{ marginBottom: '20px' }}>
