@@ -54,12 +54,16 @@ function ScoreCard({
   const dasharray = `${(score / 100) * circumference} ${circumference}`
   const strokeColor = score >= 70 ? '#52B788' : score >= 50 ? '#F4A261' : '#E63946'
 
+  const rge = result.rge ?? { certifie: false, domaines: [], organismes: [] }
+  const dirigeants = result.dirigeants ?? []
+  const bodacc = result.bodacc ?? { procedureCollective: false, annonces: [], changementDirigeantRecent: false }
+
   const breakdown = [
     { label: 'Statut légal', value: result.statut === 'actif' ? 25 : 0, max: 25 },
-    { label: 'Certifications', value: result.rge?.certifie ? 18 : 10, max: 20 },
+    { label: 'Certifications', value: rge.certifie ? 18 : 10, max: 20 },
     { label: 'Ancienneté', value: Math.min(20, Math.floor(getYears(result.dateCreation) * 1.5)), max: 20 },
-    { label: 'Dirigeants', value: (result.dirigeants?.length ?? 0) > 0 ? 16 : 8, max: 20 },
-    { label: 'Procédures', value: result.bodacc?.procedureCollective ? 0 : 15, max: 15 },
+    { label: 'Dirigeants', value: dirigeants.length > 0 ? 16 : 8, max: 20 },
+    { label: 'Procédures', value: bodacc.procedureCollective ? 0 : 15, max: 15 },
   ]
 
   let verdictText = ''
@@ -262,6 +266,9 @@ export default function ArtisanFichePage() {
   }, [siret])
 
   const score = result?.score ?? 0
+  const rge = result?.rge ?? { certifie: false, domaines: [], organismes: [] }
+  const dirigeants = result?.dirigeants ?? []
+  const bodacc = result?.bodacc ?? { procedureCollective: false, annonces: [], changementDirigeantRecent: false }
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-cream)' }}>
@@ -481,7 +488,7 @@ export default function ArtisanFichePage() {
               {/* Certifications RGE */}
               <InfoCard>
                 <SectionTitle>🌿 Certifications RGE</SectionTitle>
-                {result.rge?.certifie ? (
+                {rge.certifie ? (
                   <div>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -494,9 +501,9 @@ export default function ArtisanFichePage() {
                       <ShieldCheck size={18} />
                       Certifié RGE — Travaux éligibles aux aides État
                     </div>
-                    {(result.rge?.domaines?.length ?? 0) > 0 && (
+                    {rge.domaines.length > 0 && (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                        {(result.rge?.domaines || []).map((d, i) => (
+                        {rge.domaines.map((d, i) => (
                           <span key={i} style={{
                             background: '#E8F5EE', color: '#1B4332',
                             borderRadius: '20px', padding: '4px 12px',
@@ -532,11 +539,11 @@ export default function ArtisanFichePage() {
               </InfoCard>
 
               {/* Dirigeants */}
-              {(result.dirigeants?.length ?? 0) > 0 && (
+              {dirigeants.length > 0 && (
                 <InfoCard>
                   <SectionTitle>👤 Dirigeants</SectionTitle>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {(result.dirigeants || []).map((d, i) => (
+                    {dirigeants.map((d, i) => (
                       <div key={i} style={{
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '12px 16px',
@@ -584,7 +591,7 @@ export default function ArtisanFichePage() {
               {/* Procédures judiciaires */}
               <InfoCard>
                 <SectionTitle>⚖️ Procédures judiciaires</SectionTitle>
-                {result.bodacc?.procedureCollective ? (
+                {bodacc.procedureCollective ? (
                   <div>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -594,11 +601,11 @@ export default function ArtisanFichePage() {
                       fontSize: '13px', fontWeight: 700,
                       marginBottom: '16px',
                     }}>
-                      ⚠ {result.bodacc?.annonces?.length || 1} procédure(s) détectée(s)
+                      ⚠ {bodacc.annonces.length || 1} procédure(s) détectée(s)
                     </div>
-                    {(result.bodacc?.annonces?.length ?? 0) > 0 && (
+                    {bodacc.annonces.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {(result.bodacc?.annonces || []).slice(0, 5).map((a, i) => (
+                        {bodacc.annonces.slice(0, 5).map((a, i) => (
                           <div key={i} style={{
                             padding: '10px 14px',
                             background: '#fef2f2',

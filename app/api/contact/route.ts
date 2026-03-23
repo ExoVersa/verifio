@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: 'Verifio Contact <onboarding@resend.dev>',
-      to: ['contact@verifio.fr'],
+      to: ['couratincharlie@gmail.com'],
       replyTo: email,
       subject: `[Verifio Contact] ${sujet} — ${nom}`,
       html: `
