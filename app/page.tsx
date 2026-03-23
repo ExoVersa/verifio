@@ -2,72 +2,980 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Search, ShieldCheck, AlertTriangle, CheckCircle2, Leaf, Scale, Clock, Users,
-  TrendingDown, Lock, Star, ChevronRight, Quote, FileSearch, Calculator,
-  ArrowLeftRight, ClipboardCheck, MessageSquare, MapPin, Zap,
-} from 'lucide-react'
-import Link from 'next/link'
-import SearchBar from '@/components/SearchBar'
+import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 
-/* ── Hero SVG Illustration ─────────────────────────────── */
-function HeroIllustration() {
+/* ─── Noise SVG overlay ─────────────────────────────────── */
+const NoiseSVG = () => (
+  <svg
+    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04, pointerEvents: 'none' }}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#noise)" />
+  </svg>
+)
+
+/* ─── Hero Search bar ───────────────────────────────────── */
+function HeroSearch() {
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<Array<{ siret: string; nom: string; ville: string; statut: string }>>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const router = useRouter()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleChange(val: string) {
+    setQuery(val)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (val.trim().length < 2) {
+      setResults([])
+      setShowDropdown(false)
+      return
+    }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(val.trim())}`)
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setResults(data.slice(0, 5))
+          setShowDropdown(true)
+        } else if (data.siret) {
+          setResults([data])
+          setShowDropdown(true)
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false)
+      }
+    }, 350)
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!query.trim()) return
+    if (results.length === 1) {
+      router.push(`/artisan/${results[0].siret}`)
+    } else {
+      router.push(`/artisan/${encodeURIComponent(query.trim())}`)
+    }
+  }
+
+  function handleSuggestion(tag: string) {
+    setQuery(tag)
+    handleChange(tag)
+  }
+
   return (
-    <svg viewBox="0 0 380 340" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      {/* Background circles */}
-      <circle cx="190" cy="170" r="150" fill="#1B4332" fillOpacity="0.04" />
-      <circle cx="190" cy="170" r="110" fill="#1B4332" fillOpacity="0.05" />
+    <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
+      <form onSubmit={handleSubmit}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          height: '64px',
+        }}>
+          <div style={{ padding: '0 16px', color: '#8A8A8A', flexShrink: 0 }}>
+            <Search size={20} />
+          </div>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder="Nom de l&apos;artisan ou SIRET..."
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              fontSize: '16px',
+              fontFamily: 'var(--font-body)',
+              color: '#1A1A1A',
+              background: 'transparent',
+              height: '100%',
+              padding: '0 8px',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              background: '#1B4332',
+              color: 'white',
+              border: 'none',
+              height: '100%',
+              padding: '0 24px',
+              fontSize: '15px',
+              fontWeight: 700,
+              fontFamily: 'var(--font-body)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            {loading ? (
+              <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
+            ) : (
+              <>Vérifier <ArrowRight size={16} /></>
+            )}
+          </button>
+        </div>
+      </form>
 
-      {/* Main shield */}
-      <path d="M190 40 L260 70 L260 160 C260 205 228 240 190 255 C152 240 120 205 120 160 L120 70 Z" fill="#1B4332" />
-      <path d="M190 52 L252 78 L252 160 C252 200 223 233 190 246 C157 233 128 200 128 160 L128 78 Z" fill="#D8F3DC" />
+      {/* Dropdown */}
+      {showDropdown && results.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '68px',
+          left: 0,
+          right: 0,
+          background: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.15)',
+          zIndex: 50,
+          overflow: 'hidden',
+        }}>
+          {results.map((r, i) => (
+            <button
+              key={r.siret}
+              onClick={() => router.push(`/artisan/${r.siret}`)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                width: '100%',
+                padding: '14px 20px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                textAlign: 'left',
+                borderBottom: i < results.length - 1 ? '1px solid #F0EFE9' : 'none',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: '#E8F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, fontSize: '13px', fontWeight: 700, color: '#1B4332',
+              }}>
+                {r.nom.slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#8A8A8A' }}>{r.ville} · SIRET {r.siret}</p>
+              </div>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px',
+                background: r.statut === 'actif' ? '#f0fdf4' : '#fef2f2',
+                color: r.statut === 'actif' ? '#16a34a' : '#dc2626',
+                flexShrink: 0,
+              }}>
+                {r.statut === 'actif' ? 'Actif' : 'Fermé'}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Checkmark */}
-      <path d="M162 168 L180 186 L220 148" stroke="#1B4332" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-
-      {/* Stars around shield */}
-      <circle cx="96" cy="90" r="6" fill="#1B4332" fillOpacity="0.15" />
-      <circle cx="284" cy="90" r="4" fill="#1B4332" fillOpacity="0.20" />
-      <circle cx="80" cy="200" r="5" fill="#1B4332" fillOpacity="0.12" />
-      <circle cx="305" cy="190" r="7" fill="#1B4332" fillOpacity="0.10" />
-
-      {/* Score badge — top right */}
-      <rect x="270" y="50" width="90" height="52" rx="14" fill="white" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.10))" />
-      <text x="315" y="74" textAnchor="middle" fontFamily="Syne, sans-serif" fontSize="18" fontWeight="800" fill="#1B4332">84</text>
-      <text x="315" y="90" textAnchor="middle" fontFamily="DM Sans, sans-serif" fontSize="9" fill="#6B7280">SCORE</text>
-      {/* Stars in badge */}
-      {[298, 308, 318, 328, 338].map((x, i) => (
-        <polygon key={i} points={`${x},96 ${x+3},102 ${x+6},102 ${x+3},105 ${x+4},111 ${x},108 ${x-4},111 ${x-3},105 ${x-6},102 ${x-3},102`} fill={i < 4 ? '#f59e0b' : '#e5e7eb'} transform="scale(0.55) translate(260, 80)" />
-      ))}
-
-      {/* FIABLE badge — bottom left */}
-      <rect x="18" y="230" width="110" height="42" rx="12" fill="#1B4332" />
-      <text x="73" y="248" textAnchor="middle" fontFamily="Syne, sans-serif" fontSize="10" fontWeight="700" fill="#D8F3DC" letterSpacing="1">✓ FIABLE</text>
-      <text x="73" y="262" textAnchor="middle" fontFamily="DM Sans, sans-serif" fontSize="9" fill="#D8F3DC" fillOpacity="0.7">6 sources vérifiées</text>
-
-      {/* RGE badge — bottom right */}
-      <rect x="258" y="250" width="108" height="42" rx="12" fill="white" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.08))" stroke="#D8F3DC" strokeWidth="1.5" />
-      <text x="312" y="268" textAnchor="middle" fontFamily="Syne, sans-serif" fontSize="10" fontWeight="700" fill="#1B4332" letterSpacing="0.5">🌿 RGE</text>
-      <text x="312" y="282" textAnchor="middle" fontFamily="DM Sans, sans-serif" fontSize="9" fill="#6B7280">Certifié ADEME</text>
-
-      {/* BODACC badge — left side */}
-      <rect x="8" y="130" width="100" height="38" rx="10" fill="white" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.07))" stroke="#E4E2D9" strokeWidth="1" />
-      <text x="58" y="147" textAnchor="middle" fontFamily="DM Sans, sans-serif" fontSize="9" fontWeight="600" fill="#6B7280">BODACC</text>
-      <text x="58" y="160" textAnchor="middle" fontFamily="DM Sans, sans-serif" fontSize="9" fontWeight="700" fill="#166534">✓ Aucune alerte</text>
-
-      {/* Floating dots */}
-      <circle cx="150" cy="50" r="3" fill="#1B4332" fillOpacity="0.25" />
-      <circle cx="240" cy="310" r="4" fill="#1B4332" fillOpacity="0.18" />
-      <circle cx="340" cy="140" r="3" fill="#1B4332" fillOpacity="0.20" />
-      <circle cx="60" cy="310" r="2.5" fill="#1B4332" fillOpacity="0.15" />
-    </svg>
+      {/* Suggestion tags */}
+      <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+        {['Plombier Paris', 'Électricien Lyon', 'Maçon Bordeaux'].map((tag) => (
+          <button
+            key={tag}
+            onClick={() => handleSuggestion(tag)}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.8)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '100px',
+              padding: '6px 14px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)'
+            }}
+            onMouseLeave={e => {
+              (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)'
+            }}
+          >
+            #{tag}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
-/* ── Animated Counter ───────────────────────────────────── */
-function AnimatedCounter({ target, suffix = '', duration = 1800 }: { target: number; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0)
+/* ─── Animated Stats ────────────────────────────────────── */
+function AnimatedStat({ value, label, suffix = '' }: { value: number | string; label: string; suffix?: string }) {
+  const [display, setDisplay] = useState(typeof value === 'number' ? '0' : value)
+  const ref = useRef<HTMLDivElement>(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    if (typeof value !== 'number') return
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true
+        const duration = 1800
+        const start = performance.now()
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1)
+          const ease = 1 - Math.pow(1 - progress, 3)
+          setDisplay(Math.round(ease * (value as number)).toLocaleString('fr-FR'))
+          if (progress < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }
+    }, { threshold: 0.3 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [value])
+
+  return (
+    <div ref={ref} style={{ textAlign: 'center', padding: '8px 24px' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '48px', color: '#1B4332', lineHeight: 1 }}>
+        {display}{suffix}
+      </div>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: '#4A4A4A', marginTop: '8px', lineHeight: 1.4 }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Hero Mockup Card ──────────────────────────────────── */
+function HeroMockupCard() {
+  const circumference = 2 * Math.PI * 52
+  const score = 87
+  const dasharray = `${(score / 100) * circumference} ${circumference}`
+
+  return (
+    <div
+      className="animate-float"
+      style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '24px',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+        maxWidth: '320px',
+        width: '100%',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '12px',
+          background: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '14px', fontWeight: 700, color: '#D8F3DC', fontFamily: 'var(--font-display)',
+          flexShrink: 0,
+        }}>
+          MB
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1A1A1A', fontFamily: 'var(--font-display)' }}>
+            Martin Bâtiment SARL
+          </p>
+          <p style={{ margin: 0, fontSize: '12px', color: '#52B788', fontWeight: 600 }}>
+            SIRET vérifié ✓
+          </p>
+        </div>
+      </div>
+
+      {/* Score ring */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', position: 'relative' }}>
+        <svg viewBox="0 0 120 120" width="100" height="100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#E8E3DC" strokeWidth="8" />
+          <circle
+            cx="60" cy="60" r="52" fill="none"
+            stroke="#52B788"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={dasharray}
+            transform="rotate(-90 60 60)"
+          />
+        </svg>
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '28px', color: '#1B4332', lineHeight: 1 }}>
+            {score}
+          </div>
+          <div style={{ fontSize: '11px', color: '#8A8A8A' }}>/100</div>
+        </div>
+      </div>
+
+      {/* Badges */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+          ✓ SIRET actif
+        </span>
+        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+          ✓ Certifié RGE
+        </span>
+        <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+          ⚠ 1 alerte
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Main Page ─────────────────────────────────────────── */
+export default function HomePage() {
+  return (
+    <main style={{ minHeight: '100vh', background: 'var(--color-cream)' }}>
+      <SiteHeader />
+
+      {/* ── SECTION 1 : HERO ── */}
+      <section style={{
+        background: '#1B4332',
+        padding: '80px 0 96px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <NoiseSVG />
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '64px',
+            alignItems: 'center',
+          }}>
+            {/* Colonne gauche */}
+            <div style={{ maxWidth: '600px' }}>
+              {/* Badge */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: 'rgba(82,183,136,0.2)',
+                border: '1px solid rgba(82,183,136,0.4)',
+                borderRadius: '100px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                color: '#52B788',
+                marginBottom: '24px',
+              }}>
+                🛡️ Données officielles · Gratuit pour les particuliers
+              </div>
+
+              {/* H1 */}
+              <h1 style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 'clamp(40px, 5vw, 64px)',
+                color: 'white',
+                lineHeight: 1.1,
+                margin: '0 0 20px',
+                letterSpacing: '-0.02em',
+              }}>
+                Vérifiez votre{' '}
+                <span style={{ color: '#52B788' }}>artisan</span>
+                <br />
+                avant qu&apos;il soit trop tard
+              </h1>
+
+              {/* Sous-titre */}
+              <p style={{
+                fontSize: '18px',
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: 1.6,
+                margin: '0 0 36px',
+                fontFamily: 'var(--font-body)',
+              }}>
+                26 000 arnaques signalées en 2024. Vérifiez gratuitement en 30 secondes avec les données officielles.
+              </p>
+
+              {/* Barre de recherche */}
+              <HeroSearch />
+            </div>
+
+            {/* Colonne droite — mockup */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <HeroMockupCard />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 2 : STATS ── */}
+      <section style={{ background: 'white', padding: '64px 0' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '0',
+          }}>
+            {[
+              { value: 26000, label: 'Arnaques signalées en 2024', suffix: '+' },
+              { value: 6, label: 'Sources officielles vérifiées', suffix: '' },
+              { value: '30s', label: 'Pour obtenir un verdict', suffix: '' },
+              { value: '100%', label: 'Gratuit pour les particuliers', suffix: '' },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                borderRight: i < 3 ? '1px solid #E8E3DC' : 'none',
+                padding: '8px 24px',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 'clamp(32px, 4vw, 48px)',
+                  color: '#1B4332',
+                  lineHeight: 1,
+                }}>
+                  {typeof stat.value === 'number' ? (
+                    <AnimatedStatInline value={stat.value} suffix={stat.suffix} />
+                  ) : (
+                    stat.value
+                  )}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  color: '#4A4A4A',
+                  marginTop: '8px',
+                  lineHeight: 1.4,
+                }}>
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <style>{`
+          @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+        `}</style>
+      </section>
+
+      {/* ── SECTION 3 : COMMENT ÇA MARCHE ── */}
+      <section style={{ background: '#F8F4EF', padding: '96px 0' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(28px, 4vw, 40px)',
+              color: '#1A1A1A',
+              margin: '0 0 12px',
+            }}>
+              Vérifiez en 3 étapes
+            </h2>
+            <p style={{ fontSize: '18px', color: '#4A4A4A', margin: 0 }}>
+              Simple, rapide, gratuit.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px',
+          }}>
+            {[
+              {
+                num: '01',
+                icon: <Search size={24} color="white" />,
+                title: 'Entrez le nom ou SIRET',
+                text: 'Recherchez par nom d\'entreprise, SIRET ou type de travaux près de chez vous.',
+                delay: '',
+              },
+              {
+                num: '02',
+                icon: <ShieldCheck size={24} color="white" />,
+                title: 'On vérifie 6 sources officielles',
+                text: 'INSEE, ADEME RGE, BODACC, INPI, dirigeants et certifications — tout en temps réel.',
+                delay: 'fade-up-delay-1',
+              },
+              {
+                num: '03',
+                icon: <CheckCircle size={24} color="white" />,
+                title: 'Recevez votre verdict',
+                text: 'Score de confiance 0-100, alertes, checklist personnalisée et rapport complet.',
+                delay: 'fade-up-delay-2',
+              },
+            ].map((step, i) => (
+              <div
+                key={i}
+                className={`card-hover fade-up ${step.delay}`}
+                style={{
+                  background: 'white',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Big number background */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-16px',
+                  right: '16px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: '72px',
+                  color: '#E8E3DC',
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}>
+                  {step.num}
+                </div>
+
+                {/* Icon */}
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '14px',
+                  background: '#1B4332',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '20px',
+                  position: 'relative',
+                  zIndex: 1,
+                }}>
+                  {step.icon}
+                </div>
+
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: '18px',
+                  color: '#1A1A1A',
+                  margin: '0 0 10px',
+                  position: 'relative',
+                  zIndex: 1,
+                }}>
+                  {step.title}
+                </h3>
+                <p style={{
+                  fontSize: '15px',
+                  color: '#4A4A4A',
+                  lineHeight: 1.6,
+                  margin: 0,
+                  position: 'relative',
+                  zIndex: 1,
+                }}>
+                  {step.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 4 : POURQUOI VERIFIO ── */}
+      <section style={{ background: 'white', padding: '96px 0' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '64px',
+            alignItems: 'center',
+          }}>
+            {/* Colonne gauche — image */}
+            <div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600"
+                alt="Particulier et artisan"
+                style={{
+                  width: '100%',
+                  borderRadius: '24px',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+                }}
+              />
+            </div>
+
+            {/* Colonne droite — texte */}
+            <div>
+              <div style={{
+                display: 'inline-flex',
+                background: '#fff7ed',
+                color: '#c2410c',
+                border: '1px solid #fdba74',
+                borderRadius: '100px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                marginBottom: '20px',
+              }}>
+                Le problème
+              </div>
+
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: 'clamp(26px, 3.5vw, 40px)',
+                color: '#1A1A1A',
+                margin: '0 0 16px',
+                lineHeight: 1.2,
+              }}>
+                34% des Français victimes d&apos;arnaques sur les chantiers
+              </h2>
+
+              <p style={{
+                fontSize: '16px',
+                color: '#4A4A4A',
+                lineHeight: 1.7,
+                margin: '0 0 28px',
+              }}>
+                Faux artisans, devis non respectés, acomptes disparus... Le secteur du bâtiment est le plus touché par les arnaques en France.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                {[
+                  'Vérification du statut légal en temps réel',
+                  'Détection des procédures judiciaires',
+                  'Contrôle des certifications RGE',
+                  'Analyse de votre devis par IA',
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ShieldCheck size={18} color="#52B788" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '15px', color: '#1A1A1A' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <a
+                href="/"
+                className="btn-primary"
+                style={{ display: 'inline-flex' }}
+              >
+                Vérifier mon artisan gratuitement <ArrowRight size={16} />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 5 : TÉMOIGNAGES ── */}
+      <section style={{ background: '#F8F4EF', padding: '96px 0' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(28px, 4vw, 40px)',
+              color: '#1A1A1A',
+              margin: '0 0 12px',
+            }}>
+              Ils ont évité le pire
+            </h2>
+            <p style={{ fontSize: '16px', color: '#4A4A4A', margin: 0 }}>
+              Des milliers de particuliers nous font confiance chaque mois.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px',
+          }}>
+            {[
+              {
+                name: 'Marie D.',
+                ville: 'Tours',
+                avatarUrl: 'https://ui-avatars.com/api/?name=Marie+D&background=1B4332&color=D8F3DC&size=48',
+                text: 'J\'allais signer pour 18 000€ de travaux. Verifio m\'a montré que l\'entreprise était en liquidation judiciaire depuis 2 mois. Incroyable.',
+                badge: '✓ 18 000€ économisés',
+                badgeBg: '#f0fdf4',
+                badgeColor: '#16a34a',
+                badgeBorder: '#86efac',
+                delay: '',
+              },
+              {
+                name: 'Thomas L.',
+                ville: 'Lyon',
+                avatarUrl: 'https://ui-avatars.com/api/?name=Thomas+L&background=2D6A4F&color=D8F3DC&size=48',
+                text: 'En 30 secondes j\'ai su que l\'artisan n\'avait aucune certification RGE malgré ce qu\'il prétendait. J\'ai pu négocier.',
+                badge: '✓ Arnaque déjouée',
+                badgeBg: '#fff7ed',
+                badgeColor: '#c2410c',
+                badgeBorder: '#fdba74',
+                delay: 'fade-up-delay-1',
+              },
+              {
+                name: 'Sophie M.',
+                ville: 'Bordeaux',
+                avatarUrl: 'https://ui-avatars.com/api/?name=Sophie+M&background=52B788&color=fff&size=48',
+                text: 'Le Pack Sérénité a analysé mon devis et trouvé 3 clauses abusives. Mon notaire était impressionné.',
+                badge: '✓ Devis sécurisé',
+                badgeBg: '#eff6ff',
+                badgeColor: '#1d4ed8',
+                badgeBorder: '#93c5fd',
+                delay: 'fade-up-delay-2',
+              },
+            ].map((t, i) => (
+              <div
+                key={i}
+                className={`card-hover fade-up ${t.delay}`}
+                style={{
+                  background: 'white',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={t.avatarUrl}
+                    alt={t.name}
+                    style={{ width: '48px', height: '48px', borderRadius: '50%' }}
+                  />
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#1A1A1A' }}>{t.name}</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#8A8A8A', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={12} /> {t.ville}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ color: '#f59e0b', marginBottom: '14px', fontSize: '16px' }}>
+                  ⭐⭐⭐⭐⭐
+                </div>
+
+                <p style={{
+                  fontSize: '15px',
+                  color: '#4A4A4A',
+                  lineHeight: 1.7,
+                  margin: '0 0 20px',
+                  fontStyle: 'italic',
+                }}>
+                  &quot;{t.text}&quot;
+                </p>
+
+                <span style={{
+                  display: 'inline-block',
+                  background: t.badgeBg,
+                  color: t.badgeColor,
+                  border: `1px solid ${t.badgeBorder}`,
+                  borderRadius: '20px',
+                  padding: '4px 12px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                }}>
+                  {t.badge}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 6 : SOURCES ── */}
+      <section style={{ background: 'white', padding: '64px 0' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+          <p style={{
+            fontSize: '12px',
+            letterSpacing: '0.12em',
+            color: '#8A8A8A',
+            textTransform: 'uppercase',
+            marginBottom: '32px',
+            fontWeight: 600,
+          }}>
+            Données issues de
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            {['INSEE', 'ADEME', 'BODACC', 'INPI'].map((src, i) => (
+              <span key={src} style={{ display: 'inline-flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: '24px',
+                  color: '#C8C2BB',
+                  cursor: 'default',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => { (e.target as HTMLSpanElement).style.color = '#1B4332' }}
+                onMouseLeave={e => { (e.target as HTMLSpanElement).style.color = '#C8C2BB' }}
+                >
+                  {src}
+                </span>
+                {i < 3 && (
+                  <span style={{ color: '#C8C2BB', fontSize: '20px' }}>·</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 7 : CTA FINALE ── */}
+      <section style={{ background: '#1B4332', padding: '96px 0', position: 'relative', overflow: 'hidden' }}>
+        <NoiseSVG />
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 'clamp(28px, 4vw, 48px)',
+            color: 'white',
+            margin: '0 0 16px',
+            letterSpacing: '-0.02em',
+          }}>
+            Votre prochain chantier mérite d&apos;être sécurisé
+          </h2>
+          <p style={{
+            fontSize: '18px',
+            color: 'rgba(255,255,255,0.7)',
+            margin: '0 0 40px',
+            lineHeight: 1.6,
+          }}>
+            Rejoignez 10 000+ particuliers qui vérifient avant de signer.
+          </p>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a
+              href="/"
+              style={{
+                background: 'white',
+                color: '#1B4332',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px 28px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-body)',
+                transition: 'all 0.2s',
+              }}
+            >
+              Vérifier un artisan <ArrowRight size={16} />
+            </a>
+            <a
+              href="/pricing"
+              style={{
+                background: 'transparent',
+                color: 'white',
+                border: '1.5px solid rgba(255,255,255,0.6)',
+                borderRadius: '12px',
+                padding: '14px 28px',
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-body)',
+                transition: 'all 0.2s',
+              }}
+            >
+              Voir les tarifs
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{
+        background: '#1A1A1A',
+        color: 'white',
+        padding: '48px 0 32px',
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '40px',
+            marginBottom: '40px',
+          }}>
+            <div>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '20px',
+                color: 'white',
+                marginBottom: '12px',
+              }}>
+                Verifio
+              </div>
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: 0 }}>
+                Vérifiez votre artisan en 30 secondes avec les données officielles.
+              </p>
+            </div>
+            <div>
+              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Produit
+              </h4>
+              {['Rechercher un artisan', 'Tarifs', 'Espace artisan', 'API'].map(link => (
+                <div key={link} style={{ marginBottom: '8px' }}>
+                  <a href="/" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}>
+                    {link}
+                  </a>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Légal
+              </h4>
+              {['CGU', 'Politique de confidentialité', 'Mentions légales'].map(link => (
+                <div key={link} style={{ marginBottom: '8px' }}>
+                  <a href="/" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}>
+                    {link}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            paddingTop: '24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+              © 2024 Verifio. Tous droits réservés.
+            </p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+              Données : INSEE · ADEME · BODACC · INPI
+            </p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  )
+}
+
+/* ─── Animated stat inline (for stats section) ─────────── */
+function AnimatedStatInline({ value, suffix }: { value: number; suffix: string }) {
+  const [display, setDisplay] = useState('0')
   const ref = useRef<HTMLSpanElement>(null)
   const started = useRef(false)
 
@@ -77,11 +985,12 @@ function AnimatedCounter({ target, suffix = '', duration = 1800 }: { target: num
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !started.current) {
         started.current = true
+        const duration = 1800
         const start = performance.now()
         const tick = (now: number) => {
           const progress = Math.min((now - start) / duration, 1)
           const ease = 1 - Math.pow(1 - progress, 3)
-          setCount(Math.round(ease * target))
+          setDisplay(Math.round(ease * value).toLocaleString('fr-FR'))
           if (progress < 1) requestAnimationFrame(tick)
         }
         requestAnimationFrame(tick)
@@ -89,732 +998,7 @@ function AnimatedCounter({ target, suffix = '', duration = 1800 }: { target: num
     }, { threshold: 0.3 })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [target, duration])
+  }, [value])
 
-  return <span ref={ref}>{count.toLocaleString('fr-FR')}{suffix}</span>
-}
-
-/* ── Section observer (fade-in on scroll) ──────────────── */
-function useSectionObserver() {
-  useEffect(() => {
-    const els = document.querySelectorAll('.section-hidden')
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('section-visible')
-          entry.target.classList.remove('section-hidden')
-        }
-      })
-    }, { threshold: 0.1 })
-    els.forEach(el => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
-}
-
-/* ── Mini form for FindArtisan ──────────────────────────── */
-const MINI_WORK_TYPES = [
-  { value: 'isolation', label: 'Isolation' }, { value: 'toiture', label: 'Toiture' },
-  { value: 'plomberie', label: 'Plomberie' }, { value: 'electricite', label: 'Électricité' },
-  { value: 'chauffage', label: 'Chauffage' }, { value: 'pac', label: 'Pompe à chaleur' },
-  { value: 'photovoltaique', label: 'Panneaux solaires' }, { value: 'fenetres', label: 'Fenêtres' },
-  { value: 'salle-de-bain', label: 'Salle de bain' }, { value: 'cuisine', label: 'Cuisine' },
-  { value: 'carrelage', label: 'Carrelage' }, { value: 'maconnerie', label: 'Maçonnerie' },
-]
-
-function FindArtisanMiniForm() {
-  const [type, setType] = useState('')
-  const [ville, setVille] = useState('')
-  const handleGo = () => {
-    if (!type || !ville) return
-    const isCP = /^\d{5}$/.test(ville.trim())
-    const params = new URLSearchParams({ type })
-    if (isCP) params.set('cp', ville.trim())
-    else params.set('ville', ville.trim())
-    window.location.href = `/trouver-artisan?${params}`
-  }
-  return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'center' }}>
-      <div style={{ flex: '1', minWidth: '160px', maxWidth: '210px' }}>
-        <div style={{ position: 'relative' }}>
-          <select value={type} onChange={e => setType(e.target.value)} style={{ width: '100%', padding: '12px 28px 12px 14px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-surface)', color: type ? 'var(--color-text)' : 'var(--color-muted)', fontSize: '14px', fontFamily: 'var(--font-body)', appearance: 'none', cursor: 'pointer', outline: 'none' }}>
-            <option value="">Type de travaux</option>
-            {MINI_WORK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <ChevronRight size={13} color="var(--color-muted)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
-        </div>
-      </div>
-      <div style={{ flex: '1', minWidth: '160px', maxWidth: '210px' }}>
-        <div style={{ position: 'relative' }}>
-          <MapPin size={14} color="var(--color-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-          <input type="text" value={ville} onChange={e => setVille(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGo()} placeholder="Ville ou code postal" style={{ width: '100%', padding: '12px 14px 12px 32px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '14px', fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }} />
-        </div>
-      </div>
-      <button onClick={handleGo} disabled={!type || !ville} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '12px 22px', borderRadius: '12px', border: 'none', background: (type && ville) ? 'var(--color-accent)' : 'var(--color-border)', color: '#fff', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: (type && ville) ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', height: '46px', transition: 'background 0.15s' }}>
-        <Search size={15} />
-        Trouver
-      </button>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════════════
-   MAIN PAGE
-══════════════════════════════════════════════════════════ */
-export default function Home() {
-  const router = useRouter()
-  const loading = false
-
-  const handleSearch = (query: string) => {
-    router.push(`/recherche?q=${encodeURIComponent(query)}`)
-  }
-
-  useSectionObserver()
-
-  return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
-
-      {/* ── HEADER ── */}
-      <SiteHeader />
-
-      {/* ══════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════ */}
-      <section style={{ position: 'relative', overflow: 'hidden', background: '#1B4332' }}>
-        {/* Background photo */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&auto=format&fit=crop"
-          alt=""
-          aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-        />
-        {/* Dark green overlay */}
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(27,67,50,0.87)' }} />
-
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
-            {/* Hero 2-column */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,0.9fr)',
-              gap: '48px',
-              alignItems: 'center',
-              padding: '80px 0 64px',
-            }} className="hero-grid">
-
-              {/* LEFT — text + search */}
-              <div className="fade-up">
-                {/* Trust badge */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 600, color: '#D8F3DC', background: 'rgba(255,255,255,0.1)', padding: '5px 14px', borderRadius: '20px', marginBottom: '28px', border: '1px solid rgba(216,243,220,0.25)' }}>
-                  <ShieldCheck size={13} />
-                  Données 100% officielles — INSEE · ADEME · BODACC
-                </div>
-
-                <h1 className="font-display" style={{ margin: '0 0 20px', fontSize: 'clamp(36px, 5.5vw, 60px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.03em', color: '#fff' }}>
-                  Vérifiez votre artisan<br />
-                  <span style={{ color: '#74C69D' }}>avant de signer.</span>
-                </h1>
-
-                <p style={{ margin: '0 0 36px', fontSize: '18px', color: 'rgba(216,243,220,0.85)', lineHeight: 1.65, maxWidth: '480px' }}>
-                  26&nbsp;000 arnaques signalées en 2024. Protégez-vous en 30 secondes — <strong style={{ color: '#D8F3DC' }}>100% gratuit</strong>.
-                </p>
-
-                {/* Search bar */}
-                <div style={{ marginBottom: '12px' }}>
-                  <SearchBar onSearch={handleSearch} loading={loading} />
-                </div>
-
-                {/* Quick filter pills */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '20px' }}>
-                  {[
-                    { label: '🔧 Plomberie', q: 'plombier' },
-                    { label: '⚡ Électricité', q: 'electricien' },
-                    { label: '🧱 Maçonnerie', q: 'maçonnerie' },
-                    { label: '🌿 Certifié RGE', q: 'RGE isolation' },
-                    { label: '✅ Actif uniquement', q: 'artisan actif', statut: 'actif' },
-                  ].map(({ label, q }) => (
-                    <button key={label} onClick={() => handleSearch(q)}
-                      style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-accent)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-muted)' }}
-                    >{label}</button>
-                  ))}
-                </div>
-
-                {/* Trust badges row */}
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {[
-                    { icon: '🏛️', label: 'Données INSEE officielles' },
-                    { icon: '📋', label: 'BODACC en temps réel' },
-                    { icon: '🆓', label: '100% gratuit' },
-                  ].map(({ icon, label }) => (
-                    <div key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: '#D8F3DC', background: 'rgba(255,255,255,0.08)', padding: '6px 12px', borderRadius: '20px', border: '1px solid rgba(216,243,220,0.2)' }}>
-                      <span>{icon}</span>
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* RIGHT — illustration */}
-              <div className="fade-up fade-up-delay-2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ width: '100%', maxWidth: '380px' }}>
-                  <HeroIllustration />
-                </div>
-              </div>
-            </div>
-          </div>
-      </section>
-
-
-      {/* ══════════════════════════════════════════
-          LANDING SECTIONS
-      ══════════════════════════════════════════ */}
-      <>
-
-
-          {/* ── ANIMATED STATISTICS ── */}
-          <section style={{ padding: '72px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>
-                En France, chaque année
-              </p>
-              <h2 className="font-display" style={{ margin: '0 0 48px', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                La fraude artisanale, un fléau sous-estimé
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                {[
-                  { target: 26000, suffix: '', label: 'signalements d\'arnaques', sub: 'DGCCRF 2024', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-                  { target: 34, suffix: '%', label: 'des foyers touchés', sub: 'par au moins 1 malfaçon', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-                  { target: 20000, suffix: '€', label: 'perte moyenne', sub: 'par sinistre non couvert', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-                ].map(({ target, suffix, label, sub, color, bg, border }) => (
-                  <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: '20px', padding: '28px 20px', textAlign: 'center' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em', color, fontFamily: 'var(--font-display)' }}>
-                      <AnimatedCounter target={target} suffix={suffix} />
-                    </p>
-                    <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, lineHeight: 1.3, color: 'var(--color-text)' }}>{label}</p>
-                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── VERIFIO KEY METRICS ── */}
-          <section style={{ padding: '72px 24px', background: '#1B4332' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.10em' }}>
-                Verifio en chiffres
-              </p>
-              <h2 className="font-display" style={{ margin: '0 0 48px', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#D8F3DC' }}>
-                La protection que vous méritez
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                {[
-                  { target: 26000, suffix: '+', label: 'signalements\nanalysés', icon: '🔍' },
-                  { target: 6, suffix: '', label: 'sources\nofficiales', icon: '🏛️' },
-                  { target: 30, suffix: ' sec', label: 'pour obtenir\nun rapport', icon: '⚡' },
-                  { target: 100, suffix: '%', label: 'gratuit\npour tous', icon: '🆓' },
-                ].map(({ target, suffix, label, icon }) => (
-                  <div key={label} style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '18px', padding: '24px 16px', border: '1px solid rgba(216,243,220,0.12)' }}>
-                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>{icon}</div>
-                    <p style={{ margin: '0 0 4px', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 900, color: '#D8F3DC', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-                      <AnimatedCounter target={target} suffix={suffix} />
-                    </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#74C69D', lineHeight: 1.4, fontWeight: 500, whiteSpace: 'pre-line' }}>{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── HOW IT WORKS ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-bg)' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Simple & rapide</p>
-              <h2 className="font-display" style={{ margin: '0 0 56px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Comment ça marche
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px' }}>
-                {[
-                  {
-                    num: '01', color: '#1B4332', bg: '#D8F3DC',
-                    svg: <svg viewBox="0 0 40 40" width="24" height="24" fill="none"><circle cx="18" cy="18" r="10" stroke="#1B4332" strokeWidth="2.5"/><line x1="26" y1="26" x2="34" y2="34" stroke="#1B4332" strokeWidth="2.5" strokeLinecap="round"/></svg>,
-                    title: 'Tapez le nom ou SIRET', desc: 'Nom de l\'artisan, de l\'entreprise ou son numéro SIRET à 14 chiffres.',
-                  },
-                  {
-                    num: '02', color: '#1B4332', bg: '#D8F3DC',
-                    svg: <svg viewBox="0 0 40 40" width="24" height="24" fill="none"><path d="M20 4 L30 8 L30 22 C30 29 25 34 20 36 C15 34 10 29 10 22 L10 8 Z" stroke="#1B4332" strokeWidth="2.5" strokeLinejoin="round"/><path d="M14 21 L18 25 L26 17" stroke="#1B4332" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-                    title: 'On vérifie 6 sources', desc: 'INSEE, ADEME, BODACC, INPI, RNE et procédures collectives — en temps réel.',
-                  },
-                  {
-                    num: '03', color: '#1B4332', bg: '#D8F3DC',
-                    svg: <svg viewBox="0 0 40 40" width="24" height="24" fill="none"><circle cx="20" cy="20" r="14" stroke="#1B4332" strokeWidth="2.5"/><text x="20" y="25" textAnchor="middle" fill="#1B4332" fontSize="12" fontWeight="800" fontFamily="Syne,sans-serif">84</text></svg>,
-                    title: 'Score + alertes instantanés', desc: 'Un score de confiance sur 100 avec toutes les alertes clés pour décider.',
-                  },
-                ].map(({ num, color, bg, svg, title, desc }) => (
-                  <div key={num} className="card-hover" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-card)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {svg}
-                      </div>
-                      <span style={{ fontSize: '28px', fontWeight: 800, color: 'rgba(27,67,50,0.15)', fontFamily: 'var(--font-display)', lineHeight: 1 }}>{num}</span>
-                    </div>
-                    <div>
-                      <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</p>
-                      <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6 }}>{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── WHAT WE CHECK ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>6 sources officielles</p>
-              <h2 className="font-display" style={{ margin: '0 0 14px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Ce qu'on vérifie
-              </h2>
-              <p style={{ margin: '0 0 52px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Chaque rapport inclut ces 6 vérifications en temps réel, pour chaque artisan.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-                {[
-                  { icon: <CheckCircle2 size={20} />, color: '#166534', bg: '#dcfce7', title: 'Statut légal INSEE', source: 'Sirene officiel', desc: 'Active, fermée ou en cessation — vérification instantanée.', free: true },
-                  { icon: <Leaf size={20} />, color: '#166534', bg: '#dcfce7', title: 'Certifications RGE', source: 'ADEME', desc: 'Obligatoire pour les aides MaPrimeRénov\'. Domaines et validité.', free: true },
-                  { icon: <TrendingDown size={20} />, color: '#dc2626', bg: '#fee2e2', title: 'Procédures judiciaires', source: 'BODACC', desc: 'Redressement, liquidation, conciliation — détection automatique.', free: true },
-                  { icon: <Users size={20} />, color: '#d97706', bg: '#fef3c7', title: 'Dirigeants & historique', source: 'RNE / INPI', desc: 'Identité complète, rôle et changements récents des gérants.', free: false },
-                  { icon: <Clock size={20} />, color: '#7c3aed', bg: '#f3e8ff', title: 'Annonces légales', source: 'BODACC complet', desc: 'Toutes les publications officielles depuis la création.', free: false },
-                  { icon: <Scale size={20} />, color: '#1B4332', bg: '#D8F3DC', title: 'Score de confiance', source: '0 → 100', desc: 'Calculé en temps réel à partir de tous les indicateurs.', free: true },
-                ].map(({ icon, color, bg, title, source, desc, free }) => (
-                  <div key={title} className="card-hover" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '18px', padding: '22px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-                        {icon}
-                      </div>
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: free ? '#166534' : 'var(--color-muted)', background: free ? '#dcfce7' : 'var(--color-bg)', border: `1px solid ${free ? '#bbf7d0' : 'var(--color-border)'}`, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                        {!free && <Lock size={8} />}
-                        {free ? 'Gratuit' : 'Premium'}
-                      </span>
-                    </div>
-                    <div>
-                      <p style={{ margin: '0 0 3px', fontSize: '14px', fontWeight: 700 }}>{title}</p>
-                      <p style={{ margin: '0 0 7px', fontSize: '11px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{source}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.55 }}>{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── ANALYZE QUOTE ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '56px', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--color-accent)', background: 'var(--color-accent-light)', padding: '5px 14px', borderRadius: '20px', marginBottom: '20px', border: '1px solid rgba(27,67,50,0.2)' }}>
-                    <Zap size={12} />
-                    Nouveau — Analyse IA
-                  </div>
-                  <h2 className="font-display" style={{ margin: '0 0 16px', fontSize: 'clamp(22px, 4vw, 34px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                    Votre devis est-il<br /><span style={{ color: 'var(--color-accent)' }}>vraiment conforme ?</span>
-                  </h2>
-                  <p style={{ margin: '0 0 24px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
-                    Notre IA analyse en 30 secondes les 9 mentions légales obligatoires, les incohérences de prix et les clauses abusives.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
-                    {['9 mentions légales vérifiées (SIRET, décennale, TVA…)', 'Alertes sur les clauses abusives', 'Cohérence des prix par IA', '1ère analyse gratuite'].map(item => (
-                      <div key={item} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                        <CheckCircle2 size={16} color="#166534" style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <span style={{ fontSize: '14px', lineHeight: 1.5 }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Link href="/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 24px', borderRadius: '12px', background: 'var(--color-accent)', color: 'white', fontSize: '15px', fontWeight: 700, textDecoration: 'none', letterSpacing: '-0.01em', transition: 'background 0.15s' }}>
-                    <FileSearch size={18} />Analyser mon devis<ChevronRight size={16} />
-                  </Link>
-                </div>
-                {/* Mock card */}
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '24px', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '15px', fontWeight: 800 }}>72</div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>Analyse devis — 2 alertes</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>Rénovation cuisine · 4 200&nbsp;€</p>
-                    </div>
-                  </div>
-                  {[
-                    { label: 'Numéro SIRET', ok: true }, { label: 'Assurance décennale', ok: false },
-                    { label: 'TVA intracommunautaire', ok: true }, { label: 'Délai de rétractation 14j', ok: false },
-                    { label: 'Acompte ≤ 30%', ok: true }, { label: 'Description des travaux', ok: true },
-                  ].map(({ label, ok }) => (
-                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderBottom: '1px solid var(--color-border)' }}>
-                      {ok ? <CheckCircle2 size={14} color="#166534" /> : <AlertTriangle size={14} color="#dc2626" />}
-                      <span style={{ fontSize: '12px', color: ok ? 'var(--color-text)' : '#dc2626', fontWeight: ok ? 400 : 600 }}>{label}</span>
-                    </div>
-                  ))}
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#dc2626', fontWeight: 600 }}>⚠ 2 mentions manquantes — vérifiez avant de signer</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── FIND ARTISAN ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '720px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Annuaire certifié</p>
-              <h2 className="font-display" style={{ margin: '0 0 14px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Trouver un artisan certifié RGE
-              </h2>
-              <p style={{ margin: '0 0 40px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Score de confiance, certifications vérifiées, près de chez vous.
-              </p>
-              <FindArtisanMiniForm />
-            </div>
-          </section>
-
-          {/* ── ASSISTANT JURIDIQUE ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '720px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>IA Juridique</p>
-              <h2 className="font-display" style={{ margin: '0 0 14px', fontSize: 'clamp(22px, 4vw, 34px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Que faire en cas de litige ?
-              </h2>
-              <p style={{ margin: '0 0 40px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Vos droits et recours expliqués en français simple — gratuitement.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '32px' }}>
-                {[
-                  { href: '/assistant-juridique/artisan-disparu', icon: '🚨', label: 'Artisan disparu avec l\'acompte', desc: 'Mise en demeure, Signal Conso, tribunal' },
-                  { href: '/assistant-juridique/travaux-mal-faits', icon: '🔨', label: 'Travaux mal faits', desc: 'Garantie décennale, recours amiables' },
-                  { href: '/assistant-juridique/chantier-non-termine', icon: '🏗️', label: 'Chantier non terminé', desc: 'Abandonné, délai dépassé, recours' },
-                ].map(({ href, icon, label, desc }) => (
-                  <Link key={href} href={href} className="card-hover" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '18px', borderRadius: '16px', textDecoration: 'none', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-card)' }}>
-                    <span style={{ fontSize: '24px', flexShrink: 0 }}>{icon}</span>
-                    <div>
-                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.3 }}>{label}</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.4 }}>{desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <Link href="/assistant-juridique" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 24px', borderRadius: '12px', background: '#7c3aed', color: '#fff', fontSize: '14px', fontWeight: 700, textDecoration: 'none' }}>
-                  <MessageSquare size={16} />
-                  Poser ma question juridique
-                  <ChevronRight size={15} />
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* ── TESTIMONIALS ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Témoignages</p>
-              <h2 className="font-display" style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Ils ont évité le pire
-              </h2>
-              <p style={{ margin: '0 0 52px', fontSize: '15px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                30 secondes qui ont fait toute la différence.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                {[
-                  {
-                    name: 'Marie D.', location: 'Tours', avatarSeed: 'Marie+D',
-                    text: 'J\'ai évité une arnaque grâce à Verifio. L\'artisan était en liquidation judiciaire depuis 2 mois !',
-                    tag: 'Liquidation judiciaire', tagColor: '#dc2626', tagBg: '#fee2e2',
-                  },
-                  {
-                    name: 'Thomas L.', location: 'Lyon', avatarSeed: 'Thomas+L',
-                    text: 'Avant de signer 15 000€ de travaux, j\'ai vérifié les 3 artisans. Un seul avait un bon score. Je n\'ai plus hésité.',
-                    tag: 'Comparaison de devis', tagColor: '#d97706', tagBg: '#fef3c7',
-                  },
-                  {
-                    name: 'Sophie M.', location: 'Bordeaux', avatarSeed: 'Sophie+M',
-                    text: 'Le simulateur de prix m\'a montré que mon devis était 40% trop cher. J\'ai renégocié.',
-                    tag: 'Devis trop cher', tagColor: '#7c3aed', tagBg: '#f3e8ff',
-                  },
-                ].map(({ name, location, avatarSeed, text, tag, tagColor, tagBg }) => (
-                  <div key={name} className="card-hover" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: 'var(--shadow-card)' }}>
-                    <Quote size={18} color="var(--color-border)" />
-                    <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.75, color: 'var(--color-text)', flex: 1 }}>{text}</p>
-                    <div>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: tagColor, background: tagBg, padding: '3px 10px', borderRadius: '20px', marginBottom: '14px' }}>
-                        <AlertTriangle size={10} />{tag}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`https://ui-avatars.com/api/?name=${avatarSeed}&background=1B4332&color=fff&size=64&bold=true`}
-                            alt={name}
-                            width={36} height={36}
-                            style={{ borderRadius: '50%', flexShrink: 0 }}
-                          />
-                          <div>
-                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{name}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{location}</p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '2px' }}>
-                          {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} color="#f59e0b" fill="#f59e0b" />)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── PARTENAIRES / SOURCES ── */}
-          <section style={{ padding: '48px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-            <div style={{ maxWidth: '860px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 28px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>
-                Données issues de sources officielles
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
-                {/* INSEE */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#003189', fontFamily: 'var(--font-display)' }}>insee</span>
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#003189', textTransform: 'uppercase', letterSpacing: '0.05em' }}>•fr</span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Registre SIRENE</span>
-                </div>
-                {/* ADEME */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#e2001a', fontFamily: 'var(--font-display)' }}>ADEME</span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Certifications RGE</span>
-                </div>
-                {/* BODACC */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#1a1a6e', fontFamily: 'var(--font-display)' }}>BODACC</span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Annonces légales</span>
-                </div>
-                {/* France Rénov */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', opacity: 0.7 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0055a4', fontFamily: 'var(--font-display)' }}>France</span>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#ef4135', fontFamily: 'var(--font-display)' }}>Rénov&apos;</span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Aides rénovation</span>
-                </div>
-                {/* Badge données certifiées */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--color-safe-border)', background: 'var(--color-safe-bg)' }}>
-                    <ShieldCheck size={16} color="var(--color-safe)" />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Données certifiées</span>
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500 }}>Mises à jour quotidiennement</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── TARIFS ── */}
-          <section style={{ padding: '88px 24px', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)' }}>
-            <div className="section-hidden" style={{ maxWidth: '780px', margin: '0 auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.10em', textAlign: 'center' }}>Tarifs</p>
-              <h2 className="font-display" style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                La vérification est 100&nbsp;% gratuite
-              </h2>
-              <p style={{ margin: '0 0 48px', fontSize: '16px', color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Score, statut, RGE, BODACC, dirigeants, synthèse IA — tout sans inscription, sans CB.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                {/* Essentiel gratuit */}
-                <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Essentiel</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>Gratuit</p>
-                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-muted)' }}>Pour toujours · Sans CB</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
-                    {['Score de confiance /100', 'Statut légal & BODACC', 'Certification RGE ADEME', 'Synthèse IA', '1 artisan surveillé'].map(f => (
-                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={13} color="var(--color-accent)" />
-                        <span style={{ fontSize: '13px' }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                    Vérifier maintenant →
-                  </button>
-                </div>
-                {/* Pack Sérénité */}
-                <div style={{ background: '#1B4332', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#74C69D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pack Sérénité</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', color: '#D8F3DC', fontFamily: 'var(--font-display)' }}>19,90&nbsp;€</p>
-                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#74C69D' }}>Achat unique par chantier · À vie</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
-                    {['Analyse IA de votre devis PDF', 'Rapport complet artisan', 'Surveillance 6 mois', 'Clauses abusives détectées', 'Rapport téléchargeable'].map(f => (
-                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={13} color="#52B788" />
-                        <span style={{ fontSize: '13px', color: '#B7E4C7' }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <a href="/pricing" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#52B788', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                    Découvrir le pack →
-                  </a>
-                </div>
-                {/* Tranquillité */}
-                <div style={{ background: 'var(--color-surface)', border: '2px solid var(--color-accent)', borderRadius: '20px', padding: '28px 24px', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-card)' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tranquillité</p>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-                    <p style={{ margin: 0, fontSize: '36px', fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>4,90&nbsp;€</p>
-                    <span style={{ fontSize: '14px', color: 'var(--color-muted)' }}>/mois</span>
-                  </div>
-                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-muted)' }}>Sans engagement · Résiliable</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', flex: 1 }}>
-                    {['Analyses illimitées', 'Surveillance illimitée', 'Export PDF carnet', 'Historique complet', 'Support prioritaire'].map(f => (
-                      <div key={f} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <CheckCircle2 size={13} color="var(--color-accent)" />
-                        <span style={{ fontSize: '13px' }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <a href="/pricing" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--color-accent)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                    Commencer →
-                  </a>
-                </div>
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                <a href="/pricing" style={{ fontSize: '13px', color: 'var(--color-muted)', textDecoration: 'none', borderBottom: '1px dashed var(--color-border)' }}>Voir le détail complet des offres →</a>
-              </div>
-            </div>
-          </section>
-
-          {/* ── FINAL CTA ── */}
-          <section style={{ background: 'var(--color-accent)', padding: '88px 24px' }}>
-            <div className="section-hidden" style={{ maxWidth: '680px', margin: '0 auto', textAlign: 'center' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '28px' }}>
-                <ShieldCheck size={20} color="#D8F3DC" />
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#D8F3DC', letterSpacing: '0.05em' }}>VERIFIO</span>
-              </div>
-              <h2 className="font-display" style={{ margin: '0 0 16px', fontSize: 'clamp(26px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1.1 }}>
-                Vérifiez votre artisan maintenant
-              </h2>
-              <p style={{ margin: '0 0 36px', fontSize: '17px', color: 'rgba(216,243,220,0.85)', lineHeight: 1.6 }}>
-                C&apos;est gratuit, sans inscription, en 30 secondes.
-              </p>
-              <div style={{ maxWidth: '520px', margin: '0 auto' }}>
-                <SearchBar onSearch={handleSearch} loading={loading} dark />
-              </div>
-              <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '24px', flexWrap: 'wrap' }}>
-                {['Sans inscription', 'Données officielles', 'Résultat immédiat'].map(t => (
-                  <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(216,243,220,0.8)', fontWeight: 500 }}>
-                    <CheckCircle2 size={14} color="#D8F3DC" />
-                    {t}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── FOOTER ── */}
-          <footer style={{ background: 'var(--color-text)', padding: '56px 24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-              {/* Top row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '40px', marginBottom: '48px' }}>
-                {/* Brand */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <ShieldCheck size={20} color="#D8F3DC" />
-                    <span className="font-display" style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>Verifio</span>
-                  </div>
-                  <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
-                    Fait avec ❤️ pour protéger les particuliers français contre les arnaques sur les chantiers.
-                  </p>
-                  {/* Social */}
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 700, transition: 'background 0.15s' }}>in</a>
-                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 700, transition: 'background 0.15s' }}>𝕏</a>
-                  </div>
-                </div>
-                {/* Services */}
-                <div>
-                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Services</p>
-                  {[
-                    { href: '/', label: 'Vérifier un artisan' },
-                    { href: '/trouver-artisan', label: 'Annuaire RGE' },
-                    { href: '/simulateur-prix', label: 'Simulateur de prix' },
-                    { href: '/analyser-devis', label: 'Analyser un devis IA' },
-                    { href: '/calculateur-aides', label: 'Calculateur d\'aides' },
-                  ].map(({ href, label }) => (
-                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
-                  ))}
-                </div>
-                {/* Outils */}
-                <div>
-                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Outils</p>
-                  {[
-                    { href: '/assistant-juridique', label: 'Assistant juridique IA' },
-                    { href: '/comparer', label: 'Comparer des artisans' },
-                    { href: '/guide-chantier', label: 'Guide chantier' },
-                    { href: '/mon-espace', label: 'Mon espace' },
-                  ].map(({ href, label }) => (
-                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
-                  ))}
-                </div>
-                {/* À propos */}
-                <div>
-                  <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>À propos</p>
-                  {[
-                    { href: '/espace-artisan', label: 'Espace Artisan' },
-                    { href: '/a-propos', label: 'Notre mission' },
-                    { href: '/contact', label: 'Contact' },
-                    { href: '/mentions-legales', label: 'Mentions légales' },
-                    { href: '/politique-confidentialite', label: 'Confidentialité' },
-                    { href: '/cgu', label: 'CGU' },
-                  ].map(({ href, label }) => (
-                    <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginBottom: '8px', transition: 'color 0.15s' }}>{label}</Link>
-                  ))}
-                </div>
-              </div>
-              {/* Bottom bar */}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
-                  © 2026 Verifio — Données INSEE · ADEME · BODACC · INPI — À des fins d&apos;information uniquement
-                </p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
-                  Fait avec ❤️ en France
-                </p>
-              </div>
-            </div>
-          </footer>
-
-      </>
-
-
-      {/* ── MOBILE BOTTOM NAV ── */}
-      <nav className="mobile-bottom-nav">
-        {[
-          { href: '/', icon: <Search size={20} />, label: 'Vérifier' },
-          { href: '/trouver-artisan', icon: <MapPin size={20} />, label: 'Trouver' },
-          { href: '/simulateur-prix', icon: <Calculator size={20} />, label: 'Simulateur' },
-          { href: '/auth', icon: <ShieldCheck size={20} />, label: 'Compte' },
-        ].map(({ href, icon, label }) => (
-          <a key={href} href={href} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', textDecoration: 'none', color: 'var(--color-muted)', padding: '4px 0' }}>
-            {icon}
-            <span style={{ fontSize: '10px', fontWeight: 600 }}>{label}</span>
-          </a>
-        ))}
-      </nav>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 720px) {
-          .hero-grid { grid-template-columns: 1fr !important; }
-          .hero-grid > div:last-child { display: none !important; }
-        }
-      `}</style>
-    </main>
-  )
+  return <span ref={ref}>{display}{suffix}</span>
 }
