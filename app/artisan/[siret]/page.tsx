@@ -276,6 +276,7 @@ export default function ArtisanFichePage() {
   const [etablissementsLoading, setEtablissementsLoading] = useState(false)
   const [tvacopied, setTvaCopied] = useState(false)
   const [showAllEtab, setShowAllEtab] = useState(false)
+  const [showAllRGE, setShowAllRGE] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -817,46 +818,69 @@ export default function ArtisanFichePage() {
                 <div style={cardStyle}>
                   <h3 style={cardTitleStyle}>🌿 Certifications RGE</h3>
                   {rge.certifie ? (
-                    <div style={{
-                      background: '#f0fdf4',
-                      border: '1.5px solid #86efac',
-                      borderRadius: '12px',
-                      padding: '20px',
-                    }}>
-                      <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d' }}>
-                        ✓ Certifié RGE — Travaux éligibles aux aides de l&apos;État
-                      </p>
-                      {rge.domaines.length > 0 && (
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                          {rge.domaines.map((d, i) => (
-                            <span key={i} style={{
-                              background: '#dcfce7', color: '#166534',
-                              fontSize: '12px', fontWeight: 600,
-                              padding: '4px 10px', borderRadius: '20px',
-                            }}>
-                              ✓ {d}
-                            </span>
-                          ))}
+                    (() => {
+                      const RGE_DOMAINS: Record<string, string> = {
+                        'architecte': 'Architecture',
+                        'cnoa': 'Conseil National de l\'Ordre des Architectes',
+                        'qualibat': 'Qualibat',
+                        'qualifelec': 'Qualifelec',
+                        'qualipac': 'QualiPAC',
+                        'qualisol': 'QualiSOL',
+                        'qualit-enr': 'Qualit\'ENR',
+                        'certibat': 'Certibat',
+                        'acqualif': 'ACQualif',
+                        'afnor': 'AFNOR Certification',
+                        'promotelec': 'Promotelec',
+                        'eco-artisan': 'Eco Artisan',
+                        'label-flamme-verte': 'Flamme Verte',
+                        'handibat': 'Handibat',
+                      }
+                      const mapDomain = (d: string) => {
+                        const key = d.toLowerCase().trim()
+                        if (RGE_DOMAINS[key]) return RGE_DOMAINS[key]
+                        return key.charAt(0).toUpperCase() + key.slice(1)
+                      }
+                      const domainesUniques = [...new Set(rge.domaines.map(mapDomain))]
+                      const organismesUniques = [...new Set(rge.organismes.map(o => {
+                        const key = o.toLowerCase().trim()
+                        return RGE_DOMAINS[key] ?? (key.charAt(0).toUpperCase() + key.slice(1))
+                      }))]
+                      const MAX_VISIBLE = 5
+                      const showMore = domainesUniques.length > MAX_VISIBLE
+                      const visibleDomaines = showMore && !showAllRGE ? domainesUniques.slice(0, MAX_VISIBLE) : domainesUniques
+                      return (
+                        <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '20px' }}>
+                          <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d' }}>
+                            ✓ Certifié RGE — Travaux éligibles aux aides de l&apos;État
+                          </p>
+                          {domainesUniques.length > 0 && (
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+                              {visibleDomaines.map((d, i) => (
+                                <span key={i} style={{ background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px' }}>
+                                  ✓ {d}
+                                </span>
+                              ))}
+                              {showMore && (
+                                <button
+                                  onClick={() => setShowAllRGE(!showAllRGE)}
+                                  style={{ background: '#1B4332', color: 'white', border: 'none', borderRadius: '20px', fontSize: '12px', fontWeight: 700, padding: '4px 10px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                                >
+                                  {showAllRGE ? 'Réduire' : `+${domainesUniques.length - MAX_VISIBLE}`}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {organismesUniques.length > 0 && (
+                            <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534' }}>
+                              Certifié par : <strong>{organismesUniques[0]}</strong>
+                            </p>
+                          )}
+                          <a href="/calculateur-aides" style={{ display: 'inline-block', border: '1.5px solid #16a34a', color: '#16a34a', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                            Calculer mes aides →
+                          </a>
                         </div>
-                      )}
-                      {rge.organismes.length > 0 && (
-                        <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534' }}>
-                          Certifié par : {rge.organismes.join(', ')}
-                        </p>
-                      )}
-                      <a
-                        href="/calculateur-aides"
-                        style={{
-                          display: 'inline-block',
-                          border: '1.5px solid #16a34a', color: '#16a34a',
-                          borderRadius: '8px', padding: '8px 16px',
-                          fontSize: '13px', fontWeight: 700,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        Calculer mes aides →
-                      </a>
-                    </div>
+                      )
+                    })()
                   ) : (
                     <div style={{
                       background: '#f9fafb',
