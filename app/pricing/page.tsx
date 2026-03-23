@@ -48,7 +48,7 @@ export default function PricingPage() {
 
       {/* Pricing cards */}
       <section style={{ padding: '64px 24px 80px' }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'start' }}>
+        <div style={{ maxWidth: '960px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
 
           {/* ── Essentiel (Gratuit) ── */}
           <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: '0' }}>
@@ -63,7 +63,7 @@ export default function PricingPage() {
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>Pour toujours · Sans inscription</p>
             </div>
 
-            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', flexGrow: 1 }}>
               {[
                 'Score de confiance /100',
                 'Statut légal INSEE & BODACC',
@@ -99,7 +99,7 @@ export default function PricingPage() {
           </div>
 
           {/* ── Pack Sérénité ── */}
-          <div style={{ background: '#1B4332', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ background: '#1B4332', borderRadius: '24px', padding: '32px 28px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', transform: 'scale(1.03)', transformOrigin: 'center top', zIndex: 1 }}>
             <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#52B788', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '20px', letterSpacing: '0.04em' }}>
               LE PLUS POPULAIRE
             </div>
@@ -116,7 +116,7 @@ export default function PricingPage() {
               <p style={{ margin: 0, fontSize: '13px', color: '#74C69D' }}>Achat unique par chantier · À vie</p>
             </div>
 
-            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', flexGrow: 1 }}>
               {[
                 'Tout l\'Essentiel inclus',
                 'Analyse IA de votre devis PDF',
@@ -158,7 +158,7 @@ export default function PricingPage() {
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>Sans engagement · Résiliable à tout moment</p>
             </div>
 
-            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <ul style={{ margin: '0 0 28px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', flexGrow: 1 }}>
               {[
                 'Tout le Pack Sérénité inclus',
                 'Analyses de devis illimitées',
