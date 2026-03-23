@@ -16,7 +16,7 @@ function fj(code: string): string {
 async function checkRge(siret: string): Promise<boolean> {
   try {
     const res = await fetch(
-      `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?q=${siret}&size=1`,
+      `https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines?siret=${siret}&size=1`,
       { next: { revalidate: 86400 } }
     )
     if (!res.ok) return false
