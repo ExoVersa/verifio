@@ -91,27 +91,41 @@ function CandidateCard({ c, onClick }: { c: SearchCandidate; onClick: () => void
 
 /* ── Ville autocomplete ──────────────────────────────────── */
 interface GeoCommune { nom: string; codeDepartement: string }
+interface GeoDept { nom: string; code: string }
 
-function VilleAutocomplete({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [suggestions, setSuggestions] = useState<GeoCommune[]>([])
+function VilleAutocomplete({
+  value,
+  onChange,
+  onSelect,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSelect: (type: 'commune' | 'departement', label: string, code: string) => void
+}) {
+  const [communes, setCommunes] = useState<GeoCommune[]>([])
+  const [depts, setDepts] = useState<GeoDept[]>([])
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (value.length < 2) { setSuggestions([]); setOpen(false); return }
+    if (value.length < 2) { setCommunes([]); setDepts([]); setOpen(false); return }
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(value)}&limit=8&fields=nom,codeDepartement`
-        )
-        const data = await res.json()
-        const list: GeoCommune[] = Array.isArray(data) ? data : []
-        setSuggestions(list)
-        setOpen(list.length > 0)
+        const q = encodeURIComponent(value)
+        const [r1, r2] = await Promise.all([
+          fetch(`https://geo.api.gouv.fr/communes?nom=${q}&limit=5&fields=nom,codeDepartement`),
+          fetch(`https://geo.api.gouv.fr/departements?nom=${q}&limit=3&fields=nom,code`),
+        ])
+        const [c, d] = await Promise.all([r1.json(), r2.json()])
+        const communesList: GeoCommune[] = Array.isArray(c) ? c : []
+        const deptsList: GeoDept[] = Array.isArray(d) ? d : []
+        setCommunes(communesList)
+        setDepts(deptsList)
+        setOpen(communesList.length > 0 || deptsList.length > 0)
       } catch {
-        setSuggestions([])
+        setCommunes([]); setDepts([])
       }
     }, 250)
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
@@ -127,16 +141,33 @@ function VilleAutocomplete({ value, onChange }: { value: string; onChange: (v: s
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const select = (nom: string) => {
-    onChange(nom)
+  const select = (type: 'commune' | 'departement', label: string, code: string) => {
+    onChange(label)
+    onSelect(type, label, code)
     setOpen(false)
-    setSuggestions([])
+    setCommunes([]); setDepts([])
+  }
+
+  const groupHeaderStyle: React.CSSProperties = {
+    padding: '6px 16px 4px',
+    fontSize: '10px', fontWeight: 700, color: 'var(--color-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.08em',
+    background: 'var(--color-bg)',
+  }
+
+  const itemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '8px',
+    width: '100%', padding: '9px 16px',
+    background: 'none', border: 'none',
+    cursor: 'pointer', textAlign: 'left',
+    fontFamily: 'var(--font-body)', fontSize: '14px',
+    color: 'var(--color-text)', transition: 'background 0.1s',
   }
 
   return (
     <div ref={wrapperRef} style={{ flex: '1 1 160px', position: 'relative' }}>
       <span style={{
-        position: 'absolute', left: '14px', top: '50%',
+        position: 'absolute', left: '14px', top: '28px',
         transform: 'translateY(-50%)', fontSize: '16px',
         pointerEvents: 'none', zIndex: 1,
       }}>
@@ -153,47 +184,55 @@ function VilleAutocomplete({ value, onChange }: { value: string; onChange: (v: s
           border: '2px solid var(--color-border)', borderRadius: '14px',
           background: 'white', fontSize: '15px', fontFamily: 'var(--font-body)',
           color: 'var(--color-text)', outline: 'none',
-          transition: 'border-color 0.15s',
-          boxSizing: 'border-box',
+          transition: 'border-color 0.15s', boxSizing: 'border-box',
         }}
         onFocus={e => {
           e.target.style.borderColor = 'var(--color-accent)'
-          if (suggestions.length > 0) setOpen(true)
+          if (communes.length > 0 || depts.length > 0) setOpen(true)
         }}
         onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
       />
-      {open && suggestions.length > 0 && (
+      {open && (communes.length > 0 || depts.length > 0) && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
           background: 'white', border: '1px solid var(--color-border)',
           borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          zIndex: 200, overflow: 'hidden',
-          maxHeight: '280px', overflowY: 'auto',
+          zIndex: 200, overflow: 'hidden', maxHeight: '300px', overflowY: 'auto',
         }}>
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              type="button"
-              onMouseDown={() => select(s.nom)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                width: '100%', padding: '10px 16px',
-                background: 'none', border: 'none',
-                borderBottom: i < suggestions.length - 1 ? '1px solid var(--color-border)' : 'none',
-                cursor: 'pointer', textAlign: 'left',
-                fontFamily: 'var(--font-body)', fontSize: '14px',
-                color: 'var(--color-text)', transition: 'background 0.1s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              <span style={{ fontSize: '13px', flexShrink: 0 }}>📍</span>
-              <span style={{ fontWeight: 600, flex: 1 }}>{s.nom}</span>
-              <span style={{ color: 'var(--color-muted)', fontSize: '12px', flexShrink: 0 }}>
-                ({s.codeDepartement})
-              </span>
-            </button>
-          ))}
+          {communes.length > 0 && (
+            <>
+              <div style={groupHeaderStyle}>Villes</div>
+              {communes.map((c, i) => (
+                <button key={`c${i}`} type="button" onMouseDown={() => select('commune', c.nom, c.codeDepartement)}
+                  style={{ ...itemStyle, borderBottom: i < communes.length - 1 ? '1px solid var(--color-border)' : 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <span style={{ fontSize: '13px', flexShrink: 0 }}>📍</span>
+                  <span style={{ fontWeight: 600, flex: 1 }}>{c.nom}</span>
+                  <span style={{ color: 'var(--color-muted)', fontSize: '12px' }}>({c.codeDepartement})</span>
+                </button>
+              ))}
+            </>
+          )}
+          {depts.length > 0 && (
+            <>
+              <div style={{ ...groupHeaderStyle, borderTop: communes.length > 0 ? '1px solid var(--color-border)' : 'none' }}>
+                Départements
+              </div>
+              {depts.map((d, i) => (
+                <button key={`d${i}`} type="button" onMouseDown={() => select('departement', d.nom, d.code)}
+                  style={{ ...itemStyle, borderBottom: i < depts.length - 1 ? '1px solid var(--color-border)' : 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <span style={{ fontSize: '13px', flexShrink: 0 }}>🗺️</span>
+                  <span style={{ fontWeight: 600, flex: 1 }}>{d.nom}</span>
+                  <span style={{ color: 'var(--color-muted)', fontSize: '12px' }}>({d.code})</span>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -212,6 +251,8 @@ function RechercheInner() {
   const sortParam = (searchParams.get('sort') || 'pertinence') as 'pertinence' | 'anciennete'
   const typesParam = searchParams.get('types') || ''
   const rgeParam = searchParams.get('rge') === '1'
+  const rayonParam = searchParams.get('rayon') || '25'
+  const deptParam = searchParams.get('dept') || ''
 
   // Form state (local, not yet submitted)
   const [queryInput, setQueryInput] = useState(qParam)
@@ -224,6 +265,9 @@ function RechercheInner() {
   const [selectedTravaux, setSelectedTravaux] = useState<string[]>(typesParam ? typesParam.split(',').filter(Boolean) : [])
   const [filterRge, setFilterRge] = useState(rgeParam)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [rayon, setRayon] = useState(rayonParam)
+  const [deptCode, setDeptCode] = useState(deptParam)
+  const [filterMode, setFilterMode] = useState<'ville' | 'dept'>(deptParam ? 'dept' : 'ville')
 
   // Results state
   const [candidates, setCandidates] = useState<SearchCandidate[]>([])
@@ -250,15 +294,19 @@ function RechercheInner() {
     const so = overrides.sort ?? sortBy
     const ty = overrides.types ?? selectedTravaux.join(',')
     const rg = overrides.rge ?? (filterRge ? '1' : '')
+    const ry = overrides.rayon ?? rayon
+    const dp = overrides.dept ?? deptCode
     if (q) params.set('q', q)
     if (ville.trim()) params.set('ville', ville.trim())
-    if (st !== 'actif') params.set('statut', st) // 'actif' is the default, omit from URL
+    if (st !== 'actif') params.set('statut', st)
     if (an !== 'tous') params.set('anciennete', an)
     if (so !== 'pertinence') params.set('sort', so)
     if (ty) params.set('types', ty)
     if (rg) params.set('rge', rg)
+    if (ry !== '25') params.set('rayon', ry)
+    if (dp) params.set('dept', dp)
     return params.toString()
-  }, [qParam, villeParam, filterStatut, filterAnciennete, sortBy, selectedTravaux, filterRge])
+  }, [qParam, villeParam, filterStatut, filterAnciennete, sortBy, selectedTravaux, filterRge, rayon, deptCode])
 
   const updateURL = useCallback((overrides: Record<string, string> = {}) => {
     router.replace(`/recherche?${buildParams(overrides)}`, { scroll: false })
@@ -325,13 +373,17 @@ function RechercheInner() {
     if (filterStatut !== 'tous') list = list.filter(c => c.statut === filterStatut)
 
     // Ville/département client-side filter
-    const v = villeParam.trim().toLowerCase()
-    if (v) {
-      list = list.filter(c => {
-        const villeMatch = c.ville?.toLowerCase().includes(v)
-        const cpMatch = c.codePostal?.startsWith(v)
-        return villeMatch || cpMatch
-      })
+    if (filterMode === 'dept' && deptCode) {
+      list = list.filter(c => c.codePostal?.startsWith(deptCode))
+    } else {
+      const v = villeParam.trim().toLowerCase()
+      if (v) {
+        list = list.filter(c => {
+          const villeMatch = c.ville?.toLowerCase().includes(v)
+          const cpMatch = c.codePostal?.startsWith(v)
+          return villeMatch || cpMatch
+        })
+      }
     }
 
     // Type de travaux filter (match on activite)
@@ -364,9 +416,19 @@ function RechercheInner() {
       })
     }
     return list
-  }, [candidates, filterStatut, villeParam, selectedTravaux, filterAnciennete, sortBy])
+  }, [candidates, filterStatut, villeParam, selectedTravaux, filterAnciennete, sortBy, filterMode, deptCode])
 
   const hasActiveFilters = filterStatut !== 'actif' || filterAnciennete !== 'tous' || selectedTravaux.length > 0 || filterRge
+
+  const handleVilleSelect = useCallback((type: 'commune' | 'departement', label: string, code: string) => {
+    if (type === 'departement') {
+      setDeptCode(code)
+      setFilterMode('dept')
+    } else {
+      setDeptCode('')
+      setFilterMode('ville')
+    }
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -390,7 +452,10 @@ function RechercheInner() {
     setFilterAnciennete('tous')
     setSelectedTravaux([])
     setFilterRge(false)
-    updateURL({ statut: 'actif', anciennete: 'tous', types: '', rge: '' })
+    setRayon('25')
+    setDeptCode('')
+    setFilterMode('ville')
+    updateURL({ statut: 'actif', anciennete: 'tous', types: '', rge: '', rayon: '', dept: '' })
   }
 
   const hasResults = !loading && candidates.length > 0
@@ -456,7 +521,7 @@ function RechercheInner() {
                 />
               </div>
               {/* Ville field with autocomplete */}
-              <VilleAutocomplete value={villeInput} onChange={setVilleInput} />
+              <VilleAutocomplete value={villeInput} onChange={setVilleInput} onSelect={handleVilleSelect} />
               {/* Submit button */}
               <button
                 type="submit"
@@ -477,6 +542,34 @@ function RechercheInner() {
               </button>
             </div>
           </form>
+
+          {/* ── Rayon de recherche ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: 'var(--color-muted)', fontWeight: 600 }}>Dans un rayon de :</span>
+            {[
+              { v: '10', label: '10 km' },
+              { v: '25', label: '25 km' },
+              { v: '50', label: '50 km' },
+              { v: '100', label: '100 km' },
+              { v: '0', label: 'France entière' },
+            ].map(opt => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => { setRayon(opt.v); updateURL({ rayon: opt.v }) }}
+                style={{
+                  padding: '3px 10px', borderRadius: '20px', border: '1px solid',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                  ...(rayon === opt.v
+                    ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' }
+                    : { background: 'transparent', color: 'var(--color-muted)', borderColor: 'var(--color-border)' }),
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
           {/* ── Filters toggle (mobile) ── */}
           <button
