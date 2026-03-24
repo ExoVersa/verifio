@@ -1,30 +1,7 @@
-/* ─── Shared score calculation utility ───────────────────────
-   Used by /recherche (CandidateCard) and /artisan/[siret] page.
-   Works with partial data: missing fields default conservatively.
+/* ─── Score de confiance — source unique de vérité ────────────
+   3 critères, calcul dynamique (BODACC optionnel),
+   RGE et Dirigeants hors score (info seulement).
 ──────────────────────────────────────────────────────────── */
-
-export interface ScoreInput {
-  statut: 'actif' | 'fermé'
-  /** Either a boolean flag (search results) or full RGEInfo (artisan page) */
-  rge?: boolean | { certifie: boolean }
-  dateCreation?: string
-  /** Only available on the full artisan page */
-  dirigeants?: unknown[]
-  /** Only available on the full artisan page */
-  bodacc?: {
-    procedureCollective?: boolean
-    annonces?: unknown[]
-  }
-}
-
-export interface ScoreResult {
-  total: number
-  statut_score: number
-  certif_score: number
-  anciennete_score: number
-  dirigeants_score: number
-  procedures_score: number
-}
 
 export function getYears(dateStr: string | undefined): number {
   if (!dateStr) return 0
@@ -33,31 +10,98 @@ export function getYears(dateStr: string | undefined): number {
   return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365))
 }
 
-export function calculateScore(input: ScoreInput): ScoreResult {
-  const statut_score = input.statut === 'actif' ? 25 : 0
-
-  const rge = input.rge
-  const isRgeCertifie = typeof rge === 'boolean'
-    ? rge
-    : (rge?.certifie ?? false)
-  const certif_score = isRgeCertifie ? 20 : 0
-
-  const age = getYears(input.dateCreation)
-  const anciennete_score = age >= 10 ? 20 : age >= 3 ? 14 : 7
-
-  // dirigeants: if unavailable → 0 (conservative)
-  const dirigeants_score = (input.dirigeants?.length ?? 0) > 0 ? 20 : 0
-
-  // bodacc: if unavailable → assume no procedure → full 15 pts
-  const hasProcedure = input.bodacc?.procedureCollective ?? false
-  const nbProcedures = input.bodacc?.annonces?.length ?? 0
-  const procedures_score = !hasProcedure ? 15 : nbProcedures < 3 ? 5 : 0
-
-  const total = statut_score + certif_score + anciennete_score + dirigeants_score + procedures_score
-
-  return { total, statut_score, certif_score, anciennete_score, dirigeants_score, procedures_score }
+/* ── Input ────────────────────────────────────────────────── */
+export interface ScoreInput {
+  statut: 'actif' | 'fermé'
+  dateCreation?: string
+  /**
+   * Passer null ou omettre si BODACC non disponible → critère exclu du score.
+   * Passer { disponible: true, ... } si données récupérées.
+   */
+  bodacc?: {
+    disponible: boolean
+    procedureCollective?: boolean
+    /** Nombre de procédures collectives distinctes */
+    nbProceduresCollectives?: number
+  } | null
 }
 
+/* ── Output ───────────────────────────────────────────────── */
+export interface ScoreCritere {
+  nom: string
+  points: number
+  max: number
+  /** false = donnée indisponible, critère exclu du calcul */
+  disponible: boolean
+}
+
+export interface ScoreResult {
+  /** Score normalisé 0-100 */
+  score: number
+  totalPoints: number
+  totalMax: number
+  criteres: ScoreCritere[]
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
+function anciennetePoints(dateCreation?: string): number {
+  const years = getYears(dateCreation)
+  if (years >= 10) return 35
+  if (years >= 5) return 28
+  if (years >= 2) return 17
+  return 7
+}
+
+/* ── Fonction principale ─────────────────────────────────── */
+export function calculateScore(input: ScoreInput): ScoreResult {
+  const criteres: ScoreCritere[] = []
+
+  /* 1. Statut légal — 40 pts, toujours disponible */
+  criteres.push({
+    nom: 'Statut légal',
+    points: input.statut === 'actif' ? 40 : 0,
+    max: 40,
+    disponible: true,
+  })
+
+  /* 2. Ancienneté — 35 pts, toujours disponible */
+  criteres.push({
+    nom: 'Ancienneté',
+    points: anciennetePoints(input.dateCreation),
+    max: 35,
+    disponible: true,
+  })
+
+  /* 3. Procédures BODACC — 25 pts, seulement si données récupérées */
+  const bodaccFetched = input.bodacc?.disponible === true
+  if (bodaccFetched) {
+    const nb = input.bodacc!.nbProceduresCollectives
+      ?? (input.bodacc!.procedureCollective ? 1 : 0)
+    criteres.push({
+      nom: 'Procédures judiciaires',
+      points: nb === 0 ? 25 : nb === 1 ? 10 : 0,
+      max: 25,
+      disponible: true,
+    })
+  } else {
+    criteres.push({
+      nom: 'Procédures judiciaires',
+      points: 0,
+      max: 25,
+      disponible: false,
+    })
+  }
+
+  /* Calcul normalisé sur les critères disponibles uniquement */
+  const included = criteres.filter(c => c.disponible)
+  const totalPoints = included.reduce((s, c) => s + c.points, 0)
+  const totalMax = included.reduce((s, c) => s + c.max, 0)
+  const score = totalMax > 0 ? Math.round((totalPoints / totalMax) * 100) : 0
+
+  return { score, totalPoints, totalMax, criteres }
+}
+
+/* ── Couleurs ────────────────────────────────────────────── */
 export function scoreColor(score: number): string {
   if (score >= 70) return '#52B788'
   if (score >= 50) return '#F4A261'

@@ -28,24 +28,31 @@ async function checkRge(siret: string): Promise<boolean> {
 }
 
 /** Fetch minimal BODACC data needed for score calculation only */
-async function checkBodacc(siren: string): Promise<{ procedureCollective: boolean; nbAnnonces: number }> {
+async function checkBodacc(siren: string): Promise<{
+  disponible: boolean
+  procedureCollective: boolean
+  nbProceduresCollectives: number
+}> {
   try {
     const url = `https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%22&limit=20&fields=familleavis_lib`
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
       next: { revalidate: 86400 },
     })
-    if (!res.ok) return { procedureCollective: false, nbAnnonces: 0 }
+    if (!res.ok) return { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
     const data = await res.json()
     const records: Array<{ familleavis_lib: string }> = data.results || []
-    const procedureCollective = records.some(r =>
-      r.familleavis_lib?.toLowerCase().includes('procédure') &&
-      (r.familleavis_lib?.toLowerCase().includes('collective') ||
-        r.familleavis_lib?.toLowerCase().includes('rétablissement'))
-    )
-    return { procedureCollective, nbAnnonces: records.length }
+    const isCollective = (lib: string) =>
+      lib?.toLowerCase().includes('procédure') &&
+      (lib?.toLowerCase().includes('collective') || lib?.toLowerCase().includes('rétablissement'))
+    const procRecords = records.filter(r => isCollective(r.familleavis_lib))
+    return {
+      disponible: true,
+      procedureCollective: procRecords.length > 0,
+      nbProceduresCollectives: procRecords.length,
+    }
   } catch {
-    return { procedureCollective: false, nbAnnonces: 0 }
+    return { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
   }
 }
 
@@ -134,14 +141,16 @@ export async function GET(req: NextRequest) {
     let candidates: SearchCandidate[] = baseData.map((c, i) => {
       const isRge = rgeChecks[i].status === 'fulfilled' && (rgeChecks[i] as PromiseFulfilledResult<boolean>).value
       const bodacc = bodaccChecks[i].status === 'fulfilled'
-        ? (bodaccChecks[i] as PromiseFulfilledResult<{ procedureCollective: boolean; nbAnnonces: number }>).value
-        : { procedureCollective: false, nbAnnonces: 0 }
-      const { total: score } = calculateScore({
+        ? (bodaccChecks[i] as PromiseFulfilledResult<{ disponible: boolean; procedureCollective: boolean; nbProceduresCollectives: number }>).value
+        : { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
+      const { score } = calculateScore({
         statut: c.statut,
-        rge: isRge,
         dateCreation: c.dateCreation,
-        dirigeants: c.dirigeantsRaw,
-        bodacc: { procedureCollective: bodacc.procedureCollective, annonces: new Array(bodacc.nbAnnonces) },
+        bodacc: {
+          disponible: bodacc.disponible,
+          procedureCollective: bodacc.procedureCollective,
+          nbProceduresCollectives: bodacc.nbProceduresCollectives,
+        },
       })
       return { siret: c.siret, siren: c.siren, nom: c.nom, statut: c.statut, formeJuridique: c.formeJuridique, formeJuridiqueCode: c.formeJuridiqueCode, ville: c.ville, codePostal: c.codePostal, codeNaf: c.codeNaf, activite: c.activite, dateCreation: c.dateCreation, rge: isRge, score }
     })

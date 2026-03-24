@@ -42,13 +42,12 @@ interface SearchResult {
 
 function computeScore(company: CompanyResult): number {
   const actif = company.etat_administratif === 'A' || company.siege?.etat_administratif === 'A'
+  // BODACC non disponible depuis l'API autocomplete → critère exclu du score
   return calculateScore({
     statut: actif ? 'actif' : 'fermé',
-    rge: company.complements?.est_rge ?? false,
     dateCreation: company.date_creation || company.siege?.date_creation,
-    dirigeants: company.dirigeants ?? [],
-    // bodacc not available from autocomplete API → defaults apply
-  }).total
+    bodacc: null,
+  }).score
 }
 
 function getAgeYears(dateStr?: string): number | null {

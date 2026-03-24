@@ -401,13 +401,24 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
   }
   const dirigeants = parseDirigeants(e.dirigeants || [])
 
-  // Score via canonical function (same as /recherche and /comparer)
-  const { total: score } = calculateScore({
+  // Compte les procédures collectives distinctes pour le score
+  const nbProceduresCollectives = bodacc.annonces.filter(a =>
+    a.famille?.toLowerCase().includes('procédure') &&
+    (a.famille?.toLowerCase().includes('collective') || a.famille?.toLowerCase().includes('rétablissement')) ||
+    a.type?.toLowerCase().includes('liquidation') ||
+    a.type?.toLowerCase().includes('redressement') ||
+    a.type?.toLowerCase().includes('sauvegarde')
+  ).length
+
+  // Score via fonction canonique (même logique que /api/recherche)
+  const { score } = calculateScore({
     statut: siege.etat_administratif === 'A' ? 'actif' : 'fermé',
-    rge: rgeInfo,
     dateCreation: siege.date_creation || e.date_creation,
-    dirigeants,
-    bodacc,
+    bodacc: {
+      disponible: true,
+      procedureCollective: bodacc.procedureCollective,
+      nbProceduresCollectives,
+    },
   })
 
   // Build alerts

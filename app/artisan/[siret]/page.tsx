@@ -103,12 +103,21 @@ function categorizeBodacc(annonces: Array<{ famille: string; type: string; date:
 
 /* ─── Score calculation (shared via lib/score.ts) ────────── */
 function computeScore(result: SearchResult) {
+  const nbProceduresCollectives = (result.bodacc?.annonces ?? []).filter(a =>
+    a.famille?.toLowerCase().includes('procédure') &&
+    (a.famille?.toLowerCase().includes('collective') || a.famille?.toLowerCase().includes('rétablissement')) ||
+    a.type?.toLowerCase().includes('liquidation') ||
+    a.type?.toLowerCase().includes('redressement') ||
+    a.type?.toLowerCase().includes('sauvegarde')
+  ).length
   return calculateScore({
     statut: result.statut,
-    rge: result.rge,
     dateCreation: result.dateCreation,
-    dirigeants: result.dirigeants,
-    bodacc: result.bodacc,
+    bodacc: {
+      disponible: true,
+      procedureCollective: result.bodacc?.procedureCollective ?? false,
+      nbProceduresCollectives,
+    },
   })
 }
 
@@ -350,11 +359,8 @@ export default function ArtisanFichePage() {
   const dirigeants = result?.dirigeants ?? []
   const bodacc = result?.bodacc ?? { procedureCollective: false, annonces: [], changementDirigeantRecent: false }
 
-  const scores = result ? computeScore(result) : {
-    total: 0, statut_score: 0, certif_score: 0,
-    anciennete_score: 0, dirigeants_score: 0, procedures_score: 0,
-  }
-  const score = result?.score ?? scores.total
+  const scoreResult = result ? computeScore(result) : null
+  const score = result?.score ?? scoreResult?.score ?? 0
 
   const strokeColor = scoreColor(score)
 
@@ -372,13 +378,8 @@ export default function ArtisanFichePage() {
     ? 'Profil correct — quelques points à vérifier avant de signer.'
     : 'Profil préoccupant — vérifications fortement conseillées.'
 
-  const scoreBreakdown = [
-    { label: 'Statut légal', value: scores.statut_score, max: 25 },
-    { label: 'Certifications', value: scores.certif_score, max: 20 },
-    { label: 'Ancienneté', value: scores.anciennete_score, max: 20 },
-    { label: 'Dirigeants', value: scores.dirigeants_score, max: 20 },
-    { label: 'Procédures judiciaires', value: scores.procedures_score, max: 15 },
-  ]
+  // Breakdown : 3 critères (RGE et Dirigeants hors score, dans leurs sections dédiées)
+  const scoreBreakdown = scoreResult?.criteres ?? []
 
   const checklistItems = [
     'Vérifier l\'assurance décennale',
@@ -1220,23 +1221,29 @@ export default function ArtisanFichePage() {
                     textAlign: 'left', marginBottom: '24px',
                   }}>
                     {scoreBreakdown.map((item) => (
-                      <div key={item.label}>
+                      <div key={item.nom}>
                         <div style={{
                           display: 'flex', justifyContent: 'space-between',
                           marginBottom: '4px',
                         }}>
-                          <span style={{ fontSize: '12px', color: '#374151' }}>{item.label}</span>
-                          <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600 }}>
-                            {item.value}/{item.max}
-                          </span>
+                          <span style={{ fontSize: '12px', color: '#374151' }}>{item.nom}</span>
+                          {item.disponible ? (
+                            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600 }}>
+                              {item.points}/{item.max}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic' }}>
+                              Donnée indisponible
+                            </span>
+                          )}
                         </div>
                         <div style={{
                           height: 6, background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden',
                         }}>
                           <div style={{
                             height: '100%',
-                            width: `${(item.value / item.max) * 100}%`,
-                            background: strokeColor,
+                            width: item.disponible ? `${(item.points / item.max) * 100}%` : '0%',
+                            background: item.disponible ? strokeColor : '#e5e7eb',
                             borderRadius: '3px',
                             transition: 'width 1s ease',
                           }} />
