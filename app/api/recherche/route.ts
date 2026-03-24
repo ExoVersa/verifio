@@ -27,6 +27,28 @@ async function checkRge(siret: string): Promise<boolean> {
   }
 }
 
+/** Fetch minimal BODACC data needed for score calculation only */
+async function checkBodacc(siren: string): Promise<{ procedureCollective: boolean; nbAnnonces: number }> {
+  try {
+    const url = `https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%22&limit=20&fields=familleavis_lib`
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) return { procedureCollective: false, nbAnnonces: 0 }
+    const data = await res.json()
+    const records: Array<{ familleavis_lib: string }> = data.results || []
+    const procedureCollective = records.some(r =>
+      r.familleavis_lib?.toLowerCase().includes('procédure') &&
+      (r.familleavis_lib?.toLowerCase().includes('collective') ||
+        r.familleavis_lib?.toLowerCase().includes('rétablissement'))
+    )
+    return { procedureCollective, nbAnnonces: records.length }
+  } catch {
+    return { procedureCollective: false, nbAnnonces: 0 }
+  }
+}
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const q = sp.get('q')?.trim() || ''
@@ -103,17 +125,23 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // ADEME RGE check for all results (parallel, cached 24h — authoritative source)
-    const rgeChecks = await Promise.allSettled(baseData.map((c) => checkRge(c.siret)))
+    // RGE + BODACC checks in parallel (cached 24h) — same data as fetchCompany for consistent scores
+    const [rgeChecks, bodaccChecks] = await Promise.all([
+      Promise.allSettled(baseData.map((c) => checkRge(c.siret))),
+      Promise.allSettled(baseData.map((c) => checkBodacc(c.siren))),
+    ])
 
     let candidates: SearchCandidate[] = baseData.map((c, i) => {
       const isRge = rgeChecks[i].status === 'fulfilled' && (rgeChecks[i] as PromiseFulfilledResult<boolean>).value
+      const bodacc = bodaccChecks[i].status === 'fulfilled'
+        ? (bodaccChecks[i] as PromiseFulfilledResult<{ procedureCollective: boolean; nbAnnonces: number }>).value
+        : { procedureCollective: false, nbAnnonces: 0 }
       const { total: score } = calculateScore({
         statut: c.statut,
         rge: isRge,
         dateCreation: c.dateCreation,
         dirigeants: c.dirigeantsRaw,
-        // bodacc not available in list search — defaults to no-procedure (15 pts)
+        bodacc: { procedureCollective: bodacc.procedureCollective, annonces: new Array(bodacc.nbAnnonces) },
       })
       return { siret: c.siret, siren: c.siren, nom: c.nom, statut: c.statut, formeJuridique: c.formeJuridique, formeJuridiqueCode: c.formeJuridiqueCode, ville: c.ville, codePostal: c.codePostal, codeNaf: c.codeNaf, activite: c.activite, dateCreation: c.dateCreation, rge: isRge, score }
     })
