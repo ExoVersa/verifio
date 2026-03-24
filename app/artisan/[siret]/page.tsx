@@ -434,6 +434,10 @@ export default function ArtisanFichePage() {
   // Breakdown : 3 critères (RGE et Dirigeants hors score, dans leurs sections dédiées)
   const scoreBreakdown = scoreResult?.criteres ?? []
 
+  // Contexte risque pour Pack Sérénité
+  const nbProcedures = (result?.bodacc?.annonces ?? []).filter((a) => a.famille === 'collective').length
+  const isRisque = score < 70 || nbProcedures > 0
+
   const checklistItems = [
     'Vérifier l\'assurance décennale',
     'Demander le certificat RGE si travaux éligibles aux aides',
@@ -1489,7 +1493,9 @@ export default function ArtisanFichePage() {
                           <div style={{
                             height: '100%',
                             width: item.disponible ? `${(item.points / item.max) * 100}%` : '0%',
-                            background: item.disponible ? strokeColor : '#e5e7eb',
+                            background: item.disponible
+                              ? (item.points / item.max >= 0.8 ? '#52B788' : item.points / item.max >= 0.5 ? '#F4A261' : '#E63946')
+                              : '#e5e7eb',
                             borderRadius: '3px',
                             transition: 'width 1s ease',
                           }} />
@@ -1508,26 +1514,72 @@ export default function ArtisanFichePage() {
 
                   {/* Action buttons */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Pack Sérénité */}
-                    <div>
+                    {/* Pack Sérénité — bloc contextuel */}
+                    <div style={{
+                      background: isRisque ? '#FFF5F5' : '#F0FDF4',
+                      border: `1.5px solid ${isRisque ? '#fca5a5' : '#86efac'}`,
+                      borderRadius: '16px',
+                      padding: '18px 16px 16px',
+                    }}>
+                      {/* En-tête contextuel */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: isRisque ? '#991b1b' : '#14532d', fontFamily: 'var(--font-body)', lineHeight: 1.3 }}>
+                          {isRisque ? '🚨 Vous allez signer un contrat risqué' : '🛡️ Sécurisez votre chantier pour 19,90€'}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '12px', color: isRisque ? '#b91c1c' : '#166534', lineHeight: 1.5 }}>
+                          {isRisque
+                            ? "Cette entreprise présente des signaux d'alerte. Avant de signer, analysez votre devis et protégez-vous."
+                            : 'Le profil juridique est solide. Vérifiez aussi que votre devis est conforme avant de signer.'}
+                        </p>
+                      </div>
+
+                      {/* 3 arguments visuels */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                        {[
+                          { icon: '📄', titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
+                          { icon: '💰', titre: 'Prix du marché', desc: 'Votre devis est-il au juste prix ?' },
+                          { icon: '🔔', titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
+                        ].map(({ icon, titre, desc }) => (
+                          <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>{icon}</span>
+                            <div>
+                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#1f2937' }}>{titre}</p>
+                              <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bandeau urgence si procédures collectives */}
+                      {nbProcedures > 0 && (
+                        <div style={{
+                          background: '#dc2626', color: 'white',
+                          borderRadius: '8px', padding: '10px 12px',
+                          marginBottom: '12px', fontSize: '12px', lineHeight: 1.5,
+                        }}>
+                          ⚠️ Cette entreprise a <strong>{nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''}</strong> — analyse de devis fortement recommandée avant tout engagement financier.
+                        </div>
+                      )}
+
+                      {/* CTA */}
                       <button
                         onClick={startSerenite}
                         disabled={checkoutLoading}
                         style={{
                           width: '100%',
-                          background: '#1B4332', color: 'white',
+                          background: '#52B788', color: 'white',
                           border: 'none', borderRadius: '12px',
-                          padding: '14px', fontSize: '15px', fontWeight: 700,
+                          padding: '15px', fontSize: '15px', fontWeight: 700,
                           cursor: 'pointer', fontFamily: 'var(--font-body)',
                           opacity: checkoutLoading ? 0.7 : 1,
                         }}
-                        onMouseEnter={e => !checkoutLoading && ((e.currentTarget as HTMLButtonElement).style.background = '#145028')}
-                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1B4332')}
+                        onMouseEnter={e => !checkoutLoading && ((e.currentTarget as HTMLButtonElement).style.background = '#3d9c6e')}
+                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#52B788')}
                       >
-                        {checkoutLoading ? 'Redirection…' : '🛡️ Pack Sérénité — 19,90€'}
+                        {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 19,90€ →'}
                       </button>
-                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', textAlign: 'center' }}>
-                        Analyse devis + Rapport PDF + Surveillance 6 mois
+                      <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'center' }}>
+                        Paiement sécurisé · Satisfait ou remboursé 14j
                       </p>
                     </div>
 
@@ -1614,23 +1666,28 @@ export default function ArtisanFichePage() {
       {!loading && result && isMobile && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          background: 'white', padding: '16px',
+          background: 'white', padding: '12px 16px',
           borderTop: '1px solid #e5e7eb',
           zIndex: 50,
         }}>
+          {nbProcedures > 0 && (
+            <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#dc2626', fontWeight: 600, textAlign: 'center' }}>
+              ⚠️ {nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''} détectée{nbProcedures > 1 ? 's' : ''}
+            </p>
+          )}
           <button
             onClick={startSerenite}
             disabled={checkoutLoading}
             style={{
               width: '100%',
-              background: '#1B4332', color: 'white',
+              background: '#52B788', color: 'white',
               border: 'none', borderRadius: '12px',
               padding: '14px', fontSize: '15px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'var(--font-body)',
               opacity: checkoutLoading ? 0.7 : 1,
             }}
           >
-            {checkoutLoading ? 'Redirection…' : '🛡️ Pack Sérénité — 19,90€'}
+            {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 19,90€ →'}
           </button>
         </div>
       )}
