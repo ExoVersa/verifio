@@ -242,6 +242,25 @@ main {
 }
 .ring-fill { animation: ringFill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 
+/* ── Pricing grid ── */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .pricing-grid > *:nth-child(2) {
+    transform: none !important;
+  }
+}
+
 /* ── Card ── */
 .result-card {
   background: var(--color-surface);
