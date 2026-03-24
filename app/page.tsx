@@ -216,10 +216,9 @@ function HeroSearch() {
 
       {/* Chips */}
       <div style={{
-        display: 'flex', gap: '8px', marginTop: '18px',
-        overflowX: 'auto', paddingBottom: '4px',
-        msOverflowStyle: 'none', scrollbarWidth: 'none',
-      } as React.CSSProperties}>
+        display: 'flex', gap: '8px', marginTop: '16px',
+        flexWrap: 'wrap', justifyContent: 'center',
+      }}>
         {CHIPS.map(({ emoji, label }) => (
           <button
             key={label}
@@ -437,13 +436,20 @@ export default function HomePage() {
           background: 'linear-gradient(135deg, rgba(27,67,50,0.92) 0%, rgba(27,67,50,0.78) 100%)',
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1, padding: '120px 24px 80px', textAlign: 'center' }}>
+        {/* Floating badges */}
+        <div className="fb fb-1" style={{ top: '28%', left: '5%', background: 'white', color: '#1B4332' }}>✓ SIRET vérifié INSEE</div>
+        <div className="fb fb-2" style={{ top: '22%', right: '6%', background: '#F0FDF4', color: '#166534' }}>🌿 Certifié RGE</div>
+        <div className="fb fb-3" style={{ top: '55%', left: '4%', background: '#FFF8E7', color: '#B45309' }}>⚠ Procédure BODACC</div>
+        <div className="fb fb-4" style={{ top: '62%', right: '5%', background: 'white', color: '#1B4332' }}>🔔 Alerte activée</div>
+        <div className="fb fb-5" style={{ top: '14%', right: '10%', background: 'white', color: '#4A4A4A' }}>📋 18 ans d&apos;activité</div>
+
+        <div style={{ position: 'relative', zIndex: 1, padding: '80px 24px 40px', textAlign: 'center' }}>
           {/* Badge pill */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             background: 'rgba(82,183,136,0.18)', border: '1px solid rgba(82,183,136,0.45)',
             borderRadius: '100px', padding: '8px 18px', fontSize: '13px', color: '#52B788',
-            marginBottom: '28px', fontWeight: 600,
+            marginBottom: '16px', fontWeight: 600,
           }}>
             🛡️ Données officielles · Gratuit pour les particuliers
           </div>
@@ -451,8 +457,8 @@ export default function HomePage() {
           {/* H1 */}
           <h1 style={{
             fontFamily: 'var(--font-display)', fontWeight: 800,
-            fontSize: 'clamp(36px, 5.5vw, 68px)',
-            color: 'white', lineHeight: 1.1, margin: '0 auto 20px',
+            fontSize: 'clamp(32px, 5vw, 64px)',
+            color: 'white', lineHeight: 1.1, margin: '0 auto 12px',
             letterSpacing: '-0.02em', maxWidth: '820px',
           }}>
             Vérifiez votre <span style={{ color: '#52B788' }}>artisan</span><br />
@@ -461,9 +467,9 @@ export default function HomePage() {
 
           {/* Sous-titre */}
           <p style={{
-            fontSize: '18px', color: 'rgba(255,255,255,0.8)',
-            lineHeight: 1.6, margin: '0 auto 44px',
-            fontFamily: 'var(--font-body)', maxWidth: '520px',
+            fontSize: '17px', color: 'rgba(255,255,255,0.8)',
+            lineHeight: 1.6, margin: '0 auto 24px',
+            fontFamily: 'var(--font-body)', maxWidth: '480px',
           }}>
             26 000 arnaques signalées en 2024 —<br />vérifiez en 30 secondes
           </p>
@@ -698,6 +704,26 @@ export default function HomePage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes kenBurns { from { transform: scale(1.04); } to { transform: scale(1); } }
+        @keyframes float {
+          0%, 100% { transform: translateY(-8px); }
+          50%       { transform: translateY(0px); }
+        }
+        .fb {
+          position: absolute; z-index: 10;
+          border-radius: 100px; padding: 10px 16px;
+          font-size: 13px; font-weight: 700;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          white-space: nowrap;
+          display: none;
+        }
+        @media (min-width: 1100px) {
+          .fb { display: block; }
+        }
+        .fb-1 { animation: float 3.0s ease-in-out 0.0s infinite; }
+        .fb-2 { animation: float 3.0s ease-in-out 0.7s infinite; }
+        .fb-3 { animation: float 3.0s ease-in-out 1.4s infinite; }
+        .fb-4 { animation: float 3.0s ease-in-out 2.1s infinite; }
+        .fb-5 { animation: float 3.0s ease-in-out 0.3s infinite; }
         @keyframes fadeInDown {
           from { opacity: 0; transform: translateY(-14px); }
           to   { opacity: 1; transform: translateY(0); }
