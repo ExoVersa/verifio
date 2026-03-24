@@ -33,6 +33,8 @@ export interface BodaccInfo {
   typeProcedure?: string
   annonces: BodaccAnnonce[]
   changementDirigeantRecent: boolean
+  /** true si l'appel API BODACC a réussi, false si indisponible/erreur */
+  fetched?: boolean
 }
 
 export interface SuccessionInfo {
