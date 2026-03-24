@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square } from 'lucide-react'
+import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square, Layers } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { scoreColor } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
@@ -10,7 +10,7 @@ import type { SearchCandidate } from '@/types'
 const CHIPS = [
   { icon: <Wrench size={13} strokeWidth={1.5} />, label: 'Plombier' },
   { icon: <Zap size={13} strokeWidth={1.5} />, label: 'Électricien' },
-  { icon: <span>🧱</span>, label: 'Maçon' },
+  { icon: <Layers size={13} strokeWidth={1.5} />, label: 'Maçon' },
   { icon: <Home size={13} strokeWidth={1.5} />, label: 'Couvreur' },
   { icon: <span>🌡</span>, label: 'Chauffagiste' },
   { icon: <Square size={13} strokeWidth={1.5} />, label: 'Menuisier' },

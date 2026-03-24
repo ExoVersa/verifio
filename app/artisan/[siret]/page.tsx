@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
   Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
-  Check, FileText, ClipboardList, Users, Shield,
+  Check, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { dirigeantSlug } from '@/lib/dirigeant'
@@ -586,7 +586,7 @@ export default function ArtisanFichePage() {
             marginBottom: '20px',
           }}
         >
-          ← Retour
+          <ArrowLeft size={16} strokeWidth={1.5} /> Retour
         </button>
 
         {/* Loading */}
@@ -611,7 +611,7 @@ export default function ArtisanFichePage() {
                 fontFamily: 'var(--font-body)',
               }}
             >
-              ← Retour à la recherche
+              <ArrowLeft size={16} strokeWidth={1.5} /> Retour à la recherche
             </button>
           </div>
         )}
@@ -707,9 +707,10 @@ export default function ArtisanFichePage() {
                     background: '#ef4444', color: 'white',
                     fontSize: '13px', fontWeight: 800,
                     padding: '8px 20px', borderRadius: '24px',
-                    whiteSpace: 'nowrap', display: 'inline-block',
+                    whiteSpace: 'nowrap', display: 'inline-flex',
+                    alignItems: 'center', gap: '4px',
                   }}>
-                    ✕ FERMÉ
+                    <X size={13} strokeWidth={1.5} style={{ flexShrink: 0 }} /> FERMÉ
                   </span>
                 )}
               </div>
@@ -933,7 +934,7 @@ export default function ArtisanFichePage() {
                                 fontSize: '10px', fontWeight: 700,
                                 padding: '2px 7px', borderRadius: '8px',
                               }}>
-                                {etab.statut === 'A' ? '● Actif' : '✕ Fermé'}
+                                {etab.statut === 'A' ? '● Actif' : <><X size={10} strokeWidth={1.5} style={{ display: 'inline', marginRight: '2px' }} /> Fermé</>}
                               </span>
                             </div>
                             <p style={{ margin: '0 0 2px', fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
