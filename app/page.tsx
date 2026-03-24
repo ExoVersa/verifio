@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square, Layers, Thermometer } from 'lucide-react'
+import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square, Layers, Thermometer, FileSearch, HardHat, ClipboardCheck, Gem, ChevronDown, ChevronRight, Star } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { scoreColor } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
@@ -417,6 +417,290 @@ function AnimatedStatInline({ value, suffix }: { value: number; suffix: string }
   return <span ref={ref}>{display}{suffix}</span>
 }
 
+/* ─── Timeline Section ───────────────────────────────────── */
+const TIMELINE_STEPS = [
+  {
+    num: '01',
+    icon: Search,
+    title: 'Vous trouvez un artisan',
+    desc: 'Recherchez par nom, SIRET ou type de travaux. Obtenez un score de confiance en 30 secondes.',
+    cta: { href: '/recherche', label: 'Rechercher un artisan' },
+    points: ['SIRET vérifié en temps réel', 'Certifications RGE officielles', 'Alertes BODACC et procédures', 'Score de fiabilité 0–100'],
+  },
+  {
+    num: '02',
+    icon: FileSearch,
+    title: 'Vous analysez son devis',
+    desc: 'Notre IA contrôle la conformité légale de votre devis et compare les prix du marché.',
+    cta: { href: '/analyser-devis', label: 'Analyser mon devis' },
+    points: ['Mentions obligatoires vérifiées', 'Prix comparés au marché local', 'Détection de clauses abusives', 'Rapport PDF téléchargeable'],
+  },
+  {
+    num: '03',
+    icon: ClipboardCheck,
+    title: 'Vous signez en confiance',
+    desc: 'La checklist pré-signature vous guide pour ne rien oublier avant le premier coup de marteau.',
+    cta: { href: '/mes-chantiers', label: 'Ouvrir ma checklist' },
+    points: ['Contrat et devis signés', 'Acompte ≤ 30 % vérifié', 'Assurance décennale contrôlée', 'Garanties contractuelles en place'],
+  },
+  {
+    num: '04',
+    icon: HardHat,
+    title: 'Vous suivez le chantier',
+    desc: 'Le carnet de chantier centralise journal, paiements, photos et documents en un seul endroit.',
+    cta: { href: '/mes-chantiers', label: 'Mon carnet de chantier' },
+    points: ['Journal des événements', 'Suivi des paiements et acomptes', 'Photos horodatées', 'Documents et factures'],
+  },
+  {
+    num: '05',
+    icon: CheckCircle,
+    title: 'Vous réceptionnez les travaux',
+    desc: 'La checklist de réception vous aide à constater et formaliser les éventuelles réserves.',
+    cta: { href: '/mes-chantiers', label: 'Checklist de réception' },
+    points: ['PV de réception guidé', 'Réserves documentées', 'Délai de rétractation rappelé', 'Garanties légales activées'],
+  },
+]
+
+function TimelineSection() {
+  const [active, setActive] = useState(0)
+  const step = TIMELINE_STEPS[active]
+  const StepIcon = step.icon
+  return (
+    <section style={{ background: '#F8F4EF', padding: '96px 0' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(27,67,50,0.08)', border: '1px solid rgba(27,67,50,0.15)', borderRadius: '100px', padding: '8px 18px', fontSize: '13px', color: '#1B4332', marginBottom: '16px', fontWeight: 600 }}>
+            <ClipboardList size={13} strokeWidth={1.5} /> De la recherche à la réception
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(28px, 4vw, 40px)', color: '#1A1A1A', margin: '0 0 12px' }}>
+            Verifio vous accompagne<br />à chaque étape
+          </h2>
+          <p style={{ fontSize: '17px', color: '#4A4A4A', margin: 0 }}>5 étapes pour un chantier sans surprise.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '40px', alignItems: 'start' }}>
+          {/* Left: step list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {TIMELINE_STEPS.map((s, i) => {
+              const Icon = s.icon
+              const isActive = i === active
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                    padding: '16px 20px', borderRadius: '14px', cursor: 'pointer', textAlign: 'left',
+                    border: isActive ? '1.5px solid #1B4332' : '1.5px solid transparent',
+                    background: isActive ? 'white' : 'transparent',
+                    boxShadow: isActive ? '0 4px 16px rgba(27,67,50,0.10)' : 'none',
+                    transition: 'all 0.2s', fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0,
+                    background: isActive ? '#1B4332' : '#E8E3DC',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.2s',
+                  }}>
+                    <Icon size={18} color={isActive ? 'white' : '#8A8A8A'} strokeWidth={1.5} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: isActive ? '#52B788' : '#8A8A8A', letterSpacing: '0.1em', marginBottom: '2px' }}>
+                      ÉTAPE {s.num}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: isActive ? '#1A1A1A' : '#4A4A4A', lineHeight: 1.3 }}>
+                      {s.title}
+                    </div>
+                  </div>
+                  <ChevronRight size={16} color={isActive ? '#1B4332' : '#C8C2BB'} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Right: detail panel */}
+          <div style={{ background: 'white', borderRadius: '24px', padding: '36px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'sticky', top: '100px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <StepIcon size={24} color="white" strokeWidth={1.5} />
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#52B788', letterSpacing: '0.1em', marginBottom: '2px' }}>ÉTAPE {step.num}</div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '20px', color: '#1A1A1A', margin: 0 }}>{step.title}</h3>
+              </div>
+            </div>
+            <p style={{ fontSize: '15px', color: '#4A4A4A', lineHeight: 1.7, margin: '0 0 24px' }}>{step.desc}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px' }}>
+              {step.points.map((p, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#f0fdf4', border: '1px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Check size={11} color="#16a34a" strokeWidth={2.5} />
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#1A1A1A' }}>{p}</span>
+                </div>
+              ))}
+            </div>
+            <a
+              href={step.cta.href}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1B4332', color: 'white', borderRadius: '12px', padding: '12px 22px', fontSize: '14px', fontWeight: 700, textDecoration: 'none', fontFamily: 'var(--font-body)', transition: 'background 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#2D6A4F')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#1B4332')}
+            >
+              {step.cta.label} <ArrowRight size={15} strokeWidth={1.5} />
+            </a>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .timeline-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </section>
+  )
+}
+
+/* ─── Pricing Section ────────────────────────────────────── */
+function PricingSection() {
+  const PLANS = [
+    {
+      name: 'Gratuit',
+      price: '0€',
+      desc: 'Pour vérifier rapidement un artisan',
+      color: '#4A4A4A',
+      border: '#E8E3DC',
+      bg: 'white',
+      badge: null,
+      cta: { href: '/recherche', label: 'Commencer gratuitement', style: 'outline' as const },
+      features: [
+        { ok: true,  text: 'Recherche par nom / SIRET' },
+        { ok: true,  text: 'Score de fiabilité 0–100' },
+        { ok: true,  text: 'Statut légal INSEE' },
+        { ok: true,  text: 'Certifications RGE' },
+        { ok: false, text: 'Rapport PDF complet' },
+        { ok: false, text: 'Analyse de devis par IA' },
+        { ok: false, text: 'Alertes BODACC en temps réel' },
+        { ok: false, text: 'Carnet de chantier illimité' },
+      ],
+    },
+    {
+      name: 'Pack Sérénité',
+      price: '4,90€',
+      desc: 'Par rapport — un seul achat',
+      color: 'white',
+      border: '#1B4332',
+      bg: '#1B4332',
+      badge: '⭐ Le plus populaire',
+      cta: { href: '/pricing', label: 'Obtenir le rapport', style: 'solid' as const },
+      features: [
+        { ok: true,  text: 'Tout ce qui est gratuit' },
+        { ok: true,  text: 'Rapport PDF complet' },
+        { ok: true,  text: 'Analyse de devis par IA' },
+        { ok: true,  text: 'Alertes BODACC en temps réel' },
+        { ok: true,  text: 'Détection clauses abusives' },
+        { ok: true,  text: 'Carnet de chantier illimité' },
+        { ok: false, text: 'Accès multi-artisans' },
+        { ok: false, text: 'Support prioritaire' },
+      ],
+    },
+    {
+      name: 'Pack Tranquillité',
+      price: 'Bientôt',
+      desc: 'Pour un suivi complet et illimité',
+      color: '#4A4A4A',
+      border: '#E8E3DC',
+      bg: 'white',
+      badge: null,
+      cta: { href: '/pricing', label: 'Être notifié', style: 'outline' as const },
+      features: [
+        { ok: true,  text: 'Tout du Pack Sérénité' },
+        { ok: true,  text: 'Accès multi-artisans' },
+        { ok: true,  text: 'Support prioritaire' },
+        { ok: true,  text: 'Alertes automatiques illimitées' },
+        { ok: true,  text: 'Espace artisan partagé' },
+        { ok: true,  text: 'Exports comptables' },
+        { ok: true,  text: 'API accès professionnel' },
+        { ok: true,  text: 'Accompagnement dédié' },
+      ],
+    },
+  ]
+  return (
+    <section style={{ background: 'white', padding: '96px 0' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '100px', padding: '8px 18px', fontSize: '13px', color: '#c2410c', marginBottom: '16px', fontWeight: 600 }}>
+            <Gem size={13} strokeWidth={1.5} /> Tarifs transparents
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(28px, 4vw, 40px)', color: '#1A1A1A', margin: '0 0 12px' }}>
+            Gratuit pour commencer,<br />complet quand vous en avez besoin
+          </h2>
+          <p style={{ fontSize: '17px', color: '#4A4A4A', margin: 0 }}>Un seul achat, aucun abonnement imposé.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', alignItems: 'stretch' }}>
+          {PLANS.map((plan) => (
+            <div
+              key={plan.name}
+              style={{
+                background: plan.bg, border: `2px solid ${plan.border}`,
+                borderRadius: '24px', padding: '32px', display: 'flex',
+                flexDirection: 'column', gap: '0',
+                boxShadow: plan.bg === '#1B4332' ? '0 16px 48px rgba(27,67,50,0.25)' : '0 2px 8px rgba(0,0,0,0.06)',
+                transform: plan.bg === '#1B4332' ? 'scale(1.04)' : 'none',
+                position: 'relative',
+              }}
+            >
+              {plan.badge && (
+                <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#52B788', color: 'white', borderRadius: '100px', padding: '5px 16px', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {plan.badge}
+                </div>
+              )}
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: plan.bg === '#1B4332' ? 'rgba(255,255,255,0.7)' : '#8A8A8A' }}>{plan.name}</span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '36px', color: plan.color, lineHeight: 1, marginBottom: '6px' }}>
+                {plan.price}
+              </div>
+              <p style={{ fontSize: '13px', color: plan.bg === '#1B4332' ? 'rgba(255,255,255,0.6)' : '#8A8A8A', margin: '0 0 24px', lineHeight: 1.4 }}>{plan.desc}</p>
+              <hr style={{ border: 'none', borderTop: `1px solid ${plan.bg === '#1B4332' ? 'rgba(255,255,255,0.15)' : '#F0EFE9'}`, margin: '0 0 20px' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px' }}>
+                {plan.features.map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: f.ok ? (plan.bg === '#1B4332' ? 'rgba(82,183,136,0.2)' : '#f0fdf4') : 'transparent' }}>
+                      {f.ok
+                        ? <Check size={10} color={plan.bg === '#1B4332' ? '#52B788' : '#16a34a'} strokeWidth={2.5} />
+                        : <span style={{ width: '10px', height: '1px', display: 'block', background: plan.bg === '#1B4332' ? 'rgba(255,255,255,0.2)' : '#D1CBC3' }} />
+                      }
+                    </div>
+                    <span style={{ fontSize: '13px', color: f.ok ? (plan.bg === '#1B4332' ? 'rgba(255,255,255,0.9)' : '#1A1A1A') : (plan.bg === '#1B4332' ? 'rgba(255,255,255,0.35)' : '#B0AAA3') }}>
+                      {f.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <a
+                href={plan.cta.href}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '13px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 700,
+                  textDecoration: 'none', fontFamily: 'var(--font-body)', transition: 'all 0.2s',
+                  ...(plan.cta.style === 'solid'
+                    ? { background: 'white', color: '#1B4332', border: 'none' }
+                    : { background: 'transparent', color: plan.bg === '#1B4332' ? 'white' : '#1B4332', border: `1.5px solid ${plan.bg === '#1B4332' ? 'rgba(255,255,255,0.4)' : '#1B4332'}` }
+                  ),
+                }}
+              >
+                {plan.cta.label} <ArrowRight size={14} strokeWidth={1.5} />
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── Main Page ─────────────────────────────────────────── */
 export default function HomePage() {
   return (
@@ -515,69 +799,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── SECTION 3 : COMMENT ÇA MARCHE ── */}
-      <section style={{ background: '#F8F4EF', padding: '96px 0' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(28px, 4vw, 40px)', color: '#1A1A1A', margin: '0 0 12px' }}>
-              Vérifiez en 3 étapes
-            </h2>
-            <p style={{ fontSize: '18px', color: '#4A4A4A', margin: 0 }}>Simple, rapide, gratuit.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-            {[
-              { num: '01', icon: <Search size={24} color="white" />, title: 'Entrez le nom ou SIRET', text: 'Recherchez par nom d\'entreprise, SIRET ou type de travaux près de chez vous.', delay: '' },
-              { num: '02', icon: <ShieldCheck size={24} color="white" />, title: 'On vérifie 6 sources officielles', text: 'INSEE, ADEME RGE, BODACC, INPI, dirigeants et certifications — tout en temps réel.', delay: 'fade-up-delay-1' },
-              { num: '03', icon: <CheckCircle size={24} color="white" />, title: 'Recevez votre verdict', text: 'Score de confiance 0-100, alertes, checklist personnalisée et rapport complet.', delay: 'fade-up-delay-2' },
-            ].map((step, i) => (
-              <div key={i} className={`card-hover fade-up ${step.delay}`} style={{ background: 'white', borderRadius: '20px', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: '-16px', right: '16px', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '72px', color: '#E8E3DC', lineHeight: 1, userSelect: 'none' }}>
-                  {step.num}
-                </div>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                  {step.icon}
-                </div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', color: '#1A1A1A', margin: '0 0 10px', position: 'relative', zIndex: 1 }}>{step.title}</h3>
-                <p style={{ fontSize: '15px', color: '#4A4A4A', lineHeight: 1.6, margin: 0, position: 'relative', zIndex: 1 }}>{step.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── SECTION 3 : TIMELINE ── */}
+      <TimelineSection />
 
-      {/* ── SECTION 4 : POURQUOI VERIFIO ── */}
-      <section style={{ background: 'white', padding: '96px 0' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '64px', alignItems: 'center' }}>
-            <div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600" alt="Particulier et artisan" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)' }} />
-            </div>
-            <div>
-              <div style={{ display: 'inline-flex', background: '#fff7ed', color: '#c2410c', border: '1px solid #fdba74', borderRadius: '100px', padding: '6px 14px', fontSize: '13px', fontWeight: 600, marginBottom: '20px' }}>
-                Le problème
-              </div>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(26px, 3.5vw, 40px)', color: '#1A1A1A', margin: '0 0 16px', lineHeight: 1.2 }}>
-                34% des Français victimes d&apos;arnaques sur les chantiers
-              </h2>
-              <p style={{ fontSize: '16px', color: '#4A4A4A', lineHeight: 1.7, margin: '0 0 28px' }}>
-                Faux artisans, devis non respectés, acomptes disparus... Le secteur du bâtiment est le plus touché par les arnaques en France.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                {['Vérification du statut légal en temps réel', 'Détection des procédures judiciaires', 'Contrôle des certifications RGE', 'Analyse de votre devis par IA'].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <ShieldCheck size={18} color="#52B788" style={{ flexShrink: 0 }} />
-                    <span style={{ fontSize: '15px', color: '#1A1A1A' }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <a href="/" className="btn-primary" style={{ display: 'inline-flex' }}>
-                Vérifier mon artisan gratuitement <ArrowRight size={16} />
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── SECTION 4 : PRICING ── */}
+      <PricingSection />
 
       {/* ── SECTION 5 : TÉMOIGNAGES ── */}
       <section style={{ background: '#F8F4EF', padding: '96px 0' }}>
@@ -619,22 +845,25 @@ export default function HomePage() {
       </section>
 
       {/* ── SECTION 6 : SOURCES ── */}
-      <section style={{ background: 'white', padding: '64px 0' }}>
+      <section style={{ background: '#F8F4EF', padding: '64px 0' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <p style={{ fontSize: '12px', letterSpacing: '0.12em', color: '#8A8A8A', textTransform: 'uppercase', marginBottom: '32px', fontWeight: 600 }}>
-            Données issues de
+          <p style={{ fontSize: '12px', letterSpacing: '0.12em', color: '#8A8A8A', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 600 }}>
+            Données officielles mises à jour quotidiennement
+          </p>
+          <p style={{ fontSize: '14px', color: '#4A4A4A', margin: '0 0 32px' }}>
+            Verifio agrège 6 sources gouvernementales pour vous donner une vue complète et fiable.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            {['INSEE', 'ADEME', 'BODACC', 'INPI'].map((src, i) => (
+            {['INSEE', 'ADEME', 'BODACC', 'INPI', 'data.gouv.fr', 'Qualibat'].map((src, i, arr) => (
               <span key={src} style={{ display: 'inline-flex', alignItems: 'center', gap: '16px' }}>
                 <span
-                  style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '24px', color: '#C8C2BB', cursor: 'default', transition: 'color 0.2s' }}
+                  style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '20px', color: '#C8C2BB', cursor: 'default', transition: 'color 0.2s' }}
                   onMouseEnter={e => { (e.target as HTMLSpanElement).style.color = '#1B4332' }}
                   onMouseLeave={e => { (e.target as HTMLSpanElement).style.color = '#C8C2BB' }}
                 >
                   {src}
                 </span>
-                {i < 3 && <span style={{ color: '#C8C2BB', fontSize: '20px' }}>·</span>}
+                {i < arr.length - 1 && <span style={{ color: '#C8C2BB', fontSize: '18px' }}>·</span>}
               </span>
             ))}
           </div>
@@ -704,6 +933,10 @@ export default function HomePage() {
       {/* ── Global styles + animations ── */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 900px) {
+          .pricing-grid { grid-template-columns: 1fr !important; }
+          .timeline-two-col { grid-template-columns: 1fr !important; }
+        }
         @keyframes kenBurns { from { transform: scale(1.04); } to { transform: scale(1); } }
         @keyframes float {
           0%, 100% { transform: translateY(-8px); }

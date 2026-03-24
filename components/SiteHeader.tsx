@@ -67,13 +67,12 @@ const NAV_MENUS: NavMenu[] = [
     id: 'proteger',
     Icon: Scale,
     label: 'Se protéger',
-    ctaHref: '/guide-chantier',
-    ctaLabel: 'Voir le guide chantier',
+    ctaHref: '/assistant-juridique',
+    ctaLabel: 'Assistant juridique',
     stat: { value: '78%', label: 'des litiges évités', tip: 'Avec notre checklist complète' },
     items: [
-      { href: '/guide-chantier', Icon: ClipboardCheck, label: 'Guide chantier étape par étape', desc: 'Checklist complète en 4 phases' },
       { href: '/assistant-juridique', Icon: Scale, label: 'Assistant juridique', desc: 'Vos droits et recours en cas de litige' },
-      { href: null, Icon: AlertTriangle, label: 'Signaler un artisan', desc: 'Alertez la communauté', soon: true },
+      { href: '/pricing', Icon: Gem, label: 'Pack Sérénité', desc: 'Rapport complet + analyse de devis par IA' },
     ],
   },
   {
@@ -84,9 +83,8 @@ const NAV_MENUS: NavMenu[] = [
     ctaLabel: 'Mon carnet de chantier',
     stat: { value: '1 200+', label: 'chantiers suivis', tip: "Sur Verifio aujourd'hui" },
     items: [
-      { href: '/mes-chantiers', Icon: HardHat, label: 'Carnet de chantier', desc: 'Suivez vos travaux et paiements' },
-      { href: '/mon-espace?tab=surveillances', Icon: Bell, label: 'Mes surveillances', desc: 'Artisans que vous surveillez' },
-      { href: '/mon-espace?tab=historique', Icon: History, label: 'Mon historique', desc: 'Vos dernières recherches' },
+      { href: '/mes-chantiers', Icon: HardHat, label: 'Carnet de chantier', desc: 'Suivez vos travaux, paiements et checklist' },
+      { href: '/mon-espace', Icon: Bell, label: 'Mon espace', desc: 'Surveillances et historique de recherches' },
     ],
   },
 ]

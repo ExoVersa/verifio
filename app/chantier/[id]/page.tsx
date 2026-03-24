@@ -6,9 +6,10 @@ import {
   ArrowLeft, AlertCircle, CheckCircle2, Clock, Plus, Calendar,
   MapPin, ExternalLink, MessageSquare, Phone, Wrench, FileText,
   Camera, Trash2, Download, Upload, Eye, X, CreditCard, ChevronDown,
-  HardHat,
+  HardHat, ClipboardCheck,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import GuideChantier from '@/components/GuideChantier'
 import { supabase } from '@/lib/supabase'
 import {
   type Chantier, type ChantierPaiement, type ChantierEvenement,
@@ -730,7 +731,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [photos, setPhotos] = useState<ChantierPhoto[]>([])
   const [documents, setDocuments] = useState<ChantierDocument[]>([])
 
-  const validTabs = ['journal', 'paiements', 'photos', 'documents'] as const
+  const validTabs = ['journal', 'paiements', 'photos', 'documents', 'checklist'] as const
   type TabKey = typeof validTabs[number]
   const tabParam = searchParams.get('tab') as TabKey | null
   const [tab, setTabState] = useState<TabKey>(validTabs.includes(tabParam as TabKey) ? (tabParam as TabKey) : 'journal')
@@ -809,12 +810,13 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const paye = totalPaye(paiements)
   const payePct = chantier.montant_total && chantier.montant_total > 0 ? Math.min(100, Math.round(paye / chantier.montant_total * 100)) : 0
 
-  const TABS = [
-    { key: 'journal', label: '📝 Journal', count: evenements.length },
-    { key: 'paiements', label: '💶 Paiements', count: paiements.length },
-    { key: 'photos', label: '📷 Photos', count: photos.length },
-    { key: 'documents', label: '📄 Documents', count: documents.length },
-  ] as const
+  const TABS: { key: TabKey; Icon: React.ComponentType<{ size: number; strokeWidth?: number }>; label: string; count: number }[] = [
+    { key: 'journal', Icon: FileText, label: 'Journal', count: evenements.length },
+    { key: 'paiements', Icon: CreditCard, label: 'Paiements', count: paiements.length },
+    { key: 'photos', Icon: Camera, label: 'Photos', count: photos.length },
+    { key: 'documents', Icon: Download, label: 'Documents', count: documents.length },
+    { key: 'checklist', Icon: ClipboardCheck, label: 'Checklist', count: 0 },
+  ]
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -912,9 +914,10 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                style={{ padding: '10px 16px', background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid var(--color-accent)' : '2px solid transparent', cursor: 'pointer', fontSize: '13px', fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid var(--color-accent)' : '2px solid transparent', cursor: 'pointer', fontSize: '13px', fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
               >
-                {t.label}{t.count > 0 && <span style={{ marginLeft: '5px', fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: tab === t.key ? 'var(--color-accent-light)' : 'var(--color-neutral-bg)', color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)' }}>{t.count}</span>}
+                <t.Icon size={14} strokeWidth={1.5} />
+                {t.label}{t.count > 0 && <span style={{ marginLeft: '2px', fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: tab === t.key ? 'var(--color-accent-light)' : 'var(--color-neutral-bg)', color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)' }}>{t.count}</span>}
               </button>
             ))}
           </div>
@@ -927,6 +930,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
         {tab === 'paiements' && <PaiementsTab chantier={chantier} paiements={paiements} onRefresh={loadAll} />}
         {tab === 'photos' && <PhotosTab chantier={chantier} photos={photos} onRefresh={loadAll} />}
         {tab === 'documents' && <DocumentsTab chantier={chantier} documents={documents} onRefresh={loadAll} />}
+        {tab === 'checklist' && <GuideChantier initialArtisan={chantier.nom_artisan} />}
       </div>
     </main>
   )
