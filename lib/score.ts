@@ -12,18 +12,19 @@ export function getYears(dateStr: string | undefined): number {
 
 /* ── Input ────────────────────────────────────────────────── */
 export interface ScoreInput {
-  statut: 'actif' | 'fermé'
+  /** Accepte 'actif', 'fermé', 'A', 'F' ou toute autre chaîne */
+  statut: string
   dateCreation?: string
   /**
-   * Passer null ou omettre si BODACC non disponible → critère exclu du score.
-   * Passer { disponible: true, ... } si données récupérées.
+   * procedures.disponible = false → données BODACC pas encore récupérées
+   * → retourne score: -1, loading: true
    */
-  bodacc?: {
+  procedures: {
+    /** Nombre de procédures collectives trouvées dans BODACC */
+    collectives: number
+    /** true si les données BODACC ont été récupérées (même si 0 procédures) */
     disponible: boolean
-    procedureCollective?: boolean
-    /** Nombre de procédures collectives distinctes */
-    nbProceduresCollectives?: number
-  } | null
+  }
 }
 
 /* ── Output ───────────────────────────────────────────────── */
@@ -36,11 +37,13 @@ export interface ScoreCritere {
 }
 
 export interface ScoreResult {
-  /** Score normalisé 0-100 */
+  /** Score normalisé 0-100, ou -1 si données BODACC pas encore disponibles */
   score: number
   totalPoints: number
   totalMax: number
   criteres: ScoreCritere[]
+  /** true quand score === -1 (BODACC en attente) */
+  loading?: boolean
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -52,14 +55,23 @@ function anciennetePoints(dateCreation?: string): number {
   return 7
 }
 
+function isActif(statut: string): boolean {
+  return statut === 'actif' || statut === 'A'
+}
+
 /* ── Fonction principale ─────────────────────────────────── */
 export function calculateScore(input: ScoreInput): ScoreResult {
+  /* Données BODACC pas encore récupérées → score en attente */
+  if (!input.procedures.disponible) {
+    return { score: -1, totalPoints: 0, totalMax: 0, criteres: [], loading: true }
+  }
+
   const criteres: ScoreCritere[] = []
 
   /* 1. Statut légal — 40 pts, toujours disponible */
   criteres.push({
     nom: 'Statut légal',
-    points: input.statut === 'actif' ? 40 : 0,
+    points: isActif(input.statut) ? 40 : 0,
     max: 40,
     disponible: true,
   })
@@ -72,30 +84,18 @@ export function calculateScore(input: ScoreInput): ScoreResult {
     disponible: true,
   })
 
-  /* 3. Procédures BODACC — 25 pts, seulement si données récupérées */
-  const bodaccFetched = input.bodacc?.disponible === true
-  if (bodaccFetched) {
-    const nb = input.bodacc!.nbProceduresCollectives
-      ?? (input.bodacc!.procedureCollective ? 1 : 0)
-    criteres.push({
-      nom: 'Procédures judiciaires',
-      points: nb === 0 ? 25 : nb === 1 ? 10 : 0,
-      max: 25,
-      disponible: true,
-    })
-  } else {
-    criteres.push({
-      nom: 'Procédures judiciaires',
-      points: 0,
-      max: 25,
-      disponible: false,
-    })
-  }
+  /* 3. Procédures BODACC — 25 pts */
+  const nb = input.procedures.collectives
+  criteres.push({
+    nom: 'Procédures judiciaires',
+    points: nb === 0 ? 25 : nb === 1 ? 5 : 0,
+    max: 25,
+    disponible: true,
+  })
 
-  /* Calcul normalisé sur les critères disponibles uniquement */
-  const included = criteres.filter(c => c.disponible)
-  const totalPoints = included.reduce((s, c) => s + c.points, 0)
-  const totalMax = included.reduce((s, c) => s + c.max, 0)
+  /* Calcul normalisé */
+  const totalPoints = criteres.reduce((s, c) => s + c.points, 0)
+  const totalMax = criteres.reduce((s, c) => s + c.max, 0)
   const score = totalMax > 0 ? Math.round((totalPoints / totalMax) * 100) : 0
 
   return { score, totalPoints, totalMax, criteres }
@@ -103,12 +103,14 @@ export function calculateScore(input: ScoreInput): ScoreResult {
 
 /* ── Couleurs ────────────────────────────────────────────── */
 export function scoreColor(score: number): string {
+  if (score < 0) return '#9ca3af'
   if (score >= 70) return '#52B788'
   if (score >= 50) return '#F4A261'
   return '#E63946'
 }
 
 export function scoreBg(score: number): string {
+  if (score < 0) return '#f3f4f6'
   if (score >= 70) return '#f0fdf4'
   if (score >= 50) return '#fff7ed'
   return '#fef2f2'

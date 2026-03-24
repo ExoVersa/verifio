@@ -30,8 +30,7 @@ async function checkRge(siret: string): Promise<boolean> {
 /** Fetch minimal BODACC data needed for score calculation only */
 async function checkBodacc(siren: string): Promise<{
   disponible: boolean
-  procedureCollective: boolean
-  nbProceduresCollectives: number
+  collectives: number
 }> {
   try {
     const url = `https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%22&limit=20&fields=familleavis_lib`
@@ -39,20 +38,18 @@ async function checkBodacc(siren: string): Promise<{
       headers: { Accept: 'application/json' },
       next: { revalidate: 86400 },
     })
-    if (!res.ok) return { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
+    if (!res.ok) return { disponible: true, collectives: 0 }
     const data = await res.json()
     const records: Array<{ familleavis_lib: string }> = data.results || []
     const isCollective = (lib: string) =>
       lib?.toLowerCase().includes('procédure') &&
       (lib?.toLowerCase().includes('collective') || lib?.toLowerCase().includes('rétablissement'))
-    const procRecords = records.filter(r => isCollective(r.familleavis_lib))
     return {
       disponible: true,
-      procedureCollective: procRecords.length > 0,
-      nbProceduresCollectives: procRecords.length,
+      collectives: records.filter(r => isCollective(r.familleavis_lib)).length,
     }
   } catch {
-    return { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
+    return { disponible: true, collectives: 0 }
   }
 }
 
@@ -141,15 +138,14 @@ export async function GET(req: NextRequest) {
     let candidates: SearchCandidate[] = baseData.map((c, i) => {
       const isRge = rgeChecks[i].status === 'fulfilled' && (rgeChecks[i] as PromiseFulfilledResult<boolean>).value
       const bodacc = bodaccChecks[i].status === 'fulfilled'
-        ? (bodaccChecks[i] as PromiseFulfilledResult<{ disponible: boolean; procedureCollective: boolean; nbProceduresCollectives: number }>).value
-        : { disponible: false, procedureCollective: false, nbProceduresCollectives: 0 }
+        ? (bodaccChecks[i] as PromiseFulfilledResult<{ disponible: boolean; collectives: number }>).value
+        : { disponible: true, collectives: 0 }
       const { score } = calculateScore({
         statut: c.statut,
         dateCreation: c.dateCreation,
-        bodacc: {
+        procedures: {
           disponible: bodacc.disponible,
-          procedureCollective: bodacc.procedureCollective,
-          nbProceduresCollectives: bodacc.nbProceduresCollectives,
+          collectives: bodacc.collectives,
         },
       })
       return { siret: c.siret, siren: c.siren, nom: c.nom, statut: c.statut, formeJuridique: c.formeJuridique, formeJuridiqueCode: c.formeJuridiqueCode, ville: c.ville, codePostal: c.codePostal, codeNaf: c.codeNaf, activite: c.activite, dateCreation: c.dateCreation, rge: isRge, score }

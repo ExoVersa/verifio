@@ -46,7 +46,7 @@ function computeScore(company: CompanyResult): number {
   return calculateScore({
     statut: actif ? 'actif' : 'fermé',
     dateCreation: company.date_creation || company.siege?.date_creation,
-    bodacc: null,
+    procedures: { disponible: true, collectives: 0 },
   }).score
 }
 

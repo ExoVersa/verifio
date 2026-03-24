@@ -104,19 +104,14 @@ function categorizeBodacc(annonces: Array<{ famille: string; type: string; date:
 /* ─── Score calculation (shared via lib/score.ts) ────────── */
 function computeScore(result: SearchResult) {
   const nbProceduresCollectives = (result.bodacc?.annonces ?? []).filter(a =>
-    a.famille?.toLowerCase().includes('procédure') &&
-    (a.famille?.toLowerCase().includes('collective') || a.famille?.toLowerCase().includes('rétablissement')) ||
-    a.type?.toLowerCase().includes('liquidation') ||
-    a.type?.toLowerCase().includes('redressement') ||
-    a.type?.toLowerCase().includes('sauvegarde')
+    a.famille === 'collective'
   ).length
   return calculateScore({
     statut: result.statut,
     dateCreation: result.dateCreation,
-    bodacc: {
-      disponible: result.bodacc?.fetched !== false,
-      procedureCollective: result.bodacc?.procedureCollective ?? false,
-      nbProceduresCollectives,
+    procedures: {
+      disponible: result.bodacc?.fetched === true,
+      collectives: nbProceduresCollectives,
     },
   })
 }
@@ -255,23 +250,27 @@ function ScoreRing({ score, strokeColor }: { score: number; strokeColor: string 
     return () => clearTimeout(t)
   }, [])
 
-  const dasharray = animated
-    ? `${(score / 100) * circumference} ${circumference}`
-    : `0 ${circumference}`
+  const isLoading = score === -1
+
+  const dasharray = isLoading || !animated
+    ? `0 ${circumference}`
+    : `${(score / 100) * circumference} ${circumference}`
 
   return (
     <div style={{ position: 'relative', width: 120, height: 120 }}>
       <svg viewBox="0 0 120 120" width="120" height="120">
         <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-        <circle
-          cx="60" cy="60" r="52" fill="none"
-          stroke={strokeColor}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={dasharray}
-          transform="rotate(-90 60 60)"
-          style={{ transition: 'stroke-dasharray 1.2s ease' }}
-        />
+        {!isLoading && (
+          <circle
+            cx="60" cy="60" r="52" fill="none"
+            stroke={strokeColor}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={dasharray}
+            transform="rotate(-90 60 60)"
+            style={{ transition: 'stroke-dasharray 1.2s ease' }}
+          />
+        )}
       </svg>
       <div style={{
         position: 'absolute', top: '50%', left: '50%',
@@ -279,10 +278,16 @@ function ScoreRing({ score, strokeColor }: { score: number; strokeColor: string 
         textAlign: 'center',
         lineHeight: 1,
       }}>
-        <div style={{ fontSize: '44px', fontWeight: 800, color: '#1B4332', fontFamily: 'var(--font-body)' }}>
-          {score}
-        </div>
-        <div style={{ fontSize: '14px', color: '#9ca3af' }}>/100</div>
+        {isLoading ? (
+          <div style={{ fontSize: '14px', color: '#9ca3af', lineHeight: 1.3 }}>Données<br />indisponibles</div>
+        ) : (
+          <>
+            <div style={{ fontSize: '44px', fontWeight: 800, color: '#1B4332', fontFamily: 'var(--font-body)' }}>
+              {score}
+            </div>
+            <div style={{ fontSize: '14px', color: '#9ca3af' }}>/100</div>
+          </>
+        )}
       </div>
     </div>
   )
