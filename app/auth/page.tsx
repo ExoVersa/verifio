@@ -189,7 +189,7 @@ export default function AuthPage() {
   /* ── Colonne gauche ─────────────────────────────────────── */
   const LeftPanel = () => (
     <div style={{
-      width: '45%',
+      width: '100%',
       background: '#1B4332',
       display: 'flex',
       flexDirection: 'column',
@@ -547,7 +547,7 @@ export default function AuthPage() {
       `}</style>
       <main style={{ display: 'flex', minHeight: '100vh' }}>
         {/* Colonne gauche */}
-        <div className="auth-left">
+        <div className="auth-left" style={{ flex: '0 0 45%', maxWidth: '45%' }}>
           <LeftPanel />
         </div>
 
