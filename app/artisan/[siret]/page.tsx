@@ -121,6 +121,24 @@ function computeScore(result: SearchResult) {
   })
 }
 
+/* ─── BODACC detail sub-components ──────────────────────────*/
+function BodaccField({ label, value, full }: { label: string; value: string; full?: boolean }) {
+  return (
+    <div style={{ gridColumn: full ? '1 / -1' : undefined }}>
+      <p style={{ margin: '0 0 1px', fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+      <p style={{ margin: 0, fontSize: '12px', color: '#374151', lineHeight: 1.4 }}>{value}</p>
+    </div>
+  )
+}
+function BodaccSection({ titre, children }: { titre: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginTop: '10px', padding: '10px', background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#6b7280' }}>{titre}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{children}</div>
+    </div>
+  )
+}
+
 /* ─── Skeleton ────────────────────────────────────────────── */
 function Skeleton({ width = '100%', height = 20, borderRadius = 8 }: { width?: string | number; height?: number; borderRadius?: number }) {
   return (
@@ -270,6 +288,7 @@ export default function ArtisanFichePage() {
   const [showAllRGE, setShowAllRGE] = useState(false)
   const [showBodaccList, setShowBodaccList] = useState(false)
   const [showAllBodacc, setShowAllBodacc] = useState(false)
+  const [expandedBodacc, setExpandedBodacc] = useState<Set<string>>(new Set())
   const [financialData, setFinancialData] = useState<Record<string, unknown> | null>(null)
   const [financialLoading, setFinancialLoading] = useState(false)
 
@@ -1096,18 +1115,122 @@ export default function ArtisanFichePage() {
                               {bodaccVisible.map((a, i) => {
                                 const label = getBodaccTypeLabel(a)
                                 const badge = getBodaccBadgeStyle(label)
+                                const isOpen = expandedBodacc.has(a.id || String(i))
+                                const toggleKey = a.id || String(i)
                                 return (
                                   <div key={i} style={{
-                                    padding: '10px 14px', borderRadius: '10px', marginBottom: '6px',
+                                    borderRadius: '10px', marginBottom: '6px',
                                     background: '#f9fafb', border: '1px solid #e5e7eb',
-                                    fontSize: '13px', color: '#374151',
+                                    fontSize: '13px', color: '#374151', overflow: 'hidden',
                                   }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                                      <span style={{ fontWeight: 600, color: '#111827' }}>{a.date ? formatDate(a.date) : '—'}</span>
-                                      <span style={{ ...badge, fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{label}</span>
-                                    </div>
-                                    {a.details && <p style={{ margin: '0 0 2px', fontSize: '12px', color: '#6b7280' }}>{a.details}</p>}
-                                    {a.tribunal && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>📍 {a.tribunal}</p>}
+                                    {/* Header cliquable */}
+                                    <button
+                                      onClick={() => setExpandedBodacc(prev => {
+                                        const next = new Set(prev)
+                                        if (next.has(toggleKey)) next.delete(toggleKey)
+                                        else next.add(toggleKey)
+                                        return next
+                                      })}
+                                      style={{
+                                        width: '100%', textAlign: 'left', background: 'none', border: 'none',
+                                        padding: '10px 14px', cursor: 'pointer', fontFamily: 'var(--font-body)',
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                          <span style={{ fontWeight: 600, color: '#111827', fontSize: '13px' }}>{a.date ? formatDate(a.date) : '—'}</span>
+                                          <span style={{ ...badge, fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{label}</span>
+                                        </div>
+                                        <span style={{ color: '#9ca3af', fontSize: '12px', transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                                      </div>
+                                      {!isOpen && a.details && (
+                                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6b7280', textAlign: 'left' }}>{a.details}</p>
+                                      )}
+                                    </button>
+
+                                    {/* Détails expandés */}
+                                    {isOpen && (
+                                      <div style={{ padding: '0 14px 14px', borderTop: '1px solid #e5e7eb' }}>
+                                        {/* Infos de base */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px', marginBottom: '10px' }}>
+                                          {a.numeroAnnonce && <BodaccField label="N° annonce" value={String(a.numeroAnnonce)} />}
+                                          {a.numeroBodacc && <BodaccField label="N° BODACC" value={a.numeroBodacc} />}
+                                          {a.registre && <BodaccField label="RCS" value={a.registre} />}
+                                          {a.tribunal && <BodaccField label="Greffe" value={a.tribunal} />}
+                                          {a.ville && <BodaccField label="Ville" value={a.ville} />}
+                                        </div>
+
+                                        {/* Jugement */}
+                                        {(a.jugementNature || a.jugementDate || a.jugementComplement) && (
+                                          <BodaccSection titre="⚖️ Jugement">
+                                            {a.jugementNature && <BodaccField label="Nature" value={a.jugementNature} full />}
+                                            {a.jugementDate && <BodaccField label="Date du jugement" value={formatDate(a.jugementDate)} />}
+                                            {a.jugementComplement && <BodaccField label="Complément" value={a.jugementComplement} full />}
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Acte (immatriculation / vente) */}
+                                        {(a.acteCategorie || a.acteDate || a.acteDescriptif) && (
+                                          <BodaccSection titre="📄 Acte">
+                                            {a.acteCategorie && <BodaccField label="Catégorie" value={a.acteCategorie} full />}
+                                            {a.acteDate && <BodaccField label="Date d'immatriculation" value={formatDate(a.acteDate)} />}
+                                            {a.acteDescriptif && <BodaccField label="Descriptif" value={a.acteDescriptif} full />}
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Modification */}
+                                        {a.modificationDescriptif && (
+                                          <BodaccSection titre="✏️ Modification">
+                                            <BodaccField label="Objet" value={a.modificationDescriptif} full />
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Établissement (vente/cession) */}
+                                        {(a.etablissementActivite || a.etablissementOrigine || a.etablissementAdresse) && (
+                                          <BodaccSection titre="🏪 Établissement">
+                                            {a.etablissementActivite && <BodaccField label="Activité" value={a.etablissementActivite} full />}
+                                            {a.etablissementOrigine && <BodaccField label="Origine du fonds" value={a.etablissementOrigine} full />}
+                                            {a.etablissementAdresse && <BodaccField label="Adresse" value={a.etablissementAdresse} full />}
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Vendeur */}
+                                        {a.vendeurNom && (
+                                          <BodaccSection titre="👤 Vendeur">
+                                            <BodaccField label="Nom" value={a.vendeurNom} full />
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Personne/Société */}
+                                        {(a.personnesDenomination || a.personnesActivite || a.personnesAdministration || a.personnesFormeJuridique || a.personnesCapital) && (
+                                          <BodaccSection titre="🏢 Société concernée">
+                                            {a.personnesDenomination && <BodaccField label="Dénomination" value={a.personnesDenomination} full />}
+                                            {a.personnesFormeJuridique && <BodaccField label="Forme juridique" value={a.personnesFormeJuridique} />}
+                                            {a.personnesCapital && <BodaccField label="Capital" value={a.personnesCapital} />}
+                                            {a.personnesActivite && <BodaccField label="Activité" value={a.personnesActivite} full />}
+                                            {a.personnesAdministration && <BodaccField label="Administration" value={a.personnesAdministration} full />}
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Radiation */}
+                                        {(a.radiationDate || a.radiationCommentaire) && (
+                                          <BodaccSection titre="🚫 Radiation">
+                                            {a.radiationDate && <BodaccField label="Date d'effet" value={formatDate(a.radiationDate)} />}
+                                            {a.radiationCommentaire && <BodaccField label="Motif" value={a.radiationCommentaire} />}
+                                          </BodaccSection>
+                                        )}
+
+                                        {/* Lien BODACC */}
+                                        {a.urlBodacc && (
+                                          <a href={a.urlBodacc} target="_blank" rel="noopener noreferrer" style={{
+                                            display: 'inline-block', marginTop: '10px',
+                                            fontSize: '12px', color: '#1d4ed8', textDecoration: 'underline',
+                                          }}>
+                                            📰 Voir l&apos;annonce sur BODACC.fr
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 )
                               })}

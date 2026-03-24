@@ -23,9 +23,39 @@ export interface BodaccAnnonce {
   id: string
   date: string
   famille: string
+  familleLible?: string
   type: string
   tribunal?: string
+  ville?: string
+  numeroAnnonce?: number
+  numeroBodacc?: string
+  urlBodacc?: string
+  registre?: string
   details?: string
+  // Jugement (procédures collectives)
+  jugementNature?: string
+  jugementDate?: string
+  jugementComplement?: string
+  // Acte (immatriculation, vente)
+  acteDescriptif?: string
+  acteCategorie?: string
+  acteDate?: string
+  // Modifications
+  modificationDescriptif?: string
+  // Radiation
+  radiationDate?: string
+  radiationCommentaire?: string
+  // Établissement (vente/cession)
+  etablissementActivite?: string
+  etablissementOrigine?: string
+  etablissementAdresse?: string
+  vendeurNom?: string
+  // Personne/Société
+  personnesDenomination?: string
+  personnesActivite?: string
+  personnesAdministration?: string
+  personnesFormeJuridique?: string
+  personnesCapital?: string
 }
 
 export interface BodaccInfo {

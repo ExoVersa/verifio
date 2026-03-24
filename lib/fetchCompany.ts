@@ -306,14 +306,7 @@ async function fetchBODACC(siren: string): Promise<BodaccInfo> {
     const data = await res.json()
     const records: any[] = data.results || []
 
-    const annonces: BodaccAnnonce[] = records.map((r: any) => ({
-      id: r.id || '',
-      date: r.dateparution || '',
-      famille: r.familleavis || r.familleavis_lib || '',
-      type: r.typeavis_lib || '',
-      tribunal: r.tribunal || undefined,
-      details: extractBodaccDetails(r),
-    }))
+    const annonces: BodaccAnnonce[] = records.map((r: any) => extractBodaccAnnonce(r))
 
     const procedureRecord = records.find((r: any) =>
       r.familleavis_lib?.toLowerCase().includes('procédure') &&
@@ -350,31 +343,89 @@ function emptyBodacc(): BodaccInfo {
   return { procedureCollective: false, annonces: [], changementDirigeantRecent: false, fetched: false }
 }
 
-function extractBodaccDetails(r: any): string {
-  try {
-    if (r.jugement) {
-      const j = typeof r.jugement === 'string' ? JSON.parse(r.jugement) : r.jugement
-      return j.nature || j.complementJugement || j.type || ''
-    }
-    if (r.acte) {
-      const a = typeof r.acte === 'string' ? JSON.parse(r.acte) : r.acte
-      return a.typeActe || a.categorieCreation || ''
-    }
-    if (r.modificationsgenerales) {
-      const m = typeof r.modificationsgenerales === 'string' ? JSON.parse(r.modificationsgenerales) : r.modificationsgenerales
-      const mods = Array.isArray(m?.modification) ? m.modification : (m?.modification ? [m.modification] : [])
-      const desc = mods.map((x: any) => x?.descriptif || x?.type || '').filter(Boolean).join(', ')
-      return desc || 'Modification générale'
-    }
-    if (r.depot) {
-      const d = typeof r.depot === 'string' ? JSON.parse(r.depot) : r.depot
-      return d?.categorieDepot || 'Dépôt de documents'
-    }
-    if (r.radiationaurcs) return 'Radiation au RCS'
-  } catch {
-    // ignore parse errors
+function safeParse(v: any): any {
+  if (!v) return null
+  try { return typeof v === 'string' ? JSON.parse(v) : v } catch { return null }
+}
+
+function fmtAdresse(a: any): string | undefined {
+  if (!a) return undefined
+  return [a.numeroVoie, a.typeVoie, a.nomVoie, a.complGeographique, a.codePostal, a.ville]
+    .filter(Boolean).join(' ') || undefined
+}
+
+function extractBodaccAnnonce(r: any): BodaccAnnonce {
+  const jugement = safeParse(r.jugement)
+  const acte = safeParse(r.acte)
+  const modifs = safeParse(r.modificationsgenerales)
+  const depot = safeParse(r.depot)
+  const radiation = safeParse(r.radiationaurcs)
+  const listepersonnes = safeParse(r.listepersonnes)
+  const listeetablissements = safeParse(r.listeetablissements)
+  const listeprecedentproprietaire = safeParse(r.listeprecedentproprietaire)
+
+  const personne = listepersonnes?.personne ?? listepersonnes
+  const etablissement = listeetablissements?.etablissement ?? listeetablissements
+  const vendeur = listeprecedentproprietaire?.personne ?? listeprecedentproprietaire
+
+  // Short description
+  let details = ''
+  if (jugement) details = jugement.nature || jugement.complementJugement || jugement.type || ''
+  else if (acte) details = acte.descriptif?.slice(0, 120) || acte.typeActe || acte.categorieCreation || ''
+  else if (modifs) details = modifs.descriptif || 'Modification générale'
+  else if (depot) details = depot.categorieDepot || 'Dépôt de documents'
+  else if (radiation) details = 'Radiation au RCS'
+
+  // Registre: prefer formatted version
+  const registreArr: string[] = Array.isArray(r.registre) ? r.registre : []
+  const registre = registreArr.find((s: string) => s.includes(' ')) || registreArr[0]
+
+  // Capital
+  const capitalObj = personne?.capital
+  const capitalStr = capitalObj
+    ? `${Number(capitalObj.montantCapital).toLocaleString('fr-FR')} ${capitalObj.devise || 'EUR'}`
+    : undefined
+
+  return {
+    id: r.id || '',
+    date: r.dateparution || '',
+    famille: r.familleavis || '',
+    familleLible: r.familleavis_lib || undefined,
+    type: r.typeavis_lib || '',
+    tribunal: r.tribunal || undefined,
+    ville: r.ville || undefined,
+    numeroAnnonce: r.numeroannonce || undefined,
+    numeroBodacc: r.parution || undefined,
+    urlBodacc: r.url_complete || undefined,
+    registre: registre || undefined,
+    details: details || undefined,
+    // Jugement
+    jugementNature: jugement?.nature || undefined,
+    jugementDate: jugement?.date || undefined,
+    jugementComplement: jugement?.complementJugement || undefined,
+    // Acte
+    acteDescriptif: acte?.descriptif || undefined,
+    acteCategorie: acte?.immatriculation?.categorieImmatriculation
+      || acte?.vente?.categorieVente
+      || undefined,
+    acteDate: acte?.dateImmatriculation || undefined,
+    // Modifications
+    modificationDescriptif: modifs?.descriptif || undefined,
+    // Radiation
+    radiationDate: radiation?.dateCessationActivitePP || radiation?.dateRadiation || undefined,
+    radiationCommentaire: radiation?.commentaire || undefined,
+    // Établissement
+    etablissementActivite: etablissement?.activite || undefined,
+    etablissementOrigine: etablissement?.origineFonds || undefined,
+    etablissementAdresse: fmtAdresse(etablissement?.adresse) || undefined,
+    vendeurNom: vendeur?.denomination || (vendeur?.nom ? `${vendeur.nom}${vendeur.prenom ? ' ' + vendeur.prenom : ''}` : undefined),
+    // Personne/Société
+    personnesDenomination: personne?.denomination || (personne?.nom ? `${personne.nom}${personne.prenom ? ' ' + personne.prenom : ''}` : undefined),
+    personnesActivite: personne?.activite || undefined,
+    personnesAdministration: personne?.administration || undefined,
+    personnesFormeJuridique: personne?.formeJuridique || undefined,
+    personnesCapital: capitalStr,
   }
-  return ''
 }
 
 function parseDirigeants(raw: any[]): Dirigeant[] {
