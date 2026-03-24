@@ -80,6 +80,7 @@ export function SearchAutocomplete({
   const [open, setOpen] = useState(false)
   const [companies, setCompanies] = useState<CompanyResult[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(false)
+  const [fetchedQuery, setFetchedQuery] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [recents, setRecents] = useState<RecentSearch[]>([])
 
@@ -118,27 +119,35 @@ export function SearchAutocomplete({
   /* ── Fetch companies (debounce + cache + abort) ── */
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!showCompanies) { setCompanies([]); setLoadingCompanies(false); return }
-
-    const cached = companyCache.get(value)
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      setCompanies(cached.data); return
+    if (!showCompanies) {
+      setCompanies([])
+      setLoadingCompanies(false)
+      setFetchedQuery(null)
+      return
     }
 
+    // Vérif cache
+    const cached = companyCache.get(value)
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setCompanies(cached.data)
+      setFetchedQuery(value)
+      setLoadingCompanies(false)
+      return
+    }
+
+    // Début du chargement — marquer comme "en cours" pour cette query
     setLoadingCompanies(true)
+    setFetchedQuery(null) // reset: pas encore de résultat pour la nouvelle query
+
     debounceRef.current = setTimeout(async () => {
       if (abortRef.current) abortRef.current.abort()
       abortRef.current = new AbortController()
       try {
-        const params = new URLSearchParams({
-          q: value, per_page: '5',
-          activite_principale: '41,42,43,45,47,71,81',
-        })
-        const res = await fetch(
-          `https://recherche-entreprises.api.gouv.fr/search?${params}`,
-          { signal: abortRef.current.signal }
-        )
+        const url = `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(value)}&per_page=6`
+        console.log('Autocomplete query:', value, '→', url)
+        const res = await fetch(url, { signal: abortRef.current.signal })
         const json = await res.json()
+        console.log('API response:', json)
         const results: CompanyResult[] = (json.results || []).map((r: Record<string, unknown>) => {
           const siege = (r.siege || {}) as Record<string, unknown>
           return {
@@ -152,8 +161,13 @@ export function SearchAutocomplete({
         })
         companyCache.set(value, { data: results, ts: Date.now() })
         setCompanies(results)
+        setFetchedQuery(value)
       } catch (e) {
-        if ((e as Error).name !== 'AbortError') setCompanies([])
+        console.log('API error:', e)
+        if ((e as Error).name !== 'AbortError') {
+          setCompanies([])
+          setFetchedQuery(value)
+        }
       } finally {
         setLoadingCompanies(false)
       }
@@ -393,12 +407,22 @@ export function SearchAutocomplete({
             {showCompanies && (
               <>
                 <SectionHeader label="Entreprises" />
-                {loadingCompanies && companies.length === 0 && (
-                  <div style={{ padding: '14px 16px', textAlign: 'center', fontSize: '13px', color: '#9ca3af' }}>
-                    Recherche en cours…
+                {/* Skeletons pendant le chargement */}
+                {(loadingCompanies || fetchedQuery !== value) && companies.length === 0 && (
+                  <div style={{ padding: '6px 0' }}>
+                    {[1, 2, 3].map(i => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#e5e7eb', flexShrink: 0 }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ height: 12, width: '60%', borderRadius: 4, background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'sa-shimmer 1.4s infinite' }} />
+                          <div style={{ height: 10, width: '40%', borderRadius: 4, background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'sa-shimmer 1.4s infinite' }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                {!loadingCompanies && companies.length === 0 && (
+                {/* Message "Aucune" seulement si on a bien reçu une réponse vide */}
+                {!loadingCompanies && fetchedQuery === value && companies.length === 0 && (
                   <div style={{ padding: '14px 16px', fontSize: '13px', color: '#9ca3af' }}>
                     Aucune entreprise trouvée — essayez avec le SIRET directement
                   </div>
@@ -411,7 +435,10 @@ export function SearchAutocomplete({
         </div>
       )}
 
-      <style>{`@keyframes sa-spin { to { transform: translateY(-50%) rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes sa-spin { to { transform: translateY(-50%) rotate(360deg); } }
+        @keyframes sa-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+      `}</style>
     </div>
   )
 }
