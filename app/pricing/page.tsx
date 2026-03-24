@@ -208,6 +208,13 @@ export default function PricingPage() {
           </div>
         ))}
       </section>
+
+      {/* Disclaimer légal */}
+      <section style={{ padding: '0 24px 64px', maxWidth: '680px', margin: '0 auto' }}>
+        <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.7, textAlign: 'center' }}>
+          Verifio vérifie la solidité juridique des entreprises à partir de données officielles publiques (INSEE, ADEME, BODACC). Ces informations ne constituent pas un conseil juridique et ne garantissent pas la qualité des prestations réalisées.
+        </p>
+      </section>
     </main>
   )
 }

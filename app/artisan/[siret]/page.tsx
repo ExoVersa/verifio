@@ -121,6 +121,26 @@ function computeScore(result: SearchResult) {
   })
 }
 
+/* ─── Décennale checklist ────────────────────────────────── */
+function DecennaleChecklist() {
+  const items = [
+    'Demander l\'attestation décennale',
+    'Vérifier que le SIRET sur l\'attestation correspond à celui de l\'entreprise',
+    'Vérifier la date de validité',
+    'Vérifier que les travaux sont bien couverts',
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: '#374151' }}>
+          <span style={{ flexShrink: 0, marginTop: '1px' }}>☐</span>
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ─── BODACC detail sub-components ──────────────────────────*/
 function BodaccField({ label, value, full }: { label: string; value: string; full?: boolean }) {
   return (
@@ -383,11 +403,20 @@ export default function ArtisanFichePage() {
 
   const strokeColor = scoreColor(score)
 
+  // Qualibat detection from RGE organismes
+  const isQualibat = rge.organismes.some((o: string) => o?.toLowerCase().includes('qualibat'))
+
   const verdictText = score >= 70
-    ? '✓ Vous pouvez avancer sereinement'
+    ? '✓ Profil juridique solide'
     : score >= 50
     ? '⚠ Quelques points à vérifier'
-    : '🚨 Procédez avec grande prudence'
+    : '🚨 Profil juridique fragile'
+
+  const verdictSubtitle = score >= 70
+    ? 'Demandez toujours un devis détaillé et une attestation d\'assurance décennale.'
+    : score >= 50
+    ? 'Vérifiez l\'assurance décennale et demandez des références de chantiers récents avant de signer.'
+    : 'En cas de problème, vos recours juridiques pourraient être limités. Sécurisez-vous avec le Pack Sérénité avant de signer.'
 
   const verdictColor = score >= 70 ? '#15803d' : score >= 50 ? '#d97706' : '#dc2626'
 
@@ -971,6 +1000,50 @@ export default function ArtisanFichePage() {
                   )}
                 </div>
 
+                {/* ── Card — Assurance décennale ── */}
+                <div style={cardStyle}>
+                  <h3 style={cardTitleStyle}>🏗 Assurance décennale</h3>
+                  {isQualibat ? (
+                    <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '16px' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#15803d' }}>
+                        ✓ Assurance vérifiée par Qualibat
+                      </p>
+                      <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534', lineHeight: 1.5 }}>
+                        Cet artisan est certifié Qualibat. Pour obtenir cette certification, son assurance décennale a été contrôlée et validée par l&apos;organisme certificateur.
+                      </p>
+                      <span style={{ display: 'inline-block', background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: '20px', padding: '3px 10px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
+                        Certifié Qualibat ✓
+                      </span>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
+                        ℹ️ La certification ne garantit pas que l&apos;assurance est toujours valide à ce jour. Demandez l&apos;attestation à jour avant de signer.
+                      </p>
+                    </div>
+                  ) : rge.certifie ? (
+                    <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '16px' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#92400e' }}>
+                        ⚠ Assurance non vérifiable automatiquement
+                      </p>
+                      <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#78350f', lineHeight: 1.5 }}>
+                        Cet artisan est certifié RGE mais pas par Qualibat. Son assurance décennale n&apos;a pas pu être vérifiée via nos sources. Demandez l&apos;attestation décennale directement à l&apos;artisan avant de signer.
+                      </p>
+                      <DecennaleChecklist />
+                    </div>
+                  ) : (
+                    <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#374151' }}>
+                        ⚠ Assurance non vérifiable automatiquement
+                      </p>
+                      <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6b7280', lineHeight: 1.5 }}>
+                        Nous ne pouvons pas vérifier automatiquement l&apos;assurance décennale de cet artisan. Il n&apos;existe pas de base de données publique centralisant ces informations en France.
+                      </p>
+                      <DecennaleChecklist />
+                      <a href="/guide-chantier#assurance" style={{ fontSize: '12px', color: '#1d4ed8', textDecoration: 'underline' }}>
+                        En savoir plus sur l&apos;assurance décennale →
+                      </a>
+                    </div>
+                  )}
+                </div>
+
                 {/* ── Card 3 — Dirigeants ── */}
                 <div style={cardStyle}>
                   <h3 style={cardTitleStyle}>👤 Dirigeants</h3>
@@ -1280,6 +1353,16 @@ export default function ArtisanFichePage() {
                   </div>
                 </div>
 
+                {/* ── Disclaimer global ── */}
+                <div style={{
+                  background: '#f9fafb', border: '1px solid #e5e7eb',
+                  borderRadius: '12px', padding: '16px',
+                }}>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', lineHeight: 1.6 }}>
+                    Les données affichées proviennent de sources officielles publiques (INSEE, ADEME, BODACC). Elles sont mises à jour quotidiennement. Verifio n&apos;est pas responsable des décisions prises sur la base de ces informations. Ces données ne constituent pas un conseil juridique.
+                  </p>
+                </div>
+
                 {/* ── Card 6 — Partage ── */}
                 <div style={cardStyle}>
                   <h3 style={cardTitleStyle}>📤 Partager cette fiche</h3>
@@ -1345,19 +1428,33 @@ export default function ArtisanFichePage() {
 
                 {/* ── Score Card ── */}
                 <div style={{ ...cardStyle, textAlign: 'center' }}>
-                  {/* Score ring */}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                  {/* Score ring with tooltip */}
+                  <div
+                    title={"Ce score mesure :\n• Statut légal actif (40 pts)\n• Ancienneté de l'entreprise (35 pts)\n• Absence de procédures judiciaires (25 pts)\n\nIl ne préjuge pas de la qualité des travaux ni de la validité de l'assurance décennale."}
+                    style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', cursor: 'help' }}
+                  >
                     <ScoreRing score={score} strokeColor={strokeColor} />
                   </div>
 
                   {/* Verdict */}
-                  <p style={{
-                    margin: '0 0 20px',
-                    fontSize: '14px', fontWeight: 700,
-                    color: verdictColor,
-                  }}>
+                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: verdictColor }}>
                     {verdictText}
                   </p>
+                  <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>
+                    {verdictSubtitle}
+                  </p>
+
+                  {/* Score disclaimer */}
+                  <div style={{
+                    background: '#F8F4EF', borderRadius: '12px', padding: '12px 14px',
+                    marginBottom: '20px', textAlign: 'left',
+                    display: 'flex', gap: '8px', alignItems: 'flex-start',
+                  }}>
+                    <span style={{ fontSize: '14px', flexShrink: 0 }}>ℹ️</span>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
+                      Ce score évalue la solidité juridique — statut légal, ancienneté et historique judiciaire. Un score élevé signifie que vous disposez de leviers juridiques solides en cas de litige. <strong>Il ne garantit pas la qualité des travaux.</strong>
+                    </p>
+                  </div>
 
                   {/* Score breakdown */}
                   <div style={{
