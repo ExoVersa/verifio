@@ -136,59 +136,9 @@ function Field({
   )
 }
 
-/* ── Page principale ────────────────────────────────────────── */
-export default function AuthPage() {
-  const router = useRouter()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-
-  // Login
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPwd, setShowPwd] = useState(false)
-
-  // Signup
-  const [prenom, setPrenom] = useState('')
-  const [nom, setNom] = useState('')
-  const [emailS, setEmailS] = useState('')
-  const [passwordS, setPasswordS] = useState('')
-  const [showPwdS, setShowPwdS] = useState(false)
-  const [confirmPwd, setConfirmPwd] = useState('')
-  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
-  const [cguChecked, setCguChecked] = useState(false)
-
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-
-  const switchMode = (m: 'login' | 'signup') => {
-    setMode(m); setError(null); setSuccess(null)
-  }
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true); setError(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError('E-mail ou mot de passe incorrect.')
-    else router.push('/')
-    setLoading(false)
-  }
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (passwordS !== confirmPwd) { setError('Les mots de passe ne correspondent pas.'); return }
-    if (!cguChecked) { setError('Veuillez accepter les CGU pour continuer.'); return }
-    setLoading(true); setError(null)
-    const { error } = await supabase.auth.signUp({
-      email: emailS, password: passwordS,
-      options: { data: { prenom, nom } },
-    })
-    if (error) setError(error.message)
-    else setSuccess('Compte créé ! Vérifiez votre e-mail pour confirmer.')
-    setLoading(false)
-  }
-
-  /* ── Colonne gauche ─────────────────────────────────────── */
-  const LeftPanel = () => (
+/* ── Colonne gauche — définie au niveau MODULE ─────────────── */
+function LeftPanel() {
+  return (
     <div style={{
       width: '100%',
       background: '#1B4332',
@@ -258,10 +208,30 @@ export default function AuthPage() {
       </div>
     </div>
   )
+}
 
-  /* ── Formulaire connexion ─────────────────────────────── */
-  const LoginForm = () => (
-    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+/* ── Props LoginForm ───────────────────────────────────────── */
+interface LoginFormProps {
+  email: string
+  setEmail: (v: string) => void
+  password: string
+  setPassword: (v: string) => void
+  showPwd: boolean
+  setShowPwd: React.Dispatch<React.SetStateAction<boolean>>
+  loading: boolean
+  error: string | null
+  onSubmit: (e: React.FormEvent) => void
+  onSwitchToSignup: () => void
+}
+
+/* ── Formulaire connexion — défini au niveau MODULE ────────── */
+function LoginForm({
+  email, setEmail, password, setPassword,
+  showPwd, setShowPwd, loading, error,
+  onSubmit, onSwitchToSignup,
+}: LoginFormProps) {
+  return (
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ textAlign: 'center', marginBottom: '4px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#1B4332', marginBottom: '16px' }}>
           <IconShield />
@@ -343,14 +313,12 @@ export default function AuthPage() {
         {loading ? 'Connexion…' : 'Se connecter →'}
       </button>
 
-      {/* Séparateur */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
         <span style={{ fontSize: '12px', color: '#9ca3af', flexShrink: 0 }}>ou</span>
         <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
       </div>
 
-      {/* Bouton Google */}
       <button
         type="button"
         style={{
@@ -372,7 +340,7 @@ export default function AuthPage() {
         Pas encore de compte ?{' '}
         <button
           type="button"
-          onClick={() => switchMode('signup')}
+          onClick={onSwitchToSignup}
           style={{ background: 'none', border: 'none', color: '#1B4332', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--font-body)', textDecoration: 'underline', padding: 0 }}
         >
           S&apos;inscrire →
@@ -380,10 +348,43 @@ export default function AuthPage() {
       </p>
     </form>
   )
+}
 
-  /* ── Formulaire inscription ───────────────────────────── */
-  const SignupForm = () => (
-    <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+/* ── Props SignupForm ──────────────────────────────────────── */
+interface SignupFormProps {
+  prenom: string
+  setPrenom: (v: string) => void
+  nom: string
+  setNom: (v: string) => void
+  emailS: string
+  setEmailS: (v: string) => void
+  passwordS: string
+  setPasswordS: (v: string) => void
+  showPwdS: boolean
+  setShowPwdS: React.Dispatch<React.SetStateAction<boolean>>
+  confirmPwd: string
+  setConfirmPwd: (v: string) => void
+  showConfirmPwd: boolean
+  setShowConfirmPwd: React.Dispatch<React.SetStateAction<boolean>>
+  cguChecked: boolean
+  setCguChecked: (v: boolean) => void
+  loading: boolean
+  error: string | null
+  success: string | null
+  onSubmit: (e: React.FormEvent) => void
+  onSwitchToLogin: () => void
+}
+
+/* ── Formulaire inscription — défini au niveau MODULE ──────── */
+function SignupForm({
+  prenom, setPrenom, nom, setNom,
+  emailS, setEmailS, passwordS, setPasswordS,
+  showPwdS, setShowPwdS, confirmPwd, setConfirmPwd,
+  showConfirmPwd, setShowConfirmPwd, cguChecked, setCguChecked,
+  loading, error, success, onSubmit, onSwitchToLogin,
+}: SignupFormProps) {
+  return (
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{ textAlign: 'center', marginBottom: '4px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#1B4332', marginBottom: '16px' }}>
           <IconShield />
@@ -528,7 +529,7 @@ export default function AuthPage() {
         Déjà un compte ?{' '}
         <button
           type="button"
-          onClick={() => switchMode('login')}
+          onClick={onSwitchToLogin}
           style={{ background: 'none', border: 'none', color: '#1B4332', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--font-body)', textDecoration: 'underline', padding: 0 }}
         >
           Se connecter →
@@ -536,8 +537,59 @@ export default function AuthPage() {
       </p>
     </form>
   )
+}
 
-  /* ── Render ─────────────────────────────────────────────── */
+/* ── Page principale ────────────────────────────────────────── */
+export default function AuthPage() {
+  const router = useRouter()
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+
+  // Login
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
+
+  // Signup
+  const [prenom, setPrenom] = useState('')
+  const [nom, setNom] = useState('')
+  const [emailS, setEmailS] = useState('')
+  const [passwordS, setPasswordS] = useState('')
+  const [showPwdS, setShowPwdS] = useState(false)
+  const [confirmPwd, setConfirmPwd] = useState('')
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
+  const [cguChecked, setCguChecked] = useState(false)
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  function switchMode(m: 'login' | 'signup') {
+    setMode(m); setError(null); setSuccess(null)
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true); setError(null)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setError('E-mail ou mot de passe incorrect.')
+    else router.push('/')
+    setLoading(false)
+  }
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault()
+    if (passwordS !== confirmPwd) { setError('Les mots de passe ne correspondent pas.'); return }
+    if (!cguChecked) { setError('Veuillez accepter les CGU pour continuer.'); return }
+    setLoading(true); setError(null)
+    const { error } = await supabase.auth.signUp({
+      email: emailS, password: passwordS,
+      options: { data: { prenom, nom } },
+    })
+    if (error) setError(error.message)
+    else setSuccess('Compte créé ! Vérifiez votre e-mail pour confirmer.')
+    setLoading(false)
+  }
+
   return (
     <>
       <style>{`
@@ -574,7 +626,30 @@ export default function AuthPage() {
             padding: '36px 32px',
             boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
           }}>
-            {mode === 'login' ? <LoginForm /> : <SignupForm />}
+            {mode === 'login' ? (
+              <LoginForm
+                email={email} setEmail={setEmail}
+                password={password} setPassword={setPassword}
+                showPwd={showPwd} setShowPwd={setShowPwd}
+                loading={loading} error={error}
+                onSubmit={handleLogin}
+                onSwitchToSignup={() => switchMode('signup')}
+              />
+            ) : (
+              <SignupForm
+                prenom={prenom} setPrenom={setPrenom}
+                nom={nom} setNom={setNom}
+                emailS={emailS} setEmailS={setEmailS}
+                passwordS={passwordS} setPasswordS={setPasswordS}
+                showPwdS={showPwdS} setShowPwdS={setShowPwdS}
+                confirmPwd={confirmPwd} setConfirmPwd={setConfirmPwd}
+                showConfirmPwd={showConfirmPwd} setShowConfirmPwd={setShowConfirmPwd}
+                cguChecked={cguChecked} setCguChecked={setCguChecked}
+                loading={loading} error={error} success={success}
+                onSubmit={handleSignup}
+                onSwitchToLogin={() => switchMode('login')}
+              />
+            )}
           </div>
         </div>
       </main>
