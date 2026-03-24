@@ -739,7 +739,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     style={{
                       fontSize: '13px', fontWeight: 500, color: 'var(--color-text)',
                       textDecoration: 'none', padding: '7px 14px',
+                      borderRadius: '9px', transition: 'background 0.15s, color 0.15s',
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text)' }}
                   >
                     Se connecter
                   </a>
@@ -769,7 +772,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 background: 'none', border: '1px solid var(--color-border)',
                 borderRadius: '8px', cursor: 'pointer', padding: '7px 9px',
                 display: 'flex', alignItems: 'center', color: 'var(--color-text)',
+                transition: 'background 0.15s',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
               aria-label="Menu"
             >
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -974,7 +980,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     background: 'none', border: 'none', cursor: 'pointer',
                     color: '#dc2626', fontSize: '14px', fontWeight: 600,
                     fontFamily: 'var(--font-body)', marginTop: '4px',
+                    transition: 'background 0.12s',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   <LogOut size={16} />
                   Se déconnecter
@@ -991,7 +1000,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     border: '1px solid var(--color-border)',
                     textDecoration: 'none', color: 'var(--color-text)',
                     fontSize: '14px', fontWeight: 600,
+                    transition: 'background 0.15s',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   Se connecter
                 </a>
@@ -1004,7 +1016,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     background: '#1B4332',
                     textDecoration: 'none', color: '#fff',
                     fontSize: '14px', fontWeight: 700,
+                    transition: 'opacity 0.15s',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
                 >
                   S'inscrire
                 </a>
@@ -1054,7 +1069,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 color: isActive ? 'var(--color-accent)' : 'var(--color-muted)',
                 fontSize: '10px', fontWeight: isActive ? 700 : 500,
                 fontFamily: 'var(--font-body)',
+                transition: 'color 0.15s',
               }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = 'var(--color-text)' }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = 'var(--color-muted)' }}
             >
               <Icon size={20} />
               <span>{label}</span>

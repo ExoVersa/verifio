@@ -690,6 +690,8 @@ function PricingSection() {
                     : { background: 'transparent', color: plan.bg === '#1B4332' ? 'white' : '#1B4332', border: `1.5px solid ${plan.bg === '#1B4332' ? 'rgba(255,255,255,0.4)' : '#1B4332'}` }
                   ),
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.82' }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
               >
                 {plan.cta.label} <ArrowRight size={14} strokeWidth={1.5} />
               </a>
@@ -880,10 +882,16 @@ export default function HomePage() {
             Rejoignez 10 000+ particuliers qui vérifient avant de signer.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/" style={{ background: 'white', color: '#1B4332', border: 'none', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}>
+            <a href="/" style={{ background: 'white', color: '#1B4332', border: 'none', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.88)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
+            >
               Vérifier un artisan <ArrowRight size={16} />
             </a>
-            <a href="/pricing" style={{ background: 'transparent', color: 'white', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}>
+            <a href="/pricing" style={{ background: 'transparent', color: 'white', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
               Voir les tarifs
             </a>
           </div>
