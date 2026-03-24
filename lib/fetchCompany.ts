@@ -339,6 +339,7 @@ async function fetchBODACC(siren: string): Promise<BodaccInfo> {
       typeProcedure: procedureRecord?.familleavis_lib,
       annonces,
       changementDirigeantRecent,
+      fetched: true,
     }
   } catch {
     return emptyBodacc()
@@ -346,7 +347,7 @@ async function fetchBODACC(siren: string): Promise<BodaccInfo> {
 }
 
 function emptyBodacc(): BodaccInfo {
-  return { procedureCollective: false, annonces: [], changementDirigeantRecent: false }
+  return { procedureCollective: false, annonces: [], changementDirigeantRecent: false, fetched: false }
 }
 
 function extractBodaccDetails(r: any): string {

@@ -114,7 +114,7 @@ function computeScore(result: SearchResult) {
     statut: result.statut,
     dateCreation: result.dateCreation,
     bodacc: {
-      disponible: true,
+      disponible: result.bodacc?.fetched !== false,
       procedureCollective: result.bodacc?.procedureCollective ?? false,
       nbProceduresCollectives,
     },
@@ -986,7 +986,13 @@ export default function ArtisanFichePage() {
                       ))}
                     </div>
                   ) : (
-                    <p style={{ margin: 0, ...mutedStyle }}>Aucun dirigeant renseigné</p>
+                    <div style={{ background: '#F5F5F5', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠️</span>
+                      <div>
+                        <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#6b7280' }}>Dirigeants — données non disponibles</p>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>Nous n&apos;avons pas pu récupérer les informations sur les dirigeants de cette entreprise.</p>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -994,9 +1000,20 @@ export default function ArtisanFichePage() {
                 {(() => {
                   const cats = categorizeBodacc(bodacc.annonces ?? [])
                   const hasProcedure = bodacc.procedureCollective || cats.proceduresCollectives.length > 0
+                  const bodaccUnavailable = result?.bodacc?.fetched === false
                   return (
                     <div id="section-bodacc" style={cardStyle}>
                       <h3 style={cardTitleStyle}>⚖️ Procédures BODACC</h3>
+
+                      {bodaccUnavailable && (
+                        <div style={{ background: '#F5F5F5', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠️</span>
+                          <div>
+                            <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#6b7280' }}>Procédures judiciaires — données non disponibles</p>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>Nous n&apos;avons pas pu vérifier l&apos;historique judiciaire de cette entreprise. Demandez un extrait Kbis.</p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Compteur synthèse */}
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -1250,6 +1267,11 @@ export default function ArtisanFichePage() {
                         </div>
                       </div>
                     ))}
+                    {scoreBreakdown.some(c => !c.disponible) && (
+                      <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: 1.4 }}>
+                        ℹ️ Certaines données n&apos;ont pas pu être vérifiées — elles n&apos;impactent pas ce score.
+                      </p>
+                    )}
                   </div>
 
                   {/* Separator */}
