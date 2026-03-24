@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search } from 'lucide-react'
+import { Search, Folder, Clock } from 'lucide-react'
 
 /* ── Types ──────────────────────────────────────────────────── */
 interface CompanyResult {
@@ -252,7 +252,7 @@ export function SearchAutocomplete({
           onMouseEnter={() => setActiveIndex(idx)}
           onMouseLeave={() => setActiveIndex(-1)}
         >
-          <span style={{ fontSize: '16px', width: '20px', textAlign: 'center', flexShrink: 0 }}>🔍</span>
+          <span style={{ width: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Search size={16} strokeWidth={1.5} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontFamily: 'var(--font-display)', fontWeight: 500,
@@ -286,7 +286,7 @@ export function SearchAutocomplete({
           onMouseEnter={() => setActiveIndex(idx)}
           onMouseLeave={() => setActiveIndex(-1)}
         >
-          <span style={{ fontSize: '16px', width: '20px', textAlign: 'center', flexShrink: 0 }}>📂</span>
+          <span style={{ width: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Folder size={16} strokeWidth={1.5} /></span>
           <span style={{
             fontFamily: 'var(--font-display)', fontWeight: 500,
             fontSize: '14px', color: '#111827', flex: 1,
@@ -305,7 +305,7 @@ export function SearchAutocomplete({
         onMouseEnter={() => setActiveIndex(idx)}
         onMouseLeave={() => setActiveIndex(-1)}
       >
-        <span style={{ fontSize: '16px', width: '20px', textAlign: 'center', flexShrink: 0 }}>🕐</span>
+        <span style={{ width: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Clock size={16} strokeWidth={1.5} /></span>
         <span style={{
           fontFamily: 'var(--font-display)', fontWeight: 500,
           fontSize: '14px', color: '#111827', flex: 1,

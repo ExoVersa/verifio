@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink, Wrench, Zap, Home, Square, Paintbrush, Snowflake, Leaf, MapPin, AlertTriangle, HardHat, Search } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
 import { scoreColor, scoreBg } from '@/lib/score'
@@ -14,15 +14,15 @@ type SortBy = 'pertinence' | 'anciennete'
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { emoji: '🔧', label: 'Plombier',      kw: 'plombier' },
-  { emoji: '⚡', label: 'Électricien',   kw: 'électricien' },
-  { emoji: '🧱', label: 'Maçon',         kw: 'maçon' },
-  { emoji: '🏠', label: 'Couvreur',      kw: 'couvreur' },
-  { emoji: '🌡️', label: 'Chauffagiste',  kw: 'chauffagiste' },
-  { emoji: '🪟', label: 'Menuisier',     kw: 'menuisier' },
-  { emoji: '🎨', label: 'Peintre',       kw: 'peintre' },
-  { emoji: '🪵', label: 'Charpentier',   kw: 'charpentier' },
-  { emoji: '❄️', label: 'Climatisation', kw: 'climaticien' },
+  { Icon: Wrench,    label: 'Plombier',      kw: 'plombier' },
+  { Icon: Zap,       label: 'Électricien',   kw: 'électricien' },
+  { emoji: '🧱',    label: 'Maçon',         kw: 'maçon' },
+  { Icon: Home,      label: 'Couvreur',      kw: 'couvreur' },
+  { emoji: '🌡️',   label: 'Chauffagiste',  kw: 'chauffagiste' },
+  { Icon: Square,    label: 'Menuisier',     kw: 'menuisier' },
+  { Icon: Paintbrush, label: 'Peintre',      kw: 'peintre' },
+  { emoji: '🪵',    label: 'Charpentier',   kw: 'charpentier' },
+  { Icon: Snowflake, label: 'Climatisation', kw: 'climaticien' },
 ]
 
 const POPULAR = [
@@ -122,8 +122,8 @@ function VilleAutocomplete({
 
   return (
     <div ref={wrapperRef} style={{ flex: '1 1 160px', position: 'relative' }}>
-      <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', pointerEvents: 'none', zIndex: 1 }}>
-        📍
+      <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1, display: 'flex', alignItems: 'center' }}>
+        <MapPin size={16} strokeWidth={1.5} />
       </span>
       <input
         type="text"
@@ -149,7 +149,7 @@ function VilleAutocomplete({
         }}>
           {communes.length > 0 && (
             <>
-              <div style={groupHeader(false)}>🏙 Villes</div>
+              <div style={groupHeader(false)}>Villes</div>
               {communes.map((c, i) => (
                 <button key={`c${i}`} type="button"
                   onMouseDown={() => select({ label: c.nom, type: 'commune', codePostal: c.codesPostaux?.[0] })}
@@ -157,7 +157,7 @@ function VilleAutocomplete({
                   onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  <span>📍</span>
+                  <MapPin size={14} strokeWidth={1.5} />
                   <span style={{ fontWeight: 600, flex: 1 }}>{c.nom}</span>
                   <span style={{ color: cv('muted'), fontSize: '12px' }}>({c.codeDepartement})</span>
                 </button>
@@ -166,7 +166,7 @@ function VilleAutocomplete({
           )}
           {depts.length > 0 && (
             <>
-              <div style={groupHeader(communes.length > 0)}>🗺 Départements</div>
+              <div style={groupHeader(communes.length > 0)}>Départements</div>
               {depts.map((d, i) => (
                 <button key={`d${i}`} type="button"
                   onMouseDown={() => select({ label: d.nom, type: 'departement', deptCode: d.code })}
@@ -240,7 +240,7 @@ function CandidateCard({ c }: { c: CandidateResult }) {
                 fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
                 background: '#d1fae5', color: '#065f46', flexShrink: 0,
               }}>
-                🌿 RGE
+                <Leaf size={10} strokeWidth={1.5} style={{ marginRight: '3px' }} />RGE
               </span>
             )}
           </div>
@@ -265,10 +265,10 @@ function CandidateCard({ c }: { c: CandidateResult }) {
           {/* Location + age */}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {(c.ville || c.codePostal) && (
-              <span style={{ fontSize: '12px', color: cv('muted') }}>📍 {c.codePostal} {c.ville}</span>
+              <span style={{ fontSize: '12px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}><MapPin size={12} strokeWidth={1.5} />{c.codePostal} {c.ville}</span>
             )}
             {age !== null && (
-              <span style={{ fontSize: '12px', color: cv('muted') }}>🏗 {age} an{age > 1 ? 's' : ''} d&apos;activité</span>
+              <span style={{ fontSize: '12px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}><HardHat size={12} strokeWidth={1.5} />{age} an{age > 1 ? 's' : ''} d&apos;activité</span>
             )}
           </div>
         </div>
@@ -608,7 +608,7 @@ function RechercheInner() {
                 active={filterRge}
                 onClick={() => { const n = !filterRge; setFilterRge(n); updateFilters({ rge: n ? 'true' : '' }) }}
               >
-                🌿 RGE
+                <Leaf size={12} strokeWidth={1.5} style={{ marginRight: '3px' }} />RGE
               </Chip>
 
               {/* Statut */}
@@ -715,7 +715,7 @@ function RechercheInner() {
               gap: '12px',
               marginBottom: '32px',
             }}>
-              {QUICK_ACTIONS.map(({ emoji, label, kw }) => (
+              {QUICK_ACTIONS.map((action) => { const { label, kw } = action; return (
                 <button
                   key={kw}
                   type="button"
@@ -744,10 +744,16 @@ function RechercheInner() {
                     el.style.transform = 'none'
                   }}
                 >
-                  <span style={{ fontSize: '28px', lineHeight: 1 }}>{emoji}</span>
+                  <span style={{ fontSize: '28px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {'Icon' in action
+                      ? (() => { const Ic = action.Icon as React.ComponentType<{ size: number; strokeWidth: number }>; return <Ic size={28} strokeWidth={1.5} /> })()
+                      : action.emoji
+                    }
+                  </span>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: cv('text') }}>{label}</span>
                 </button>
-              ))}
+              )})}
+
             </div>
 
             {/* Popular searches — discrete text line */}
@@ -795,7 +801,7 @@ function RechercheInner() {
         {/* Error state */}
         {hasError && !loading && (
           <div style={{ textAlign: 'center', padding: '56px 16px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+            <div style={{ fontSize: '40px', marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><AlertTriangle size={40} strokeWidth={1} /></div>
             <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: cv('text') }}>
               Impossible de charger les résultats
             </p>
@@ -867,7 +873,7 @@ function RechercheInner() {
         {/* Empty state */}
         {!loading && !hasError && hasQuery && results.length === 0 && (
           <div style={{ textAlign: 'center', padding: '56px 16px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔎</div>
+            <div style={{ fontSize: '40px', marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Search size={40} strokeWidth={1} /></div>
             <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: cv('text') }}>
               Aucun artisan trouvé pour cette recherche
             </p>

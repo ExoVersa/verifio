@@ -6,6 +6,7 @@ import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
   ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin, HardHat,
   AlertTriangle, Euro, History, Bell, Shield, ShieldCheck, LayoutDashboard, FileText,
+  BarChart2, ClipboardList, Wrench, Gem,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -22,7 +23,7 @@ interface NavItem {
 
 interface NavMenu {
   id: string
-  emoji: string
+  Icon: React.ComponentType<{ size: number; strokeWidth?: number; color?: string }>
   label: string
   items: NavItem[]
   stat: { value: string; label: string; tip: string }
@@ -39,7 +40,7 @@ interface SiteHeaderProps {
 const NAV_MENUS: NavMenu[] = [
   {
     id: 'verifier',
-    emoji: '🔍',
+    Icon: Search,
     label: 'Vérifier',
     ctaHref: '/recherche',
     ctaLabel: 'Vérifier un artisan',
@@ -51,7 +52,7 @@ const NAV_MENUS: NavMenu[] = [
   },
   {
     id: 'analyser',
-    emoji: '📊',
+    Icon: BarChart2,
     label: 'Analyser',
     ctaHref: '/simulateur-prix',
     ctaLabel: 'Simuler mon devis',
@@ -64,7 +65,7 @@ const NAV_MENUS: NavMenu[] = [
   },
   {
     id: 'proteger',
-    emoji: '⚖️',
+    Icon: Scale,
     label: 'Se protéger',
     ctaHref: '/guide-chantier',
     ctaLabel: 'Voir le guide chantier',
@@ -77,7 +78,7 @@ const NAV_MENUS: NavMenu[] = [
   },
   {
     id: 'chantier',
-    emoji: '📋',
+    Icon: ClipboardList,
     label: 'Mon chantier',
     ctaHref: '/mes-chantiers',
     ctaLabel: 'Mon carnet de chantier',
@@ -407,7 +408,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
           justifyContent: 'space-between',
         }}>
           <p style={{ margin: 0, fontSize: '11px', color: '#D8F3DC', fontWeight: 500 }}>
-            🛡️ Données officielles INSEE · ADEME · BODACC · Mise à jour quotidienne
+            <Shield size={12} strokeWidth={1.5} style={{ marginRight: '5px', display: 'inline-block', verticalAlign: 'middle' }} />Données officielles INSEE · ADEME · BODACC · Mise à jour quotidienne
           </p>
           <p style={{ margin: 0, fontSize: '11px', color: '#74C69D', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span>⭐</span> 4.8/5 — Fait confiance par 10 000+ particuliers
@@ -463,7 +464,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     fontFamily: 'var(--font-body)', transition: 'background 0.15s, color 0.15s',
                   }}
                 >
-                  <span>{menu.emoji}</span>
+                  <menu.Icon size={14} strokeWidth={1.5} />
                   {menu.label}
                   <ChevronDown
                     size={12}
@@ -498,7 +499,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/pricing' ? 'var(--color-bg)' : 'transparent' }}
             >
-              💎 Tarifs
+              <Gem size={14} strokeWidth={1.5} style={{ marginRight: '5px' }} />Tarifs
             </a>
             <a
               href="/a-propos"
@@ -528,7 +529,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent' }}
             >
-              🔨 Espace Artisan
+              <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
             </a>
           </nav>
 
@@ -804,7 +805,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span>{menu.emoji}</span>
+                    <menu.Icon size={16} strokeWidth={1.5} />
                     {menu.label}
                   </span>
                   <ChevronDown
@@ -903,7 +904,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent')}
             >
-              🔨 Espace Artisan
+              <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
             </a>
 
             <div style={{ height: '1px', background: 'var(--color-border)', margin: '16px 0' }} />

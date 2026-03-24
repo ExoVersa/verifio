@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Shield, Zap, Gift } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 /* ── Icônes SVG inline ─────────────────────────────────────── */
@@ -216,12 +217,12 @@ export default function AuthPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {[
-            { icon: '🛡️', text: 'Données officielles INSEE, ADEME, BODACC' },
-            { icon: '⚡', text: 'Vérification en 30 secondes' },
-            { icon: '🎁', text: 'Gratuit pour les particuliers' },
-          ].map(({ icon, text }) => (
+            { Icon: Shield, text: 'Données officielles INSEE, ADEME, BODACC' },
+            { Icon: Zap, text: 'Vérification en 30 secondes' },
+            { Icon: Gift, text: 'Gratuit pour les particuliers' },
+          ].map(({ Icon, text }) => (
             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
+              <Icon size={22} strokeWidth={1.5} style={{ flexShrink: 0, color: 'rgba(255,255,255,0.85)' }} />
               <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>{text}</span>
             </div>
           ))}

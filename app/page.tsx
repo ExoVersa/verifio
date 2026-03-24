@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin } from 'lucide-react'
+import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { scoreColor } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
 
 const CHIPS = [
-  { emoji: '🔧', label: 'Plombier' },
-  { emoji: '⚡', label: 'Électricien' },
-  { emoji: '🧱', label: 'Maçon' },
-  { emoji: '🏠', label: 'Couvreur' },
-  { emoji: '🌡', label: 'Chauffagiste' },
-  { emoji: '🪟', label: 'Menuisier' },
+  { icon: <Wrench size={13} strokeWidth={1.5} />, label: 'Plombier' },
+  { icon: <Zap size={13} strokeWidth={1.5} />, label: 'Électricien' },
+  { icon: <span>🧱</span>, label: 'Maçon' },
+  { icon: <Home size={13} strokeWidth={1.5} />, label: 'Couvreur' },
+  { icon: <span>🌡</span>, label: 'Chauffagiste' },
+  { icon: <Square size={13} strokeWidth={1.5} />, label: 'Menuisier' },
 ]
 
 function getInitials(nom: string) {
@@ -219,7 +219,7 @@ function HeroSearch() {
         display: 'flex', gap: '8px', marginTop: '16px',
         flexWrap: 'wrap', justifyContent: 'center',
       }}>
-        {CHIPS.map(({ emoji, label }) => (
+        {CHIPS.map(({ icon, label }) => (
           <button
             key={label}
             onClick={() => handleChip(label)}
@@ -229,11 +229,12 @@ function HeroSearch() {
               padding: '7px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0,
               transition: 'background 0.15s',
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
           >
-            {emoji} {label}
+            {icon} {label}
           </button>
         ))}
       </div>
@@ -319,14 +320,14 @@ function HeroMockupCard() {
 
       {/* Badges */}
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '16px' }}>
-        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-          ✓ SIRET actif
+        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <Check size={10} strokeWidth={1.5} /> SIRET actif
         </span>
-        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-          ✓ Certifié RGE
+        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <Check size={10} strokeWidth={1.5} /> Certifié RGE
         </span>
-        <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-          ⚠ 1 alerte BODACC
+        <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <AlertTriangle size={10} strokeWidth={1.5} /> 1 alerte BODACC
         </span>
       </div>
 
@@ -341,8 +342,8 @@ function HeroMockupCard() {
           { ok: false, text: '1 procédure BODACC détectée' },
         ].map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', flexShrink: 0, color: item.ok ? '#16a34a' : '#d97706' }}>
-              {item.ok ? '✓' : '⚠'}
+            <span style={{ flexShrink: 0, color: item.ok ? '#16a34a' : '#d97706', display: 'flex' }}>
+              {item.ok ? <Check size={13} strokeWidth={1.5} /> : <AlertTriangle size={13} strokeWidth={1.5} />}
             </span>
             <span style={{ fontSize: '12px', color: '#4A4A4A' }}>{item.text}</span>
           </div>
@@ -437,11 +438,11 @@ export default function HomePage() {
         }} />
 
         {/* Floating badges */}
-        <div className="fb fb-1" style={{ top: '28%', left: '5%', background: 'white', color: '#1B4332' }}>✓ SIRET vérifié INSEE</div>
-        <div className="fb fb-2" style={{ top: '22%', right: '6%', background: '#F0FDF4', color: '#166534' }}>🌿 Certifié RGE</div>
-        <div className="fb fb-3" style={{ top: '55%', left: '4%', background: '#FFF8E7', color: '#B45309' }}>⚠ Procédure BODACC</div>
-        <div className="fb fb-4" style={{ top: '62%', right: '5%', background: 'white', color: '#1B4332' }}>🔔 Alerte activée</div>
-        <div className="fb fb-5" style={{ top: '14%', right: '10%', background: 'white', color: '#4A4A4A' }}>📋 18 ans d&apos;activité</div>
+        <div className="fb fb-1" style={{ top: '28%', left: '5%', background: 'white', color: '#1B4332', display: 'flex', alignItems: 'center', gap: '5px' }}><Check size={13} strokeWidth={1.5} /> SIRET vérifié INSEE</div>
+        <div className="fb fb-2" style={{ top: '22%', right: '6%', background: '#F0FDF4', color: '#166534', display: 'flex', alignItems: 'center', gap: '5px' }}><Leaf size={13} strokeWidth={1.5} /> Certifié RGE</div>
+        <div className="fb fb-3" style={{ top: '55%', left: '4%', background: '#FFF8E7', color: '#B45309', display: 'flex', alignItems: 'center', gap: '5px' }}><AlertTriangle size={13} strokeWidth={1.5} /> Procédure BODACC</div>
+        <div className="fb fb-4" style={{ top: '62%', right: '5%', background: 'white', color: '#1B4332', display: 'flex', alignItems: 'center', gap: '5px' }}><Bell size={13} strokeWidth={1.5} /> Alerte activée</div>
+        <div className="fb fb-5" style={{ top: '14%', right: '10%', background: 'white', color: '#4A4A4A', display: 'flex', alignItems: 'center', gap: '5px' }}><ClipboardList size={13} strokeWidth={1.5} /> 18 ans d&apos;activité</div>
 
         <div style={{ position: 'relative', zIndex: 1, padding: '80px 24px 40px', textAlign: 'center' }}>
           {/* Badge pill */}
@@ -451,7 +452,7 @@ export default function HomePage() {
             borderRadius: '100px', padding: '8px 18px', fontSize: '13px', color: '#52B788',
             marginBottom: '16px', fontWeight: 600,
           }}>
-            🛡️ Données officielles · Gratuit pour les particuliers
+            <Shield size={13} strokeWidth={1.5} /> Données officielles · Gratuit pour les particuliers
           </div>
 
           {/* H1 */}
@@ -589,9 +590,9 @@ export default function HomePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
             {[
-              { name: 'Marie D.', ville: 'Tours', avatarUrl: 'https://ui-avatars.com/api/?name=Marie+D&background=1B4332&color=D8F3DC&size=48', text: 'J\'allais signer pour 18 000€ de travaux. Verifio m\'a montré que l\'entreprise était en liquidation judiciaire depuis 2 mois. Incroyable.', badge: '✓ 18 000€ économisés', badgeBg: '#f0fdf4', badgeColor: '#16a34a', badgeBorder: '#86efac', delay: '' },
-              { name: 'Thomas L.', ville: 'Lyon', avatarUrl: 'https://ui-avatars.com/api/?name=Thomas+L&background=2D6A4F&color=D8F3DC&size=48', text: 'En 30 secondes j\'ai su que l\'artisan n\'avait aucune certification RGE malgré ce qu\'il prétendait. J\'ai pu négocier.', badge: '✓ Arnaque déjouée', badgeBg: '#fff7ed', badgeColor: '#c2410c', badgeBorder: '#fdba74', delay: 'fade-up-delay-1' },
-              { name: 'Sophie M.', ville: 'Bordeaux', avatarUrl: 'https://ui-avatars.com/api/?name=Sophie+M&background=52B788&color=fff&size=48', text: 'Le Pack Sérénité a analysé mon devis et trouvé 3 clauses abusives. Mon notaire était impressionné.', badge: '✓ Devis sécurisé', badgeBg: '#eff6ff', badgeColor: '#1d4ed8', badgeBorder: '#93c5fd', delay: 'fade-up-delay-2' },
+              { name: 'Marie D.', ville: 'Tours', avatarUrl: 'https://ui-avatars.com/api/?name=Marie+D&background=1B4332&color=D8F3DC&size=48', text: 'J\'allais signer pour 18 000€ de travaux. Verifio m\'a montré que l\'entreprise était en liquidation judiciaire depuis 2 mois. Incroyable.', badge: '18 000€ économisés', badgeBg: '#f0fdf4', badgeColor: '#16a34a', badgeBorder: '#86efac', delay: '' },
+              { name: 'Thomas L.', ville: 'Lyon', avatarUrl: 'https://ui-avatars.com/api/?name=Thomas+L&background=2D6A4F&color=D8F3DC&size=48', text: 'En 30 secondes j\'ai su que l\'artisan n\'avait aucune certification RGE malgré ce qu\'il prétendait. J\'ai pu négocier.', badge: 'Arnaque déjouée', badgeBg: '#fff7ed', badgeColor: '#c2410c', badgeBorder: '#fdba74', delay: 'fade-up-delay-1' },
+              { name: 'Sophie M.', ville: 'Bordeaux', avatarUrl: 'https://ui-avatars.com/api/?name=Sophie+M&background=52B788&color=fff&size=48', text: 'Le Pack Sérénité a analysé mon devis et trouvé 3 clauses abusives. Mon notaire était impressionné.', badge: 'Devis sécurisé', badgeBg: '#eff6ff', badgeColor: '#1d4ed8', badgeBorder: '#93c5fd', delay: 'fade-up-delay-2' },
             ].map((t, i) => (
               <div key={i} className={`card-hover fade-up ${t.delay}`} style={{ background: 'white', borderRadius: '20px', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -608,8 +609,8 @@ export default function HomePage() {
                 <p style={{ fontSize: '15px', color: '#4A4A4A', lineHeight: 1.7, margin: '0 0 20px', fontStyle: 'italic' }}>
                   &quot;{t.text}&quot;
                 </p>
-                <span style={{ display: 'inline-block', background: t.badgeBg, color: t.badgeColor, border: `1px solid ${t.badgeBorder}`, borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: 700 }}>
-                  {t.badge}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: t.badgeBg, color: t.badgeColor, border: `1px solid ${t.badgeBorder}`, borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: 700 }}>
+                  <Check size={11} strokeWidth={1.5} /> {t.badge}
                 </span>
               </div>
             ))}

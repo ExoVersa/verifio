@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import {
+  MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
+  Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
+  Check, FileText, ClipboardList, Users, Shield,
+} from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { dirigeantSlug } from '@/lib/dirigeant'
 import { calculateScore, getYears as getYearsUtil, scoreColor } from '@/lib/score'
@@ -412,10 +417,16 @@ export default function ArtisanFichePage() {
   const isQualibat = rge.organismes.some((o: string) => o?.toLowerCase().includes('qualibat'))
 
   const verdictText = score >= 70
-    ? '✓ Profil juridique solide'
+    ? 'Profil juridique solide'
     : score >= 50
-    ? '⚠ Quelques points à vérifier'
-    : '🚨 Profil juridique fragile'
+    ? 'Quelques points à vérifier'
+    : 'Profil juridique fragile'
+
+  const VerdictIcon = score >= 70
+    ? Check
+    : score >= 50
+    ? AlertTriangle
+    : AlertCircle
 
   const verdictSubtitle = score >= 70
     ? 'Demandez toujours un devis détaillé et une attestation d\'assurance décennale.'
@@ -584,7 +595,9 @@ export default function ArtisanFichePage() {
         {/* Error */}
         {!loading && error && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <MapPin size={48} strokeWidth={1} color="#1B4332" />
+          </div>
             <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1B4332', margin: '0 0 8px' }}>
               Entreprise introuvable
             </h2>
@@ -667,8 +680,8 @@ export default function ArtisanFichePage() {
 
                 {/* Address */}
                 {result.adresse && (
-                  <p style={{ margin: '0 0 6px', fontSize: '14px', color: '#6b7280' }}>
-                    📍 {result.adresse}
+                  <p style={{ margin: '0 0 6px', fontSize: '14px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <MapPin size={14} strokeWidth={1.5} /> {result.adresse}
                   </p>
                 )}
 
@@ -720,7 +733,7 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card 1 — Informations légales ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>🏢 Informations légales</h3>
+                  <h3 style={cardTitleStyle}><Building2 size={20} strokeWidth={1.5} /> Informations légales</h3>
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
@@ -735,7 +748,7 @@ export default function ArtisanFichePage() {
                         fontSize: '10px', background: '#d1fae5', color: '#065f46',
                         padding: '2px 6px', borderRadius: '8px', fontWeight: 600,
                       }}>
-                        ✓ Vérifié INSEE
+                        <Check size={10} strokeWidth={1.5} style={{ display: 'inline', marginRight: '2px' }} /> Vérifié INSEE
                       </span>
                     </div>
 
@@ -811,7 +824,7 @@ export default function ArtisanFichePage() {
                               fontFamily: 'var(--font-body)',
                             }}
                           >
-                            {tvacopied ? '✓ Copié' : 'Copier'}
+                            {tvacopied ? <><Check size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: '2px' }} /> Copié</> : 'Copier'}
                           </button>
                         </div>
                         <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af' }}>
@@ -824,14 +837,14 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card 2 — Santé financière ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>💰 Santé financière</h3>
+                  <h3 style={cardTitleStyle}><Banknote size={20} strokeWidth={1.5} /> Santé financière</h3>
 
                   {financialLoading ? (
                     <div style={{ color: '#9ca3af', fontSize: '13px' }}>Vérification des données financières…</div>
                   ) : financialData ? (
                     <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px 20px' }}>
-                      <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 600, color: '#15803d' }}>
-                        ✓ Données disponibles
+                      <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 600, color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={14} strokeWidth={1.5} /> Données disponibles
                       </p>
                       <p style={{ margin: 0, fontSize: '13px', color: '#166534', lineHeight: 1.6 }}>
                         Des informations financières ont été trouvées pour cette entreprise.
@@ -852,13 +865,13 @@ export default function ArtisanFichePage() {
                           rel="noreferrer"
                           style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#1B4332', fontWeight: 600, textDecoration: 'none', background: '#f0fdf4', borderRadius: '8px', padding: '8px 12px', border: '1px solid #86efac' }}
                         >
-                          📄 Demander un extrait Kbis à l&apos;artisan
+                          <FileText size={14} strokeWidth={1.5} /> Demander un extrait Kbis à l&apos;artisan
                         </a>
                         <a
                           href="#section-bodacc"
                           style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#374151', fontWeight: 600, textDecoration: 'none', background: '#f5f5f5', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e5e7eb' }}
                         >
-                          📋 Consulter les annonces BODACC ci-dessous
+                          <ClipboardList size={14} strokeWidth={1.5} /> Consulter les annonces BODACC ci-dessous
                         </a>
                       </div>
                     </div>
@@ -866,16 +879,16 @@ export default function ArtisanFichePage() {
 
                   {result.capitalSocial ? (
                     <div style={{ marginTop: '12px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #86efac' }}>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#15803d' }}>
-                        ✓ Capital social déclaré : <strong>{result.capitalSocial.toLocaleString('fr-FR')} €</strong> — signe d&apos;une structure formalisée.
+                      <p style={{ margin: 0, fontSize: '13px', color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={13} strokeWidth={1.5} /> Capital social déclaré : <strong>{result.capitalSocial.toLocaleString('fr-FR')} €</strong> — signe d&apos;une structure formalisée.
                       </p>
                     </div>
                   ) : null}
 
                   {result.effectif && result.effectif !== 'Non renseigné' && (
                     <div style={{ marginTop: '12px', padding: '12px 16px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#1d4ed8' }}>
-                        👥 Effectifs déclarés : <strong>{result.effectif}</strong>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Users size={13} strokeWidth={1.5} /> Effectifs déclarés : <strong>{result.effectif}</strong>
                       </p>
                     </div>
                   )}
@@ -884,14 +897,14 @@ export default function ArtisanFichePage() {
                 {/* ── Card 3 — Établissements ── */}
                 <div style={cardStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <h3 style={{ ...cardTitleStyle, margin: 0 }}>🏪 Établissements</h3>
+                    <h3 style={{ ...cardTitleStyle, margin: 0 }}><Store size={20} strokeWidth={1.5} /> Établissements</h3>
                     {etablissements.filter(e => e.statut === 'A').length > 1 && (
                       <span style={{
                         background: '#d1fae5', color: '#065f46',
                         fontSize: '11px', fontWeight: 700,
                         padding: '3px 10px', borderRadius: '20px',
                       }}>
-                        ✓ Présence multi-sites
+                        <Check size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: '2px' }} /> Présence multi-sites
                       </span>
                     )}
                   </div>
@@ -960,17 +973,17 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card 4 — Certifications RGE ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>🌿 Certifications RGE</h3>
+                  <h3 style={cardTitleStyle}><Leaf size={20} strokeWidth={1.5} /> Certifications RGE</h3>
                   {rge.certifie ? (
                     <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '20px' }}>
-                      <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d' }}>
-                        ✓ Certifié RGE — Travaux éligibles aux aides de l&apos;État
+                      <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Check size={15} strokeWidth={1.5} /> Certifié RGE — Travaux éligibles aux aides de l&apos;État
                       </p>
                       {rgeDomainesUniques.length > 0 && (
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
                           {rgeVisibleDomaines.map((d, i) => (
                             <span key={i} style={{ background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px' }}>
-                              ✓ {d}
+                              <Check size={10} strokeWidth={1.5} style={{ display: 'inline', marginRight: '2px' }} /> {d}
                             </span>
                           ))}
                           {rgeDomainesUniques.length > RGE_MAX && (
@@ -1011,26 +1024,26 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card — Assurance décennale ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>🏗 Assurance décennale</h3>
+                  <h3 style={cardTitleStyle}><HardHat size={20} strokeWidth={1.5} /> Assurance décennale</h3>
                   {isQualibat ? (
                     <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '16px' }}>
-                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#15803d' }}>
-                        ✓ Assurance vérifiée par Qualibat
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={14} strokeWidth={1.5} /> Assurance vérifiée par Qualibat
                       </p>
                       <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#166534', lineHeight: 1.5 }}>
                         Cet artisan est certifié Qualibat. Pour obtenir cette certification, son assurance décennale a été contrôlée et validée par l&apos;organisme certificateur.
                       </p>
                       <span style={{ display: 'inline-block', background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: '20px', padding: '3px 10px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
-                        Certifié Qualibat ✓
+                        Certifié Qualibat <Check size={11} strokeWidth={1.5} style={{ display: 'inline', marginLeft: '2px' }} />
                       </span>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
-                        ℹ️ La certification ne garantit pas que l&apos;assurance est toujours valide à ce jour. Demandez l&apos;attestation à jour avant de signer.
+                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+                        <Info size={12} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '1px' }} /> La certification ne garantit pas que l&apos;assurance est toujours valide à ce jour. Demandez l&apos;attestation à jour avant de signer.
                       </p>
                     </div>
                   ) : rge.certifie ? (
                     <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '16px' }}>
-                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#92400e' }}>
-                        ⚠ Assurance non vérifiable automatiquement
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#92400e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={14} strokeWidth={1.5} /> Assurance non vérifiable automatiquement
                       </p>
                       <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#78350f', lineHeight: 1.5 }}>
                         Cet artisan est certifié RGE mais pas par Qualibat. Son assurance décennale n&apos;a pas pu être vérifiée via nos sources. Demandez l&apos;attestation décennale directement à l&apos;artisan avant de signer.
@@ -1039,8 +1052,8 @@ export default function ArtisanFichePage() {
                     </div>
                   ) : (
                     <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
-                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#374151' }}>
-                        ⚠ Assurance non vérifiable automatiquement
+                      <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={14} strokeWidth={1.5} /> Assurance non vérifiable automatiquement
                       </p>
                       <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6b7280', lineHeight: 1.5 }}>
                         Nous ne pouvons pas vérifier automatiquement l&apos;assurance décennale de cet artisan. Il n&apos;existe pas de base de données publique centralisant ces informations en France.
@@ -1055,7 +1068,7 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card 3 — Dirigeants ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>👤 Dirigeants</h3>
+                  <h3 style={cardTitleStyle}><User size={20} strokeWidth={1.5} /> Dirigeants</h3>
                   {dirigeants.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {dirigeants.map((d, i) => (
@@ -1092,7 +1105,7 @@ export default function ArtisanFichePage() {
                     </div>
                   ) : (
                     <div style={{ background: '#F5F5F5', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠️</span>
+                      <AlertTriangle size={15} strokeWidth={1.5} style={{ flexShrink: 0, color: '#9ca3af' }} />
                       <div>
                         <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#6b7280' }}>Dirigeants — données non disponibles</p>
                         <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>Nous n&apos;avons pas pu récupérer les informations sur les dirigeants de cette entreprise.</p>
@@ -1108,11 +1121,11 @@ export default function ArtisanFichePage() {
                   const bodaccUnavailable = result?.bodacc?.fetched === false
                   return (
                     <div id="section-bodacc" style={cardStyle}>
-                      <h3 style={cardTitleStyle}>⚖️ Procédures BODACC</h3>
+                      <h3 style={cardTitleStyle}><Scale size={20} strokeWidth={1.5} /> Procédures BODACC</h3>
 
                       {bodaccUnavailable && (
                         <div style={{ background: '#F5F5F5', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '12px' }}>
-                          <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠️</span>
+                          <AlertTriangle size={15} strokeWidth={1.5} style={{ flexShrink: 0, color: '#9ca3af' }} />
                           <div>
                             <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#6b7280' }}>Procédures judiciaires — données non disponibles</p>
                             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>Nous n&apos;avons pas pu vérifier l&apos;historique judiciaire de cette entreprise. Demandez un extrait Kbis.</p>
@@ -1127,11 +1140,14 @@ export default function ArtisanFichePage() {
                           background: cats.proceduresCollectives.length > 0 ? '#fef2f2' : '#f0fdf4',
                           color: cats.proceduresCollectives.length > 0 ? '#dc2626' : '#15803d',
                         }}>
-                          {cats.proceduresCollectives.length === 0 ? '✓ ' : '⚠ '}{cats.proceduresCollectives.length} procédure{cats.proceduresCollectives.length > 1 ? 's' : ''} collective{cats.proceduresCollectives.length > 1 ? 's' : ''}
+                          {cats.proceduresCollectives.length === 0
+                            ? <><Check size={12} strokeWidth={1.5} style={{ display: 'inline', marginRight: '3px' }} /></>
+                            : <><AlertTriangle size={12} strokeWidth={1.5} style={{ display: 'inline', marginRight: '3px' }} /></>
+                          }{cats.proceduresCollectives.length} procédure{cats.proceduresCollectives.length > 1 ? 's' : ''} collective{cats.proceduresCollectives.length > 1 ? 's' : ''}
                         </span>
                         {cats.depotComptes.length > 0 && (
                           <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, background: '#f0fdf4', color: '#15803d' }}>
-                            ✓ {cats.depotComptes.length} dépôt{cats.depotComptes.length > 1 ? 's' : ''} de comptes
+                            <Check size={12} strokeWidth={1.5} style={{ display: 'inline', marginRight: '3px' }} /> {cats.depotComptes.length} dépôt{cats.depotComptes.length > 1 ? 's' : ''} de comptes
                           </span>
                         )}
                         {cats.ventesCoissions.length > 0 && (
@@ -1147,14 +1163,14 @@ export default function ArtisanFichePage() {
                       </div>
 
                       {!hasProcedure ? (
-                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px', color: '#15803d', fontSize: '14px', fontWeight: 600 }}>
-                          ✓ Aucune procédure collective détectée — c&apos;est un bon signal.
+                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px', color: '#15803d', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Check size={14} strokeWidth={1.5} /> Aucune procédure collective détectée — c&apos;est un bon signal.
                         </div>
                       ) : (
                         <div>
                           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px' }}>
-                            <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#dc2626' }}>
-                              ⚠ Procédure collective détectée — vigilance recommandée
+                            <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <AlertTriangle size={13} strokeWidth={1.5} /> Procédure collective détectée — vigilance recommandée
                             </p>
                             <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
                               Une liquidation ou un redressement judiciaire est un signal sérieux avant de signer un contrat.
@@ -1170,8 +1186,8 @@ export default function ArtisanFichePage() {
                       )}
 
                       {cats.depotComptes.length > 0 && (
-                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f0fdf4', borderRadius: '10px', fontSize: '13px', color: '#15803d' }}>
-                          ✓ Dépôt de comptes publié — cette entreprise est transparente sur sa gestion.
+                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f0fdf4', borderRadius: '10px', fontSize: '13px', color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Check size={13} strokeWidth={1.5} /> Dépôt de comptes publié — cette entreprise est transparente sur sa gestion.
                         </div>
                       )}
 
@@ -1244,7 +1260,7 @@ export default function ArtisanFichePage() {
 
                                         {/* Jugement */}
                                         {(a.jugementNature || a.jugementDate || a.jugementComplement) && (
-                                          <BodaccSection titre="⚖️ Jugement">
+                                          <BodaccSection titre="Jugement">
                                             {a.jugementNature && <BodaccField label="Nature" value={a.jugementNature} full />}
                                             {a.jugementDate && <BodaccField label="Date du jugement" value={formatDate(a.jugementDate)} />}
                                             {a.jugementComplement && <BodaccField label="Complément" value={a.jugementComplement} full />}
@@ -1253,7 +1269,7 @@ export default function ArtisanFichePage() {
 
                                         {/* Acte (immatriculation / vente) */}
                                         {(a.acteCategorie || a.acteDate || a.acteDescriptif) && (
-                                          <BodaccSection titre="📄 Acte">
+                                          <BodaccSection titre="Acte">
                                             {a.acteCategorie && <BodaccField label="Catégorie" value={a.acteCategorie} full />}
                                             {a.acteDate && <BodaccField label="Date d'immatriculation" value={formatDate(a.acteDate)} />}
                                             {a.acteDescriptif && <BodaccField label="Descriptif" value={a.acteDescriptif} full />}
@@ -1262,14 +1278,14 @@ export default function ArtisanFichePage() {
 
                                         {/* Modification */}
                                         {a.modificationDescriptif && (
-                                          <BodaccSection titre="✏️ Modification">
+                                          <BodaccSection titre="Modification">
                                             <BodaccField label="Objet" value={a.modificationDescriptif} full />
                                           </BodaccSection>
                                         )}
 
                                         {/* Établissement (vente/cession) */}
                                         {(a.etablissementActivite || a.etablissementOrigine || a.etablissementAdresse) && (
-                                          <BodaccSection titre="🏪 Établissement">
+                                          <BodaccSection titre="Établissement">
                                             {a.etablissementActivite && <BodaccField label="Activité" value={a.etablissementActivite} full />}
                                             {a.etablissementOrigine && <BodaccField label="Origine du fonds" value={a.etablissementOrigine} full />}
                                             {a.etablissementAdresse && <BodaccField label="Adresse" value={a.etablissementAdresse} full />}
@@ -1278,14 +1294,14 @@ export default function ArtisanFichePage() {
 
                                         {/* Vendeur */}
                                         {a.vendeurNom && (
-                                          <BodaccSection titre="👤 Vendeur">
+                                          <BodaccSection titre="Vendeur">
                                             <BodaccField label="Nom" value={a.vendeurNom} full />
                                           </BodaccSection>
                                         )}
 
                                         {/* Personne/Société */}
                                         {(a.personnesDenomination || a.personnesActivite || a.personnesAdministration || a.personnesFormeJuridique || a.personnesCapital) && (
-                                          <BodaccSection titre="🏢 Société concernée">
+                                          <BodaccSection titre="Société concernée">
                                             {a.personnesDenomination && <BodaccField label="Dénomination" value={a.personnesDenomination} full />}
                                             {a.personnesFormeJuridique && <BodaccField label="Forme juridique" value={a.personnesFormeJuridique} />}
                                             {a.personnesCapital && <BodaccField label="Capital" value={a.personnesCapital} />}
@@ -1296,7 +1312,7 @@ export default function ArtisanFichePage() {
 
                                         {/* Radiation */}
                                         {(a.radiationDate || a.radiationCommentaire) && (
-                                          <BodaccSection titre="🚫 Radiation">
+                                          <BodaccSection titre="Radiation">
                                             {a.radiationDate && <BodaccField label="Date d'effet" value={formatDate(a.radiationDate)} />}
                                             {a.radiationCommentaire && <BodaccField label="Motif" value={a.radiationCommentaire} />}
                                           </BodaccSection>
@@ -1308,7 +1324,7 @@ export default function ArtisanFichePage() {
                                             display: 'inline-block', marginTop: '10px',
                                             fontSize: '12px', color: '#1d4ed8', textDecoration: 'underline',
                                           }}>
-                                            📰 Voir l&apos;annonce sur BODACC.fr
+                                            <FileText size={12} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Voir l&apos;annonce sur BODACC.fr
                                           </a>
                                         )}
                                       </div>
@@ -1374,7 +1390,7 @@ export default function ArtisanFichePage() {
 
                 {/* ── Card 6 — Partage ── */}
                 <div style={cardStyle}>
-                  <h3 style={cardTitleStyle}>📤 Partager cette fiche</h3>
+                  <h3 style={cardTitleStyle}><Share2 size={20} strokeWidth={1.5} /> Partager cette fiche</h3>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <a
                       href={`https://wa.me/?text=${encodeURIComponent(`Fiche artisan : ${result.nom} — ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
@@ -1398,7 +1414,7 @@ export default function ArtisanFichePage() {
                         fontWeight: 500,
                       }}
                     >
-                      ✉️ Email
+                      <Mail size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Email
                     </a>
                     <button
                       onClick={copyLink}
@@ -1410,7 +1426,7 @@ export default function ArtisanFichePage() {
                         fontWeight: 500, fontFamily: 'var(--font-body)',
                       }}
                     >
-                      {linkCopied ? '✓ Lien copié !' : '🔗 Copier le lien'}
+                      {linkCopied ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Lien copié !</> : '🔗 Copier le lien'}
                     </button>
                   </div>
                   <p
@@ -1446,8 +1462,8 @@ export default function ArtisanFichePage() {
                   </div>
 
                   {/* Verdict */}
-                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: verdictColor }}>
-                    {verdictText}
+                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: verdictColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    <VerdictIcon size={14} strokeWidth={1.5} /> {verdictText}
                   </p>
                   <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>
                     {verdictSubtitle}
@@ -1459,7 +1475,7 @@ export default function ArtisanFichePage() {
                     marginBottom: '20px', textAlign: 'left',
                     display: 'flex', gap: '8px', alignItems: 'flex-start',
                   }}>
-                    <span style={{ fontSize: '14px', flexShrink: 0 }}>ℹ️</span>
+                    <Info size={14} strokeWidth={1.5} style={{ flexShrink: 0 }} />
                     <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
                       Ce score évalue la solidité juridique — statut légal, ancienneté et historique judiciaire. Un score élevé signifie que vous disposez de leviers juridiques solides en cas de litige. <strong>Il ne garantit pas la qualité des travaux.</strong>
                     </p>
@@ -1503,8 +1519,8 @@ export default function ArtisanFichePage() {
                       </div>
                     ))}
                     {scoreBreakdown.some(c => !c.disponible) && (
-                      <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: 1.4 }}>
-                        ℹ️ Certaines données n&apos;ont pas pu être vérifiées — elles n&apos;impactent pas ce score.
+                      <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: 1.4, display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+                        <Info size={11} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '1px' }} /> Certaines données n&apos;ont pas pu être vérifiées — elles n&apos;impactent pas ce score.
                       </p>
                     )}
                   </div>
@@ -1523,8 +1539,8 @@ export default function ArtisanFichePage() {
                     }}>
                       {/* En-tête contextuel */}
                       <div style={{ marginBottom: '14px' }}>
-                        <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: isRisque ? '#991b1b' : '#14532d', fontFamily: 'var(--font-body)', lineHeight: 1.3 }}>
-                          {isRisque ? '🚨 Vous allez signer un contrat risqué' : '🛡️ Sécurisez votre chantier pour 19,90€'}
+                        <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: isRisque ? '#991b1b' : '#14532d', fontFamily: 'var(--font-body)', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {isRisque ? <><AlertCircle size={16} strokeWidth={1.5} /> Vous allez signer un contrat risqué</> : <><Shield size={16} strokeWidth={1.5} /> Sécurisez votre chantier pour 19,90€</>}
                         </p>
                         <p style={{ margin: 0, fontSize: '12px', color: isRisque ? '#b91c1c' : '#166534', lineHeight: 1.5 }}>
                           {isRisque
@@ -1536,12 +1552,12 @@ export default function ArtisanFichePage() {
                       {/* 3 arguments visuels */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px', textAlign: 'left' }}>
                         {[
-                          { icon: '📄', titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
-                          { icon: '💰', titre: 'Prix du marché', desc: 'Votre devis est-il au juste prix ?' },
-                          { icon: '🔔', titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
-                        ].map(({ icon, titre, desc }) => (
+                          { Icon: FileText, titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
+                          { Icon: Banknote, titre: 'Prix du marché', desc: 'Votre devis est-il au juste prix ?' },
+                          { Icon: Bell, titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
+                        ].map(({ Icon, titre, desc }) => (
                           <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                            <span style={{ fontSize: '16px', flexShrink: 0, lineHeight: '1.4' }}>{icon}</span>
+                            <Icon size={16} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px', color: '#1f2937' }} />
                             <div style={{ textAlign: 'left' }}>
                               <div style={{ fontSize: '12px', fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>{titre}</div>
                               <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>
@@ -1557,7 +1573,7 @@ export default function ArtisanFichePage() {
                           borderRadius: '8px', padding: '10px 12px',
                           marginBottom: '12px', fontSize: '12px', lineHeight: 1.5,
                         }}>
-                          ⚠️ Cette entreprise a <strong>{nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''}</strong> — analyse de devis fortement recommandée avant tout engagement financier.
+                          <AlertTriangle size={12} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Cette entreprise a <strong>{nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''}</strong> — analyse de devis fortement recommandée avant tout engagement financier.
                         </div>
                       )}
 
@@ -1593,7 +1609,7 @@ export default function ArtisanFichePage() {
                         cursor: 'pointer', fontFamily: 'var(--font-body)',
                       }}
                     >
-                      🔔 Recevoir une alerte
+                      <Bell size={15} strokeWidth={1.5} style={{ display: 'inline', marginRight: '6px' }} /> Recevoir une alerte
                     </button>
 
                     {/* Row of 2 small buttons */}
@@ -1608,7 +1624,7 @@ export default function ArtisanFichePage() {
                           display: 'block',
                         }}
                       >
-                        📊 Comparer →
+                        <BarChart2 size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Comparer →
                       </a>
                       <button
                         onClick={copyLink}
@@ -1621,7 +1637,10 @@ export default function ArtisanFichePage() {
                           fontFamily: 'var(--font-body)',
                         }}
                       >
-                        {linkCopied ? '✓ Copié' : '📤 Partager'}
+                        {linkCopied
+                          ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Copié</>
+                          : <><Share2 size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Partager</>
+                        }
                       </button>
                     </div>
                   </div>
@@ -1636,8 +1655,8 @@ export default function ArtisanFichePage() {
                       borderRadius: '10px', padding: '12px',
                       textAlign: 'left',
                     }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#14532d' }}>
-                        ✓ Artisan vérifié Verifio
+                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#14532d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={13} strokeWidth={1.5} /> Artisan vérifié Verifio
                       </p>
                       <p style={{ margin: 0, fontSize: '11px', color: '#166534' }}>
                         L&apos;existence légale de cet artisan a été vérifiée.
@@ -1672,7 +1691,7 @@ export default function ArtisanFichePage() {
         }}>
           {nbProcedures > 0 && (
             <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#dc2626', fontWeight: 600, textAlign: 'center' }}>
-              ⚠️ {nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''} détectée{nbProcedures > 1 ? 's' : ''}
+              <AlertTriangle size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> {nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''} détectée{nbProcedures > 1 ? 's' : ''}
             </p>
           )}
           <button
