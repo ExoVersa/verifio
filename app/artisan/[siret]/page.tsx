@@ -1534,17 +1534,17 @@ export default function ArtisanFichePage() {
                       </div>
 
                       {/* 3 arguments visuels */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px', textAlign: 'left' }}>
                         {[
                           { icon: '📄', titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
                           { icon: '💰', titre: 'Prix du marché', desc: 'Votre devis est-il au juste prix ?' },
                           { icon: '🔔', titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
                         ].map(({ icon, titre, desc }) => (
-                          <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                            <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>{icon}</span>
-                            <div>
-                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#1f2937' }}>{titre}</p>
-                              <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{desc}</p>
+                          <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <span style={{ fontSize: '16px', flexShrink: 0, lineHeight: '1.4' }}>{icon}</span>
+                            <div style={{ textAlign: 'left' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>{titre}</div>
+                              <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>
                             </div>
                           </div>
                         ))}
