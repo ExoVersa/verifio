@@ -6,6 +6,7 @@ import {
   MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
   Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
   Check, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
+  Smartphone, Link,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { dirigeantSlug } from '@/lib/dirigeant'
@@ -1404,7 +1405,7 @@ export default function ArtisanFichePage() {
                         fontWeight: 500,
                       }}
                     >
-                      📱 WhatsApp
+                      <Smartphone size={14} strokeWidth={1.5} style={{ marginRight: '5px', verticalAlign: 'middle' }} />WhatsApp
                     </a>
                     <a
                       href={`mailto:?subject=${encodeURIComponent(`Fiche artisan : ${result.nom}`)}&body=${encodeURIComponent(`Consulter la fiche : ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
@@ -1427,7 +1428,7 @@ export default function ArtisanFichePage() {
                         fontWeight: 500, fontFamily: 'var(--font-body)',
                       }}
                     >
-                      {linkCopied ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Lien copié !</> : '🔗 Copier le lien'}
+                      {linkCopied ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Lien copié !</> : <><Link size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Copier le lien</>}
                     </button>
                   </div>
                   <p
