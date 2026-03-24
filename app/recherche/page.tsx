@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { X, ExternalLink, Wrench, Zap, Home, Square, Paintbrush, Snowflake, Leaf, MapPin, AlertTriangle, HardHat, Search } from 'lucide-react'
+import { X, ExternalLink, Wrench, Zap, Home, Square, Paintbrush, Snowflake, Leaf, MapPin, AlertTriangle, HardHat, Search, Layers, Thermometer, Hammer, Map } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
 import { scoreColor, scoreBg } from '@/lib/score'
@@ -14,15 +14,15 @@ type SortBy = 'pertinence' | 'anciennete'
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { Icon: Wrench,    label: 'Plombier',      kw: 'plombier' },
-  { Icon: Zap,       label: 'Électricien',   kw: 'électricien' },
-  { emoji: '🧱',    label: 'Maçon',         kw: 'maçon' },
-  { Icon: Home,      label: 'Couvreur',      kw: 'couvreur' },
-  { emoji: '🌡️',   label: 'Chauffagiste',  kw: 'chauffagiste' },
-  { Icon: Square,    label: 'Menuisier',     kw: 'menuisier' },
-  { Icon: Paintbrush, label: 'Peintre',      kw: 'peintre' },
-  { emoji: '🪵',    label: 'Charpentier',   kw: 'charpentier' },
-  { Icon: Snowflake, label: 'Climatisation', kw: 'climaticien' },
+  { Icon: Wrench,      label: 'Plombier',      kw: 'plombier' },
+  { Icon: Zap,         label: 'Électricien',   kw: 'électricien' },
+  { Icon: Layers,      label: 'Maçon',         kw: 'maçon' },
+  { Icon: Home,        label: 'Couvreur',      kw: 'couvreur' },
+  { Icon: Thermometer, label: 'Chauffagiste',  kw: 'chauffagiste' },
+  { Icon: Square,      label: 'Menuisier',     kw: 'menuisier' },
+  { Icon: Paintbrush,  label: 'Peintre',       kw: 'peintre' },
+  { Icon: Hammer,      label: 'Charpentier',   kw: 'charpentier' },
+  { Icon: Snowflake,   label: 'Climatisation', kw: 'climaticien' },
 ]
 
 const POPULAR = [
@@ -174,7 +174,7 @@ function VilleAutocomplete({
                   onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  <span>🗺️</span>
+                  <Map size={14} strokeWidth={1.5} style={{ flexShrink: 0, color: 'var(--color-muted)' }} />
                   <span style={{ fontWeight: 600, flex: 1 }}>{d.nom}</span>
                   <span style={{ color: cv('muted'), fontSize: '12px' }}>({d.code})</span>
                 </button>
@@ -744,11 +744,8 @@ function RechercheInner() {
                     el.style.transform = 'none'
                   }}
                 >
-                  <span style={{ fontSize: '28px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {'Icon' in action
-                      ? (() => { const Ic = action.Icon as React.ComponentType<{ size: number; strokeWidth: number }>; return <Ic size={28} strokeWidth={1.5} /> })()
-                      : action.emoji
-                    }
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: cv('accent') }}>
+                    {(() => { const Ic = action.Icon as React.ComponentType<{ size: number; strokeWidth: number }>; return <Ic size={28} strokeWidth={1.5} /> })()}
                   </span>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: cv('text') }}>{label}</span>
                 </button>
