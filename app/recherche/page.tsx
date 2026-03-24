@@ -329,6 +329,8 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
           ? { background: cv('accent'), color: '#fff', borderColor: cv('accent') }
           : { background: 'transparent', color: cv('muted'), borderColor: cv('border') }),
       }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = cv('text') } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = cv('muted') } }}
     >
       {children}
     </button>
@@ -685,7 +687,10 @@ function RechercheInner() {
                     border: `1px solid ${cv('border')}`, background: 'transparent',
                     color: cv('muted'), fontSize: '12px', fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'var(--font-body)',
+                    transition: 'background 0.15s ease, color 0.15s ease',
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = cv('text') }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = cv('muted') }}
                 >
                   <X size={12} /> Réinitialiser
                 </button>
@@ -812,7 +817,10 @@ function RechercheInner() {
                 padding: '10px 24px', borderRadius: '12px',
                 background: cv('accent'), color: 'white', border: 'none',
                 fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
+                transition: 'background 0.15s ease',
               }}
+              onMouseEnter={e => e.currentTarget.style.background = '#2D6A4F'}
+              onMouseLeave={e => e.currentTarget.style.background = cv('accent')}
             >
               Réessayer
             </button>
@@ -888,7 +896,10 @@ function RechercheInner() {
                 border: `1px solid ${cv('accent')}`, background: 'white',
                 color: cv('accent'), fontSize: '14px', fontWeight: 600,
                 cursor: 'pointer', fontFamily: 'var(--font-body)',
+                transition: 'background 0.15s ease',
               }}
+              onMouseEnter={e => e.currentTarget.style.background = '#ecfdf5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'white'}
             >
               Élargir la recherche
             </button>

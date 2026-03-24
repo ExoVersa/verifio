@@ -322,6 +322,7 @@ export default function ArtisanFichePage() {
   const [expandedBodacc, setExpandedBodacc] = useState<Set<string>>(new Set())
   const [financialData, setFinancialData] = useState<Record<string, unknown> | null>(null)
   const [financialLoading, setFinancialLoading] = useState(false)
+  const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -582,10 +583,13 @@ export default function ArtisanFichePage() {
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#6b7280', fontSize: '13px', fontWeight: 500,
+            color: hoveredBtn === 'back' ? 'var(--color-accent)' : '#6b7280',
+            fontSize: '13px', fontWeight: 500,
             padding: 0, fontFamily: 'var(--font-body)',
-            marginBottom: '20px',
+            marginBottom: '20px', transition: 'color 0.15s ease',
           }}
+          onMouseEnter={() => setHoveredBtn('back')}
+          onMouseLeave={() => setHoveredBtn(null)}
         >
           <ArrowLeft size={16} strokeWidth={1.5} /> Retour
         </button>
@@ -609,8 +613,10 @@ export default function ArtisanFichePage() {
                 background: '#1B4332', color: 'white', border: 'none',
                 borderRadius: '12px', padding: '12px 24px',
                 fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--font-body)', transition: 'opacity 0.15s ease',
               }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
             >
               <ArrowLeft size={16} strokeWidth={1.5} /> Retour à la recherche
             </button>
@@ -1399,41 +1405,56 @@ export default function ArtisanFichePage() {
                       target="_blank"
                       rel="noreferrer"
                       style={{
-                        border: '1px solid #e5e7eb', borderRadius: '8px',
-                        padding: '7px 14px', fontSize: '13px',
-                        color: '#374151', textDecoration: 'none',
-                        fontWeight: 500,
+                        border: `1px solid ${hoveredBtn === 'whatsapp' ? 'var(--color-accent)' : '#e5e7eb'}`,
+                        borderRadius: '8px', padding: '7px 14px', fontSize: '13px',
+                        color: '#374151', textDecoration: 'none', fontWeight: 500,
+                        background: hoveredBtn === 'whatsapp' ? 'rgba(45,185,110,0.06)' : 'transparent',
+                        transition: 'all 0.15s ease',
                       }}
+                      onMouseEnter={() => setHoveredBtn('whatsapp')}
+                      onMouseLeave={() => setHoveredBtn(null)}
                     >
                       <Smartphone size={14} strokeWidth={1.5} style={{ marginRight: '5px', verticalAlign: 'middle' }} />WhatsApp
                     </a>
                     <a
                       href={`mailto:?subject=${encodeURIComponent(`Fiche artisan : ${result.nom}`)}&body=${encodeURIComponent(`Consulter la fiche : ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
                       style={{
-                        border: '1px solid #e5e7eb', borderRadius: '8px',
-                        padding: '7px 14px', fontSize: '13px',
-                        color: '#374151', textDecoration: 'none',
-                        fontWeight: 500,
+                        border: `1px solid ${hoveredBtn === 'email' ? 'var(--color-accent)' : '#e5e7eb'}`,
+                        borderRadius: '8px', padding: '7px 14px', fontSize: '13px',
+                        color: '#374151', textDecoration: 'none', fontWeight: 500,
+                        background: hoveredBtn === 'email' ? 'rgba(45,185,110,0.06)' : 'transparent',
+                        transition: 'all 0.15s ease',
                       }}
+                      onMouseEnter={() => setHoveredBtn('email')}
+                      onMouseLeave={() => setHoveredBtn(null)}
                     >
                       <Mail size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Email
                     </a>
                     <button
                       onClick={copyLink}
                       style={{
-                        border: '1px solid #e5e7eb', borderRadius: '8px',
-                        padding: '7px 14px', fontSize: '13px',
+                        border: `1px solid ${hoveredBtn === 'copier' ? 'var(--color-accent)' : '#e5e7eb'}`,
+                        borderRadius: '8px', padding: '7px 14px', fontSize: '13px',
                         color: linkCopied ? '#15803d' : '#374151',
-                        background: 'white', cursor: 'pointer',
-                        fontWeight: 500, fontFamily: 'var(--font-body)',
+                        background: hoveredBtn === 'copier' ? 'rgba(45,185,110,0.06)' : 'white',
+                        cursor: 'pointer', fontWeight: 500, fontFamily: 'var(--font-body)',
+                        transition: 'all 0.15s ease',
                       }}
+                      onMouseEnter={() => setHoveredBtn('copier')}
+                      onMouseLeave={() => setHoveredBtn(null)}
                     >
                       {linkCopied ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Lien copié !</> : <><Link size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Copier le lien</>}
                     </button>
                   </div>
                   <p
-                    style={{ margin: 0, fontSize: '12px', color: '#9ca3af', cursor: 'pointer' }}
+                    style={{
+                      margin: 0, fontSize: '12px',
+                      color: hoveredBtn === 'signaler' ? 'var(--color-accent)' : '#9ca3af',
+                      cursor: 'pointer', transition: 'color 0.15s ease',
+                    }}
                     onClick={() => window.location.href = `mailto:contact@verifio.fr?subject=Erreur fiche ${result.siret}`}
+                    onMouseEnter={() => setHoveredBtn('signaler')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                   >
                     Signaler une erreur sur cette fiche
                   </p>
@@ -1605,11 +1626,16 @@ export default function ArtisanFichePage() {
                     <button
                       style={{
                         width: '100%',
-                        background: 'white', color: '#1B4332',
-                        border: '1.5px solid #1B4332', borderRadius: '12px',
-                        padding: '13px', fontSize: '15px', fontWeight: 700,
+                        background: hoveredBtn === 'alerte' ? 'rgba(45,185,110,0.06)' : 'white',
+                        color: '#1B4332',
+                        border: `1.5px solid ${hoveredBtn === 'alerte' ? 'var(--color-accent)' : '#1B4332'}`,
+                        borderRadius: '12px', padding: '13px',
+                        fontSize: '15px', fontWeight: 700,
                         cursor: 'pointer', fontFamily: 'var(--font-body)',
+                        transition: 'all 0.15s ease',
                       }}
+                      onMouseEnter={() => setHoveredBtn('alerte')}
+                      onMouseLeave={() => setHoveredBtn(null)}
                     >
                       <Bell size={15} strokeWidth={1.5} style={{ display: 'inline', marginRight: '6px' }} /> Recevoir une alerte
                     </button>
@@ -1620,11 +1646,15 @@ export default function ArtisanFichePage() {
                         href={`/comparer?a=${result.siret}`}
                         style={{
                           flex: 1, textAlign: 'center',
-                          border: '1px solid #e5e7eb', borderRadius: '8px',
-                          padding: '9px 8px', fontSize: '13px', fontWeight: 600,
-                          color: '#374151', textDecoration: 'none',
-                          display: 'block',
+                          border: `1px solid ${hoveredBtn === 'comparer' ? 'var(--color-accent)' : '#e5e7eb'}`,
+                          borderRadius: '8px', padding: '9px 8px',
+                          fontSize: '13px', fontWeight: 600,
+                          color: '#374151', textDecoration: 'none', display: 'block',
+                          background: hoveredBtn === 'comparer' ? 'rgba(45,185,110,0.06)' : 'transparent',
+                          transition: 'all 0.15s ease',
                         }}
+                        onMouseEnter={() => setHoveredBtn('comparer')}
+                        onMouseLeave={() => setHoveredBtn(null)}
                       >
                         <BarChart2 size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Comparer →
                       </a>
@@ -1632,12 +1662,16 @@ export default function ArtisanFichePage() {
                         onClick={copyLink}
                         style={{
                           flex: 1,
-                          border: '1px solid #e5e7eb', borderRadius: '8px',
-                          padding: '9px 8px', fontSize: '13px', fontWeight: 600,
+                          border: `1px solid ${hoveredBtn === 'partager' ? 'var(--color-accent)' : '#e5e7eb'}`,
+                          borderRadius: '8px', padding: '9px 8px',
+                          fontSize: '13px', fontWeight: 600,
                           color: linkCopied ? '#15803d' : '#374151',
-                          background: 'white', cursor: 'pointer',
-                          fontFamily: 'var(--font-body)',
+                          background: hoveredBtn === 'partager' ? 'rgba(45,185,110,0.06)' : 'white',
+                          cursor: 'pointer', fontFamily: 'var(--font-body)',
+                          transition: 'all 0.15s ease',
                         }}
+                        onMouseEnter={() => setHoveredBtn('partager')}
+                        onMouseLeave={() => setHoveredBtn(null)}
                       >
                         {linkCopied
                           ? <><Check size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> Copié</>
@@ -1669,7 +1703,13 @@ export default function ArtisanFichePage() {
                       Vous êtes le dirigeant ?{' '}
                       <a
                         href="/espace-artisan"
-                        style={{ color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}
+                        style={{
+                          color: hoveredBtn === 'revendiquer' ? 'var(--color-accent)' : '#1B4332',
+                          fontWeight: 600, textDecoration: 'none',
+                          transition: 'color 0.15s ease',
+                        }}
+                        onMouseEnter={() => setHoveredBtn('revendiquer')}
+                        onMouseLeave={() => setHoveredBtn(null)}
                       >
                         Revendiquez cette fiche →
                       </a>
@@ -1706,7 +1746,10 @@ export default function ArtisanFichePage() {
               padding: '14px', fontSize: '15px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'var(--font-body)',
               opacity: checkoutLoading ? 0.7 : 1,
+              transition: 'background 0.15s ease',
             }}
+            onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLButtonElement).style.background = '#2D6A4F' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#52B788' }}
           >
             {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
           </button>

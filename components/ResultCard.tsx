@@ -673,7 +673,10 @@ export default function ResultCard({ result, onSelect }: Props) {
                     textDecoration: 'none', padding: '5px 10px',
                     borderRadius: '8px', border: '1px solid var(--color-safe-border)',
                     background: 'var(--color-safe-bg)',
+                    transition: 'background 0.15s ease', cursor: 'pointer',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--color-safe-bg)'}
                 >
                   💶 Calculer mes aides MaPrimeRénov&apos; →
                 </a>
@@ -790,7 +793,9 @@ export default function ResultCard({ result, onSelect }: Props) {
         <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <a
             href={`/nouveau-chantier?nom=${encodeURIComponent(result.nom)}&siret=${encodeURIComponent(result.siret || '')}&type=${encodeURIComponent(result.activite || '')}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box', fontFamily: 'var(--font-body)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px 20px', borderRadius: '12px', background: 'var(--color-accent)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box', fontFamily: 'var(--font-body)', transition: 'background 0.15s ease' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#2D6A4F'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--color-accent)'}
           >
             <ClipboardCheck size={16} />
             Créer un chantier avec cet artisan
@@ -810,6 +815,8 @@ export default function ResultCard({ result, onSelect }: Props) {
                 ? { background: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }
                 : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-muted)' }),
             }}
+            onMouseEnter={e => { if (!surveillanceActive) { e.currentTarget.style.background = 'var(--color-bg)'; e.currentTarget.style.color = 'var(--color-text)' } }}
+            onMouseLeave={e => { if (!surveillanceActive) { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.color = 'var(--color-muted)' } }}
           >
             <Bell size={14} />
             {surveillanceActive ? '✓ Alerte activée' : 'Recevoir une alerte si le statut change'}
@@ -818,14 +825,18 @@ export default function ResultCard({ result, onSelect }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <a
               href={`/comparer?q=${encodeURIComponent(result.siret)}`}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box', transition: 'background 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
             >
               <GitCompare size={14} />
               Comparer
             </a>
             <button
               onClick={() => window.print()}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
             >
               <Download size={14} />
               PDF
@@ -847,8 +858,10 @@ export default function ResultCard({ result, onSelect }: Props) {
             <button
               key={r.siren}
               onClick={() => onSelect?.(r.siren)}
-              style={{ width: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: onSelect ? 'pointer' : 'default', fontFamily: 'var(--font-body)', textAlign: 'left' }}
+              style={{ width: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: onSelect ? 'pointer' : 'default', fontFamily: 'var(--font-body)', textAlign: 'left', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
               className="card-hover"
+              onMouseEnter={e => { if (onSelect) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.10)' } }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <CompanyAvatar nom={r.nom} size={36} />
