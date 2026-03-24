@@ -309,7 +309,7 @@ async function fetchBODACC(siren: string): Promise<BodaccInfo> {
     const annonces: BodaccAnnonce[] = records.map((r: any) => ({
       id: r.id || '',
       date: r.dateparution || '',
-      famille: r.familleavis_lib || '',
+      famille: r.familleavis || r.familleavis_lib || '',
       type: r.typeavis_lib || '',
       tribunal: r.tribunal || undefined,
       details: extractBodaccDetails(r),
@@ -351,13 +351,28 @@ function emptyBodacc(): BodaccInfo {
 }
 
 function extractBodaccDetails(r: any): string {
-  if (r.jugement) {
-    const j = typeof r.jugement === 'string' ? JSON.parse(r.jugement) : r.jugement
-    return j.complementJugement || j.type || ''
-  }
-  if (r.acte) {
-    const a = typeof r.acte === 'string' ? JSON.parse(r.acte) : r.acte
-    return a.categorieCreation || ''
+  try {
+    if (r.jugement) {
+      const j = typeof r.jugement === 'string' ? JSON.parse(r.jugement) : r.jugement
+      return j.nature || j.complementJugement || j.type || ''
+    }
+    if (r.acte) {
+      const a = typeof r.acte === 'string' ? JSON.parse(r.acte) : r.acte
+      return a.typeActe || a.categorieCreation || ''
+    }
+    if (r.modificationsgenerales) {
+      const m = typeof r.modificationsgenerales === 'string' ? JSON.parse(r.modificationsgenerales) : r.modificationsgenerales
+      const mods = Array.isArray(m?.modification) ? m.modification : (m?.modification ? [m.modification] : [])
+      const desc = mods.map((x: any) => x?.descriptif || x?.type || '').filter(Boolean).join(', ')
+      return desc || 'Modification générale'
+    }
+    if (r.depot) {
+      const d = typeof r.depot === 'string' ? JSON.parse(r.depot) : r.depot
+      return d?.categorieDepot || 'Dépôt de documents'
+    }
+    if (r.radiationaurcs) return 'Radiation au RCS'
+  } catch {
+    // ignore parse errors
   }
   return ''
 }

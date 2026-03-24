@@ -87,13 +87,13 @@ interface Etablissement {
 /* ─── BODACC categorization ──────────────────────────────── */
 function categorizeBodacc(annonces: Array<{ famille: string; type: string; date: string; tribunal?: string }>) {
   const proceduresCollectives = annonces.filter(a =>
-    a.famille === 'PROCEDURE_COLLECTIVE' || a.type?.toLowerCase().includes('liquidation') || a.type?.toLowerCase().includes('redressement') || a.type?.toLowerCase().includes('sauvegarde')
+    a.famille === 'collective' || a.type?.toLowerCase().includes('liquidation') || a.type?.toLowerCase().includes('redressement') || a.type?.toLowerCase().includes('sauvegarde')
   )
   const depotComptes = annonces.filter(a =>
-    a.famille === 'BILAN' || a.famille === 'DEPOT_COMPTES' || a.type?.toLowerCase().includes('dépôt') || a.type?.toLowerCase().includes('bilan')
+    a.famille === 'bilan'
   )
   const ventesCoissions = annonces.filter(a =>
-    a.famille === 'VENTE' || a.type?.toLowerCase().includes('vente') || a.type?.toLowerCase().includes('cession')
+    a.famille === 'vente' || a.type?.toLowerCase().includes('vente') || a.type?.toLowerCase().includes('cession')
   )
   const modifications = annonces.filter(a =>
     !proceduresCollectives.includes(a) && !depotComptes.includes(a) && !ventesCoissions.includes(a)
@@ -439,18 +439,22 @@ export default function ArtisanFichePage() {
 
   // ── BODACC helpers ──────────────────────────────────────
   function getBodaccTypeLabel(a: { famille: string; type: string }): string {
-    const f = a.famille?.toUpperCase() ?? ''
+    const f = a.famille?.toLowerCase() ?? ''
     const t = a.type?.toLowerCase() ?? ''
-    if (f === 'PROCEDURE_COLLECTIVE' || t.includes('liquidation') || t.includes('redressement') || t.includes('sauvegarde')) return 'Procédure collective'
-    if (f === 'BILAN' || f === 'DEPOT_COMPTES' || t.includes('dépôt') || t.includes('bilan')) return 'Dépôt de comptes'
-    if (f === 'VENTE' || t.includes('vente') || t.includes('cession')) return 'Vente / Cession'
-    return a.type || 'Modification'
+    if (f === 'collective' || t.includes('liquidation') || t.includes('redressement') || t.includes('sauvegarde')) return 'Procédure collective'
+    if (f === 'bilan') return 'Dépôt de comptes'
+    if (f === 'vente' || t.includes('vente') || t.includes('cession')) return 'Vente / Cession'
+    if (f === 'immatriculation') return 'Création'
+    if (f === 'radiation') return 'Radiation'
+    return 'Modification'
   }
   function getBodaccBadgeStyle(label: string): React.CSSProperties {
     if (label === 'Procédure collective') return { background: '#fef2f2', color: '#dc2626' }
-    if (label === 'Dépôt de comptes') return { background: '#f0fdf4', color: '#15803d' }
-    if (label === 'Vente / Cession') return { background: '#f5f5f5', color: '#6b7280' }
-    return { background: '#f0f4ff', color: '#3730a3' }
+    if (label === 'Radiation') return { background: '#fef2f2', color: '#991b1b' }
+    if (label === 'Dépôt de comptes') return { background: '#eff6ff', color: '#1d4ed8' }
+    if (label === 'Vente / Cession') return { background: '#fff7ed', color: '#c2410c' }
+    if (label === 'Création') return { background: '#f0fdf4', color: '#15803d' }
+    return { background: '#f5f5f5', color: '#6b7280' }
   }
   const bodaccSorted = [...(bodacc.annonces ?? [])].sort((a, b) => {
     const da = new Date(a.date).getTime()
