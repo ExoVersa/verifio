@@ -6,7 +6,7 @@ import {
   MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
   Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
   Check, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
-  Smartphone, Link,
+  Smartphone, Link, Download,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { dirigeantSlug } from '@/lib/dirigeant'
@@ -1542,7 +1542,7 @@ export default function ArtisanFichePage() {
                       {/* En-tête contextuel */}
                       <div style={{ marginBottom: '14px' }}>
                         <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: isRisque ? '#991b1b' : '#14532d', fontFamily: 'var(--font-body)', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {isRisque ? <><AlertCircle size={16} strokeWidth={1.5} /> Vous allez signer un contrat risqué</> : <><Shield size={16} strokeWidth={1.5} /> Sécurisez votre chantier pour 19,90€</>}
+                          {isRisque ? <><AlertCircle size={16} strokeWidth={1.5} /> Vous allez signer un contrat risqué</> : <><Shield size={16} strokeWidth={1.5} /> Sécurisez votre chantier pour 4,90€</>}
                         </p>
                         <p style={{ margin: 0, fontSize: '12px', color: isRisque ? '#b91c1c' : '#166534', lineHeight: 1.5 }}>
                           {isRisque
@@ -1554,8 +1554,8 @@ export default function ArtisanFichePage() {
                       {/* 3 arguments visuels */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px', textAlign: 'left' }}>
                         {[
+                          { Icon: Download, titre: 'Rapport PDF complet', desc: "Rapport complet de l'artisan en PDF" },
                           { Icon: FileText, titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
-                          { Icon: Banknote, titre: 'Prix du marché', desc: 'Votre devis est-il au juste prix ?' },
                           { Icon: Bell, titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
                         ].map(({ Icon, titre, desc }) => (
                           <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -1594,7 +1594,7 @@ export default function ArtisanFichePage() {
                         onMouseEnter={e => !checkoutLoading && ((e.currentTarget as HTMLButtonElement).style.background = '#3d9c6e')}
                         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#52B788')}
                       >
-                        {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 19,90€ →'}
+                        {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
                       </button>
                       <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'center' }}>
                         Paiement sécurisé · Satisfait ou remboursé 14j
@@ -1708,7 +1708,7 @@ export default function ArtisanFichePage() {
               opacity: checkoutLoading ? 0.7 : 1,
             }}
           >
-            {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 19,90€ →'}
+            {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
           </button>
         </div>
       )}
