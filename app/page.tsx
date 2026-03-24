@@ -4,16 +4,41 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { scoreColor } from '@/lib/score'
+import type { SearchCandidate } from '@/types'
+
+const CHIPS = [
+  { emoji: '🔧', label: 'Plombier' },
+  { emoji: '⚡', label: 'Électricien' },
+  { emoji: '🧱', label: 'Maçon' },
+  { emoji: '🏠', label: 'Couvreur' },
+  { emoji: '🌡', label: 'Chauffagiste' },
+  { emoji: '🪟', label: 'Menuisier' },
+]
+
+function getInitials(nom: string) {
+  const w = nom.trim().split(/\s+/)
+  if (w.length === 1) return w[0].slice(0, 2).toUpperCase()
+  return ((w[0]?.[0] ?? '') + (w[1]?.[0] ?? '')).toUpperCase()
+}
+
+function getDept(cp?: string) {
+  if (!cp) return ''
+  return cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2)
+}
 
 /* ─── Hero Search ────────────────────────────────────────── */
 function HeroSearch() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState<Array<{ siret: string; nom: string; ville: string; statut: string }>>([])
+  const [results, setResults] = useState<SearchCandidate[]>([])
+  const [empty, setEmpty] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const router = useRouter()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -25,47 +50,62 @@ function HeroSearch() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  function handleChange(val: string) {
-    setQuery(val)
+  function search(val: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (val.trim().length < 2) { setResults([]); setShowDropdown(false); return }
+    if (abortRef.current) abortRef.current.abort()
+    if (val.trim().length < 2) { setResults([]); setEmpty(false); setShowDropdown(false); return }
     debounceRef.current = setTimeout(async () => {
+      abortRef.current = new AbortController()
       setLoading(true)
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(val.trim())}`)
+        const res = await fetch(`/api/recherche?q=${encodeURIComponent(val.trim())}&per_page=6`, { signal: abortRef.current.signal })
         const data = await res.json()
-        if (Array.isArray(data)) {
-          setResults(data.slice(0, 5)); setShowDropdown(true)
-        } else if (data.siret) {
-          setResults([data]); setShowDropdown(true)
-        }
-      } catch { /* ignore */ }
+        if (data.isExact && data.siret) { router.push(`/artisan/${data.siret}`); return }
+        const list: SearchCandidate[] = data.results || []
+        setResults(list.slice(0, 6))
+        setEmpty(list.length === 0)
+        setShowDropdown(true)
+      } catch { /* aborted or network */ }
       finally { setLoading(false) }
-    }, 350)
+    }, 300)
+  }
+
+  function handleChange(val: string) {
+    setQuery(val)
+    search(val)
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
+    setShowDropdown(false)
     router.push(`/recherche?q=${encodeURIComponent(query.trim())}`)
   }
 
+  function handleChip(label: string) {
+    setQuery(label)
+    inputRef.current?.focus()
+    search(label)
+  }
+
   return (
-    <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={wrapperRef} style={{ position: 'relative', width: '100%', maxWidth: '680px', margin: '0 auto' }}>
       <form onSubmit={handleSubmit}>
         <div style={{
           display: 'flex', alignItems: 'center', background: 'white',
-          borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          borderRadius: '20px', boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
           overflow: 'hidden', height: '72px',
         }}>
-          <div style={{ padding: '0 18px', color: '#8A8A8A', flexShrink: 0 }}>
+          <div style={{ padding: '0 18px', color: '#9ca3af', flexShrink: 0 }}>
             <Search size={22} />
           </div>
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="Nom de l'artisan, SIRET, ville..."
+            onFocus={() => results.length > 0 && setShowDropdown(true)}
+            placeholder="Nom de l'artisan, SIRET, entreprise..."
             style={{
               flex: 1, border: 'none', outline: 'none',
               fontSize: '16px', fontFamily: 'var(--font-body)',
@@ -77,13 +117,11 @@ function HeroSearch() {
               type="submit"
               style={{
                 background: '#52B788', color: 'white', border: 'none',
-                height: '56px', padding: '0 28px', borderRadius: '12px',
+                height: '56px', padding: '0 28px', borderRadius: '14px',
                 fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-body)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center',
-                gap: '8px', whiteSpace: 'nowrap', transition: 'opacity 0.15s',
+                gap: '8px', whiteSpace: 'nowrap',
               }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >
               {loading
                 ? <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
@@ -95,61 +133,108 @@ function HeroSearch() {
       </form>
 
       {/* Dropdown */}
-      {showDropdown && results.length > 0 && (
+      {showDropdown && (
         <div style={{
-          position: 'absolute', top: '76px', left: 0, right: 0,
+          position: 'absolute', top: '78px', left: 0, right: 0,
           background: 'white', borderRadius: '16px',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.15)', zIndex: 20, overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.22)', zIndex: 300, overflow: 'hidden',
         }}>
-          {results.map((r, i) => (
-            <button key={r.siret} onClick={() => router.push(`/artisan/${r.siret}`)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                width: '100%', padding: '14px 20px', border: 'none',
-                background: 'transparent', cursor: 'pointer', textAlign: 'left',
-                borderBottom: i < results.length - 1 ? '1px solid #F0EFE9' : 'none',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                background: '#E8F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, fontSize: '13px', fontWeight: 700, color: '#1B4332',
-              }}>
-                {r.nom.slice(0, 2).toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#8A8A8A' }}>{r.ville} · SIRET {r.siret}</p>
-              </div>
-              <span style={{
-                fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px',
-                background: r.statut === 'actif' ? '#f0fdf4' : '#fef2f2',
-                color: r.statut === 'actif' ? '#16a34a' : '#dc2626', flexShrink: 0,
-              }}>
-                {r.statut === 'actif' ? 'Actif' : 'Fermé'}
-              </span>
-            </button>
-          ))}
+          {/* Skeleton */}
+          {loading && results.length === 0 && (
+            <div style={{ padding: '12px 16px' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 0', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#f3f4f6', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: 14, background: '#f3f4f6', borderRadius: 4, width: '60%', marginBottom: 6 }} />
+                    <div style={{ height: 11, background: '#f3f4f6', borderRadius: 4, width: '40%' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Empty state */}
+          {!loading && empty && (
+            <div style={{ padding: '28px 20px', textAlign: 'center' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>Aucune entreprise trouvée</p>
+              <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Essayez avec le SIRET directement</p>
+            </div>
+          )}
+          {/* Results */}
+          {results.map((r, i) => {
+            const dept = getDept(r.codePostal)
+            const sc = r.score ?? 0
+            const col = scoreColor(sc)
+            return (
+              <button key={r.siret} onClick={() => { setShowDropdown(false); router.push(`/artisan/${r.siret}`) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  width: '100%', padding: '12px 16px', border: 'none',
+                  background: 'transparent', cursor: 'pointer', textAlign: 'left',
+                  borderBottom: i < results.length - 1 ? '1px solid #f3f4f6' : 'none',
+                  fontFamily: 'var(--font-body)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
+                  background: '#E8F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '13px', fontWeight: 700, color: '#1B4332',
+                }}>
+                  {getInitials(r.nom)}
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</p>
+                    <span style={{
+                      fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '20px', flexShrink: 0,
+                      background: r.statut === 'actif' ? '#f0fdf4' : '#fef2f2',
+                      color: r.statut === 'actif' ? '#16a34a' : '#dc2626',
+                    }}>
+                      {r.statut === 'actif' ? 'ACTIF' : 'FERMÉ'}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+                    {r.formeJuridique && <span>{r.formeJuridique} · </span>}
+                    {r.ville && <span>{r.ville}{dept ? ` (${dept})` : ''}</span>}
+                  </p>
+                </div>
+                {/* Score */}
+                {sc > 0 && (
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: col, flexShrink: 0 }}>
+                    {sc}/100
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       )}
 
-      {/* Suggestion chips */}
-      <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
-        {['Plombier Paris', 'Électricien Lyon', 'Maçon Bordeaux'].map((tag) => (
+      {/* Chips */}
+      <div style={{
+        display: 'flex', gap: '8px', marginTop: '18px',
+        overflowX: 'auto', paddingBottom: '4px',
+        msOverflowStyle: 'none', scrollbarWidth: 'none',
+      } as React.CSSProperties}>
+        {CHIPS.map(({ emoji, label }) => (
           <button
-            key={tag}
-            onClick={() => { setQuery(tag); handleChange(tag) }}
+            key={label}
+            onClick={() => handleChip(label)}
             style={{
-              background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)',
+              background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)',
               border: '1px solid rgba(255,255,255,0.3)', borderRadius: '100px',
-              padding: '6px 14px', fontSize: '13px', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', transition: 'all 0.2s',
+              padding: '7px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0,
+              transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
           >
-            {tag}
+            {emoji} {label}
           </button>
         ))}
       </div>
@@ -339,9 +424,8 @@ export default function HomePage() {
       <SiteHeader />
 
       {/* ── SECTION 1 : HERO ── */}
-      <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 0 100px' }}>
-        {/* Background photo — Ken Burns */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+      <section style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {/* Background photo */}
         <div className="hero-bg-photo" style={{
           position: 'absolute', inset: 0,
           backgroundImage: 'url(https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1400)',
@@ -350,94 +434,43 @@ export default function HomePage() {
         {/* Gradient overlay */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(27,67,50,0.92) 0%, rgba(27,67,50,0.75) 100%)',
+          background: 'linear-gradient(135deg, rgba(27,67,50,0.92) 0%, rgba(27,67,50,0.78) 100%)',
         }} />
 
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
-          <div className="hero-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 380px',
-            gap: '64px',
-            alignItems: 'center',
+        <div style={{ position: 'relative', zIndex: 1, padding: '120px 24px 80px', textAlign: 'center' }}>
+          {/* Badge pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(82,183,136,0.18)', border: '1px solid rgba(82,183,136,0.45)',
+            borderRadius: '100px', padding: '8px 18px', fontSize: '13px', color: '#52B788',
+            marginBottom: '28px', fontWeight: 600,
           }}>
-            {/* ── Colonne gauche ── */}
-            <div style={{ maxWidth: '620px' }}>
-              {/* Badge pill */}
-              <div className="hero-badge" style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                background: 'rgba(82,183,136,0.18)',
-                border: '1px solid rgba(82,183,136,0.45)',
-                borderRadius: '100px', padding: '8px 18px',
-                fontSize: '13px', color: '#52B788',
-                marginBottom: '24px', fontWeight: 600,
-              }}>
-                🛡️ Données officielles · Gratuit pour les particuliers
-              </div>
+            🛡️ Données officielles · Gratuit pour les particuliers
+          </div>
 
-              {/* H1 — 3 lines in cascade */}
-              <h1 style={{
-                fontFamily: 'var(--font-display)', fontWeight: 800,
-                fontSize: 'clamp(44px, 5.5vw, 72px)',
-                color: 'white', lineHeight: 1.1, margin: '0 0 24px',
-                letterSpacing: '-0.02em',
-              }}>
-                <span className="hero-h1-l1" style={{ display: 'block' }}>Vérifiez votre</span>
-                <span className="hero-h1-l2" style={{ display: 'block' }}>
-                  <span style={{ color: '#52B788' }}>artisan</span> avant
-                </span>
-                <span className="hero-h1-l3" style={{ display: 'block' }}>qu&apos;il soit trop tard</span>
-              </h1>
+          {/* H1 */}
+          <h1 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: 'clamp(36px, 5.5vw, 68px)',
+            color: 'white', lineHeight: 1.1, margin: '0 auto 20px',
+            letterSpacing: '-0.02em', maxWidth: '820px',
+          }}>
+            Vérifiez votre <span style={{ color: '#52B788' }}>artisan</span><br />
+            avant qu&apos;il soit trop tard
+          </h1>
 
-              {/* Sous-titre */}
-              <p className="hero-sub" style={{
-                fontSize: '18px', color: 'rgba(255,255,255,0.8)',
-                lineHeight: 1.6, margin: '0 0 36px',
-                fontFamily: 'var(--font-body)',
-              }}>
-                26 000 arnaques signalées en 2024.<br />
-                Vérifiez gratuitement en 30 secondes<br />
-                avec les données officielles.
-              </p>
+          {/* Sous-titre */}
+          <p style={{
+            fontSize: '18px', color: 'rgba(255,255,255,0.8)',
+            lineHeight: 1.6, margin: '0 auto 44px',
+            fontFamily: 'var(--font-body)', maxWidth: '520px',
+          }}>
+            26 000 arnaques signalées en 2024 —<br />vérifiez en 30 secondes
+          </p>
 
-              {/* Search bar */}
-              <div className="hero-search">
-                <HeroSearch />
-              </div>
-            </div>
-
-            {/* ── Colonne droite — mockup card ── */}
-            <div className="hero-card-col" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <div style={{ position: 'relative' }}>
-                {/* Floating badge — top left */}
-                <FloatingBadge
-                  animClass="fb-1"
-                  style={{ top: '-12px', left: '-24px', background: 'white', color: '#1B4332' }}
-                >
-                  ✓ SIRET vérifié INSEE
-                </FloatingBadge>
-
-                {/* Floating badge — top right */}
-                <FloatingBadge
-                  animClass="fb-3"
-                  style={{ top: '24px', right: '-28px', background: '#F0FDF4', color: '#166534' }}
-                >
-                  📋 Certifié RGE
-                </FloatingBadge>
-
-                {/* Card */}
-                <div className="hero-card-wrap">
-                  <HeroMockupCard />
-                </div>
-
-                {/* Floating badge — bottom right */}
-                <FloatingBadge
-                  animClass="fb-2"
-                  style={{ bottom: '24px', right: '-24px', background: '#FFF8E7', color: '#B45309' }}
-                >
-                  🔔 Alerte activée
-                </FloatingBadge>
-              </div>
-            </div>
+          {/* Search bar */}
+          <div style={{ padding: '0 16px' }}>
+            <HeroSearch />
           </div>
         </div>
       </section>
