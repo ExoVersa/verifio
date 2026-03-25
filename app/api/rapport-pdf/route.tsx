@@ -313,6 +313,112 @@ function RapportPDF({
   )
 }
 
+// ── Contrat PDF ───────────────────────────────────────────────────────────────
+function buildContratText(nomEntreprise: string, siret: string, adresse: string, nomDirigeant: string) {
+  return [
+    'CONTRAT DE PRESTATION DE TRAVAUX',
+    '═══════════════════════════════════════════════════════',
+    'Entre les soussignés :',
+    '',
+    "L'ARTISAN",
+    `Raison sociale : ${nomEntreprise}`,
+    `SIRET : ${siret}`,
+    `Adresse : ${adresse}`,
+    `Représenté par : ${nomDirigeant}`,
+    '',
+    'LE CLIENT',
+    'Nom : ___________________________',
+    'Adresse : ___________________________',
+    'Téléphone : ___________________________',
+    'Email : ___________________________',
+    '',
+    'OBJET DES TRAVAUX',
+    'Nature des travaux : ___________________________',
+    'Adresse du chantier : ___________________________',
+    'Date de début prévue : ___________________________',
+    'Durée estimée : ___________________________',
+    'Matériaux principaux : ___________________________',
+    '',
+    'CONDITIONS FINANCIÈRES',
+    'Montant total TTC : ___________________________',
+    'Acompte à la signature (max 30 %) : ___________________________',
+    '2ème versement (mi-chantier) : ___________________________',
+    'Solde à la réception : ___________________________',
+    'Mode de paiement : ___________________________',
+    '',
+    'GARANTIES',
+    "L'artisan certifie être couvert par une assurance décennale.",
+    'Numéro de police : ___________________________',
+    'Assureur : ___________________________',
+    'Validité : ___________________________',
+    '',
+    'CONDITIONS GÉNÉRALES',
+    '- Les travaux supplémentaires feront l\'objet d\'un avenant écrit.',
+    '- Tout retard de paiement entraîne des pénalités de 3x le taux légal.',
+    '- En cas de litige, les parties s\'engagent à tenter une médiation',
+    '  avant tout recours judiciaire.',
+    '- Le présent contrat est soumis au droit français.',
+    '',
+    'RÉCEPTION DES TRAVAUX',
+    'Les travaux feront l\'objet d\'un procès-verbal de réception',
+    'signé contradictoirement par les deux parties.',
+    'La réception déclenche :',
+    '- Garantie de parfait achèvement (1 an)',
+    '- Garantie biennale (2 ans)',
+    '- Garantie décennale (10 ans)',
+    '',
+    '═══════════════════════════════════════════════════════',
+    'Fait à _______________, le _______________',
+    '',
+    'Signature de l\'artisan :        Signature du client :',
+    '(précédée de "Lu et approuvé")  (précédée de "Lu et approuvé")',
+    '',
+    '___________________________     ___________________________',
+  ]
+}
+
+const contratStyles = StyleSheet.create({
+  page: { fontFamily: 'Helvetica', fontSize: 9, padding: 40, color: '#1a1a1a', backgroundColor: '#ffffff' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottomWidth: 2, borderBottomColor: '#2db96e' },
+  logo: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: '#2db96e' },
+  meta: { fontSize: 8, color: '#888', textAlign: 'right' },
+  line: { marginBottom: 3, lineHeight: 1.5 },
+  bold: { fontFamily: 'Helvetica-Bold', fontSize: 10 },
+  separator: { fontSize: 9, color: '#aaa', marginBottom: 3 },
+  footer: { position: 'absolute', bottom: 24, left: 40, right: 40, borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 6, flexDirection: 'row', justifyContent: 'space-between' },
+  footerText: { fontSize: 7, color: '#999' },
+})
+
+function ContratPDF({ lines, dateGeneration, nomEntreprise }: { lines: string[]; dateGeneration: string; nomEntreprise: string }) {
+  return (
+    <Document title={`Contrat — ${nomEntreprise}`} author="Verifio">
+      <Page size="A4" style={contratStyles.page}>
+        <View style={contratStyles.header}>
+          <View>
+            <Text style={contratStyles.logo}>Verifio</Text>
+            <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>Modèle de contrat de prestation</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={contratStyles.meta}>Généré le {dateGeneration}</Text>
+            <Text style={[contratStyles.meta, { color: '#2db96e', fontFamily: 'Helvetica-Bold', marginTop: 2 }]}>verifio.vercel.app</Text>
+          </View>
+        </View>
+        {lines.map((line, i) => {
+          if (line.startsWith('═')) return <Text key={i} style={contratStyles.separator}>{line}</Text>
+          if (line === 'CONTRAT DE PRESTATION DE TRAVAUX') return <Text key={i} style={[contratStyles.bold, { marginBottom: 6, fontSize: 12, color: '#1B4332' }]}>{line}</Text>
+          const isSectionHeader = /^[A-ZÀÈÉÊËÎÏÔÙÛÜ\s'&]+$/.test(line) && line.length > 3 && !line.startsWith('-') && !line.startsWith('(') && !line.includes(':') && !line.includes('___')
+          if (isSectionHeader && line.trim().length > 0) return <Text key={i} style={[contratStyles.bold, { marginTop: 10, marginBottom: 4, color: '#1B4332', fontSize: 9 }]}>{line}</Text>
+          return <Text key={i} style={contratStyles.line}>{line || ' '}</Text>
+        })}
+        <View style={contratStyles.footer} fixed>
+          <Text style={contratStyles.footerText}>Modèle non contractuel — à adapter selon votre situation</Text>
+          <Text style={contratStyles.footerText}>Verifio · verifio.vercel.app</Text>
+        </View>
+      </Page>
+    </Document>
+  )
+}
+
 async function getSynthese(result: Awaited<ReturnType<typeof fetchCompany>>): Promise<SyntheseResult | null> {
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
@@ -344,11 +450,15 @@ async function getSynthese(result: Awaited<ReturnType<typeof fetchCompany>>): Pr
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
+  const type = searchParams.get('type') ?? 'rapport'
   const siret = searchParams.get('siret')
   const session_id = searchParams.get('session_id')
 
-  if (!session_id || !siret) {
-    return new Response('Paramètres manquants', { status: 400 })
+  if (!session_id) {
+    return new Response('Paramètre session_id manquant', { status: 400 })
+  }
+  if (!siret) {
+    return new Response('Paramètre siret manquant', { status: 400 })
   }
 
   // Vérification Stripe
@@ -356,9 +466,11 @@ export async function GET(req: NextRequest) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
     const session = await stripe.checkout.sessions.retrieve(session_id)
     if (session.payment_status !== 'paid') {
+      console.error('[rapport-pdf] Paiement non confirmé pour session', session_id)
       return new Response('Paiement non confirmé', { status: 403 })
     }
-  } catch {
+  } catch (err) {
+    console.error('[rapport-pdf] Erreur vérification Stripe:', err)
     return new Response('Session Stripe invalide', { status: 403 })
   }
 
@@ -366,22 +478,51 @@ export async function GET(req: NextRequest) {
   let result: Awaited<ReturnType<typeof fetchCompany>>
   try {
     result = await fetchCompany(siret)
-  } catch {
+  } catch (err) {
+    console.error('[rapport-pdf] Erreur fetchCompany pour siret', siret, ':', err)
     return new Response('Erreur chargement données artisan', { status: 500 })
   }
 
-  const synthese = await getSynthese(result)
   const dateGeneration = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  const pdfBuffer = await renderToBuffer(
-    <RapportPDF result={result} synthese={synthese} dateGeneration={dateGeneration} />
-  )
+  // Génération PDF contrat
+  if (type === 'contrat') {
+    try {
+      const dirigeant = result.dirigeants?.[0]
+      const nomDirigeant = dirigeant ? `${dirigeant.nom}${dirigeant.qualite ? ` (${dirigeant.qualite})` : ''}` : 'Non renseigné'
+      const adresse = result.adresse || 'Non renseignée'
+      const lines = buildContratText(result.nom, result.siret, adresse, nomDirigeant)
+      const pdfBuffer = await renderToBuffer(
+        <ContratPDF lines={lines} dateGeneration={dateGeneration} nomEntreprise={result.nom} />
+      )
+      return new Response(new Uint8Array(pdfBuffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="contrat-verifio-${siret}.pdf"`,
+          'Cache-Control': 'no-store',
+        },
+      })
+    } catch (err) {
+      console.error('[rapport-pdf] Erreur génération PDF contrat:', err)
+      return new Response('Erreur génération PDF contrat', { status: 500 })
+    }
+  }
 
-  return new Response(new Uint8Array(pdfBuffer), {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="rapport-verifio-${siret}.pdf"`,
-      'Cache-Control': 'no-store',
-    },
-  })
+  // Génération PDF rapport complet
+  try {
+    const synthese = await getSynthese(result)
+    const pdfBuffer = await renderToBuffer(
+      <RapportPDF result={result} synthese={synthese} dateGeneration={dateGeneration} />
+    )
+    return new Response(new Uint8Array(pdfBuffer), {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="rapport-verifio-${siret}.pdf"`,
+        'Cache-Control': 'no-store',
+      },
+    })
+  } catch (err) {
+    console.error('[rapport-pdf] Erreur génération PDF rapport:', err)
+    return new Response('Erreur génération PDF rapport', { status: 500 })
+  }
 }
