@@ -692,8 +692,8 @@ function RapportsTab({
       missing.map(r =>
         fetch(`/api/artisan/public?siret=${encodeURIComponent(r.siret)}`)
           .then(res => res.json())
-          .then(data => ({ siret: r.siret, nom: data?.nom || data?.name || '' }))
-          .catch(() => ({ siret: r.siret, nom: '' }))
+          .then(data => ({ siret: r.siret, nom: data?.nomEntreprise ?? null }))
+          .catch(() => ({ siret: r.siret, nom: null }))
       )
     ).then(results => {
       const map: Record<string, string> = {}
@@ -753,7 +753,7 @@ function RapportsTab({
           <Shield size={20} color="var(--color-accent)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: '0 0 2px', fontSize: '16px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {r.nom_entreprise || noms[r.siret] || `SIRET ${r.siret}`}
+              {r.nom_entreprise || noms[r.siret] || 'Entreprise inconnue'}
             </p>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
               SIRET {r.siret}

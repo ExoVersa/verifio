@@ -245,6 +245,7 @@ export default async function SuccesPage({
         // New rapport — insert
         const { data: inserted } = await supabaseAdmin.from('rapports').insert({
           user_id: userId, siret, stripe_session_id: session_id, montant: 490, statut: 'genere',
+          nom_entreprise: result?.nom || null,
         }).select('id').single()
         rapportId = inserted?.id ?? null
 
