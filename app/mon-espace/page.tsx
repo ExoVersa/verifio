@@ -956,6 +956,7 @@ function MonEspaceInner() {
       setChantiers(withStats)
     }
 
+    console.log('RAPPORTS:', rapportsRes.data, rapportsRes.error)
     setSurveillances(survRes.data ?? [])
     setSearches(searchRes.data ?? [])
     setRapports(rapportsRes.data ?? [])

@@ -337,6 +337,8 @@ export default function ArtisanFichePage() {
   useEffect(() => {
     if (!siret) return
     supabase.auth.getUser().then(({ data: { user } }) => {
+      console.log('CHECK RAPPORT pour SIRET:', siret)
+      console.log('USER ID:', user?.id)
       if (!user) return
       supabase
         .from('rapports')
@@ -344,7 +346,10 @@ export default function ArtisanFichePage() {
         .eq('user_id', user.id)
         .eq('siret', siret)
         .maybeSingle()
-        .then(({ data }) => { if (data) setRapportExistant(data) })
+        .then(({ data, error }) => {
+          console.log('RAPPORT FOUND:', data, error)
+          if (data) setRapportExistant(data)
+        })
     })
   }, [siret])
 
@@ -360,7 +365,7 @@ export default function ArtisanFichePage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'serenite', siret, nom: result?.nom }),
+        body: JSON.stringify({ plan: 'serenite', siret, nom: result?.nom, user_id: user.id }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url

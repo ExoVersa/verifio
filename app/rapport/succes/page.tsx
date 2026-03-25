@@ -121,18 +121,35 @@ export default async function SuccesPage({
       redirect('/recherche')
     }
 
-    // Persistance dans rapports (non bloquant)
+    // Persistance dans rapports
+    const userId = stripeSession.metadata?.user_id || null
+    console.log('USER ID from Stripe metadata:', userId)
+    console.log('SESSION ID:', session_id)
+    console.log('SIRET:', siret)
+
     if (siret) {
       try {
         const supabaseAdmin = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
         )
-        await supabaseAdmin.from('rapports').upsert(
-          { siret, stripe_session_id: session_id, montant: 490, statut: 'genere' },
-          { onConflict: 'stripe_session_id', ignoreDuplicates: true },
-        )
-      } catch { /* non bloquant */ }
+        const { data, error } = await supabaseAdmin
+          .from('rapports')
+          .upsert(
+            {
+              user_id: userId,
+              siret,
+              stripe_session_id: session_id,
+              montant: 490,
+              statut: 'genere',
+            },
+            { onConflict: 'stripe_session_id', ignoreDuplicates: false },
+          )
+        console.log('INSERT RAPPORT RESULT:', data, error)
+        if (error) console.error('INSERT RAPPORT ERROR:', error)
+      } catch (e) {
+        console.error('INSERT RAPPORT EXCEPTION:', e)
+      }
     }
   } catch {
     redirect('/recherche')
