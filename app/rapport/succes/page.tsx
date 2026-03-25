@@ -1,21 +1,53 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, Sparkles, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft } from 'lucide-react'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { fetchCompany } from '@/lib/fetchCompany'
 import ScoreRing from '@/components/ScoreRing'
-import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
+import SyntheseIA from '@/components/SyntheseIA'
+import BoutonPDF from '@/components/BoutonPDF'
+import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
-const alertIcons: Record<AlertType, React.ReactNode> = {
-  safe: <CheckCircle2 size={15} />,
-  warn: <AlertCircle size={15} />,
-  danger: <XCircle size={15} />,
-  info: <Info size={15} />,
+// ── Libellés BODACC en clair ────────────────────────────────────────────────
+const LIBELLES_BODACC: Record<string, string> = {
+  dpc: 'Dépôt de comptes',
+  vente: 'Vente ou cession',
+  immatriculation: 'Immatriculation',
+  modification: 'Modification',
+  radiation: 'Radiation',
+  collective: 'Procédure collective',
+  redressement: 'Redressement judiciaire',
+  liquidation: 'Liquidation judiciaire',
+  sauvegarde: 'Procédure de sauvegarde',
 }
 
+function getLibelleBodacc(type: string): string {
+  if (!type) return ''
+  const key = type.toLowerCase().trim()
+  if (LIBELLES_BODACC[key]) return LIBELLES_BODACC[key]
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+function isProcedureCollective(annonce: BodaccAnnonce): boolean {
+  const f = annonce.famille?.toLowerCase() ?? ''
+  const t = annonce.type?.toLowerCase() ?? ''
+  return (
+    f.includes('procédure') ||
+    f.includes('collective') ||
+    f.includes('redressement') ||
+    f.includes('liquidation') ||
+    f.includes('sauvegarde') ||
+    t === 'collective' ||
+    t === 'redressement' ||
+    t === 'liquidation' ||
+    t === 'sauvegarde'
+  )
+}
+
+// ── Couleurs famille BODACC ──────────────────────────────────────────────────
 const FAMILLE_COLORS: Record<string, string> = {
   'Créations': 'var(--color-safe)',
   'Immatriculations': 'var(--color-safe)',
@@ -28,45 +60,17 @@ const FAMILLE_COLORS: Record<string, string> = {
   'Dépôts des comptes': 'var(--color-muted)',
 }
 
+const alertIcons: Record<AlertType, React.ReactNode> = {
+  safe: <CheckCircle2 size={15} />,
+  warn: <AlertCircle size={15} />,
+  danger: <XCircle size={15} />,
+  info: <Info size={15} />,
+}
+
 function formatDate(d: string) {
   if (!d) return undefined
   try { return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) }
   catch { return d }
-}
-
-async function getAISummary(result: SearchResult): Promise<string> {
-  if (!process.env.ANTHROPIC_API_KEY) return ''
-  try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const prompt = `Tu es un expert en vérification d'entreprises du bâtiment français. Rédige une synthèse concise (3-4 phrases max) en français pour aider un particulier à décider s'il peut faire confiance à cet artisan.
-
-Données de l'entreprise :
-- Nom : ${result.nom}
-- Statut : ${result.statut}
-- Score de fiabilité : ${result.score}/100
-- Activité : ${result.activite}
-- Ancienneté : créée le ${result.dateCreation ? formatDate(result.dateCreation) : 'inconnue'}
-- Capital social : ${result.capitalSocial !== undefined ? result.capitalSocial.toLocaleString('fr-FR') + ' €' : 'non renseigné'}
-- Effectif : ${result.effectif || 'non renseigné'}
-- Certifié RGE : ${result.rge.certifie ? 'Oui (' + result.rge.domaines.slice(0, 2).join(', ') + ')' : 'Non'}
-- Procédure collective : ${result.bodacc.procedureCollective ? 'OUI — ' + (result.bodacc.typeProcedure || 'type inconnu') : 'Non'}
-- Changement dirigeant récent : ${result.bodacc.changementDirigeantRecent ? 'Oui' : 'Non'}
-- Dirigeants : ${result.dirigeants.map(d => `${d.prenoms || ''} ${d.nom} (${d.qualite})`).join(', ') || 'inconnus'}
-- Alertes : ${result.alerts.map(a => a.message).join(' | ')}
-
-Synthèse (sans intro comme "Voici" ou "Cette entreprise") :`
-
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const block = message.content[0]
-    return block.type === 'text' ? block.text.trim() : ''
-  } catch {
-    return ''
-  }
 }
 
 export default async function SuccesPage({
@@ -93,7 +97,7 @@ export default async function SuccesPage({
       redirect('/recherche')
     }
 
-    // ── Persistance dans la table rapports ──────────────────────────────
+    // Persistance dans rapports (non bloquant)
     if (siret) {
       try {
         const supabaseAdmin = createClient(
@@ -101,24 +105,16 @@ export default async function SuccesPage({
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
         )
         await supabaseAdmin.from('rapports').upsert(
-          {
-            siret,
-            stripe_session_id: session_id,
-            montant: 490,
-            statut: 'genere',
-          },
+          { siret, stripe_session_id: session_id, montant: 490, statut: 'genere' },
           { onConflict: 'stripe_session_id', ignoreDuplicates: true },
         )
-      } catch {
-        // Non bloquant — le rapport s'affiche même si l'insert échoue
-      }
+      } catch { /* non bloquant */ }
     }
   } catch {
-    // Session Stripe invalide, expirée ou clé manquante
     redirect('/recherche')
   }
 
-  // ── Chargement des données entreprise ────────────────────────────────────
+  // ── Données artisan manquantes ───────────────────────────────────────────
   if (!siret) {
     return (
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--color-bg)' }}>
@@ -130,19 +126,34 @@ export default async function SuccesPage({
     )
   }
 
+  // ── Chargement données entreprise ────────────────────────────────────────
   let result: SearchResult | null = null
   let fetchError = ''
-  let aiSummary = ''
 
   try {
     result = await fetchCompany(siret)
-    aiSummary = await getAISummary(result)
   } catch (err: any) {
     fetchError = err.message || 'Erreur lors du chargement des données.'
   }
 
   const statutColor = result?.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
   const statutBg = result?.statut === 'actif' ? 'var(--color-safe-bg)' : 'var(--color-danger-bg)'
+
+  // Input pour la synthèse IA (passé au composant client)
+  const syntheseInput = result ? {
+    nom: result.nom,
+    siret: result.siret,
+    score: result.score,
+    statut: result.statut,
+    dateCreation: result.dateCreation,
+    formeJuridique: result.formeJuridique,
+    effectif: result.effectif || '',
+    certifieRge: result.rge.certifie,
+    domainesRge: result.rge.domaines,
+    dirigeants: result.dirigeants.map(d => ({ nom: d.nom, qualite: d.qualite, anneeNaissance: d.anneeNaissance })),
+    nbAnnoncesBodacc: result.bodacc.annonces.length,
+    proceduresCollectives: result.bodacc.annonces.filter(isProcedureCollective).length,
+  } : null
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -155,13 +166,13 @@ export default async function SuccesPage({
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
+        flexWrap: 'wrap',
       }}>
         <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
         <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
           Verifio
         </span>
         <span style={{
-          marginLeft: 'auto',
           fontSize: '12px', fontWeight: 600,
           color: 'var(--color-safe)',
           background: 'var(--color-safe-bg)',
@@ -171,6 +182,11 @@ export default async function SuccesPage({
           <CheckCircle2 size={12} />
           Rapport complet débloqué
         </span>
+        {result && (
+          <div style={{ marginLeft: 'auto' }}>
+            <BoutonPDF siret={siret} sessionId={session_id} />
+          </div>
+        )}
       </header>
 
       <section style={{ maxWidth: '680px', margin: '0 auto', padding: '32px 24px' }}>
@@ -192,13 +208,13 @@ export default async function SuccesPage({
         {result && (
           <div className="result-card fade-up">
 
-            {/* Confirmation banner */}
+            {/* 1. Bannière confirmation */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '12px 16px', borderRadius: '10px',
               background: 'var(--color-safe-bg)',
               border: '1px solid color-mix(in srgb, var(--color-safe) 30%, transparent)',
-              marginBottom: '24px',
+              marginBottom: '16px',
             }}>
               <CheckCircle2 size={18} color="var(--color-safe)" />
               <div>
@@ -207,7 +223,15 @@ export default async function SuccesPage({
               </div>
             </div>
 
-            {/* Header entreprise */}
+            {/* 2. Bouton PDF en haut (mobile) */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+              <BoutonPDF siret={siret} sessionId={session_id} />
+            </div>
+
+            {/* 3. Synthèse IA */}
+            {syntheseInput && <SyntheseIA input={syntheseInput} />}
+
+            {/* 4. Score + statut + alertes */}
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' }}>
               <ScoreRing score={result.score} />
               <div style={{ flex: 1, minWidth: '200px' }}>
@@ -238,28 +262,7 @@ export default async function SuccesPage({
 
             <div style={{ height: '1px', background: 'var(--color-border)', marginBottom: '16px' }} />
 
-            {/* Résumé IA */}
-            {aiSummary && (
-              <div style={{
-                padding: '16px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, transparent), color-mix(in srgb, var(--color-accent) 4%, transparent))',
-                border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
-                marginBottom: '20px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <Sparkles size={16} color="var(--color-accent)" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Synthèse IA
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.7, color: 'var(--color-text)' }}>
-                  {aiSummary}
-                </p>
-              </div>
-            )}
-
-            {/* Infos de base */}
+            {/* 5. Données identité */}
             {[
               { icon: <Hash size={15} />, label: 'SIRET', value: result.siret },
               { icon: <Building2 size={15} />, label: 'Forme juridique', value: result.formeJuridique },
@@ -276,7 +279,6 @@ export default async function SuccesPage({
               </div>
             ) : null)}
 
-            {/* Effectif — DÉBLOQUÉ */}
             {result.effectif && (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid var(--color-border)' }}>
                 <div style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '1px' }}><Users size={15} /></div>
@@ -287,7 +289,7 @@ export default async function SuccesPage({
               </div>
             )}
 
-            {/* RGE */}
+            {/* 6. RGE */}
             <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: result.rge.certifie ? 'var(--color-safe-bg)' : 'var(--color-neutral-bg)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: result.rge.certifie ? '10px' : '0' }}>
                 <Leaf size={17} color={result.rge.certifie ? 'var(--color-safe)' : 'var(--color-muted)'} />
@@ -309,7 +311,7 @@ export default async function SuccesPage({
               )}
             </div>
 
-            {/* Section premium débloquée */}
+            {/* 7. Section premium : dirigeants + BODACC */}
             <div style={{ marginTop: '20px', border: '1px solid color-mix(in srgb, var(--color-safe) 40%, transparent)', borderRadius: '14px', overflow: 'hidden' }}>
               <div style={{ padding: '14px 16px', background: 'var(--color-safe-bg)', borderBottom: '1px solid color-mix(in srgb, var(--color-safe) 20%, transparent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Scale size={16} color="var(--color-safe)" />
@@ -320,7 +322,6 @@ export default async function SuccesPage({
 
               <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                {/* Procédure collective */}
                 {result.bodacc.procedureCollective && (
                   <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
@@ -335,7 +336,7 @@ export default async function SuccesPage({
                   </div>
                 )}
 
-                {/* Dirigeants — COMPLETS */}
+                {/* 7a. Dirigeants */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                     <Users size={14} color="var(--color-muted)" />
@@ -361,7 +362,7 @@ export default async function SuccesPage({
                   )}
                 </div>
 
-                {/* BODACC — COMPLET */}
+                {/* 8. BODACC avec libellés en clair */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                     <Clock size={14} color="var(--color-muted)" />
@@ -374,13 +375,14 @@ export default async function SuccesPage({
                   ) : (
                     <div>
                       {result.bodacc.annonces.map((annonce, i) => {
-                        const color = FAMILLE_COLORS[annonce.famille] || 'var(--color-muted)'
-                        const isAlert = annonce.famille.toLowerCase().includes('procédure')
+                        const isProc = isProcedureCollective(annonce)
+                        const color = isProc ? 'var(--color-danger)' : (FAMILLE_COLORS[annonce.famille] || 'var(--color-muted)')
+                        const libelle = annonce.famille || getLibelleBodacc(annonce.type)
                         return (
                           <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, marginTop: '4px' }} />
-                              {i < result.bodacc.annonces.length - 1 && (
+                              {i < result!.bodacc.annonces.length - 1 && (
                                 <div style={{ width: '1px', flex: 1, background: 'var(--color-border)', marginTop: '4px', minHeight: '20px' }} />
                               )}
                             </div>
@@ -388,9 +390,21 @@ export default async function SuccesPage({
                               <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', marginBottom: '2px' }}>
                                 {annonce.date ? new Date(annonce.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                               </p>
-                              <p style={{ margin: 0, fontSize: '13px', fontWeight: isAlert ? 600 : 500, color: isAlert ? color : 'var(--color-text)' }}>
-                                {annonce.famille}
-                              </p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <p style={{ margin: 0, fontSize: '13px', fontWeight: isProc ? 600 : 500, color: isProc ? color : 'var(--color-text)' }}>
+                                  {libelle}
+                                </p>
+                                {isProc && (
+                                  <span style={{
+                                    fontSize: '10px', fontWeight: 700,
+                                    background: 'var(--color-danger-bg)',
+                                    color: 'var(--color-danger)',
+                                    padding: '1px 6px', borderRadius: '4px',
+                                  }}>
+                                    Procédure collective
+                                  </span>
+                                )}
+                              </div>
                               {annonce.tribunal && (
                                 <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)' }}>{annonce.tribunal}</p>
                               )}
@@ -408,8 +422,13 @@ export default async function SuccesPage({
               </div>
             </div>
 
-            {/* Disclaimer */}
-            <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
+            {/* 9. Bouton PDF en bas */}
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0 8px' }}>
+              <BoutonPDF siret={siret} sessionId={session_id} />
+            </div>
+
+            {/* 10. Disclaimer */}
+            <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
               Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l&apos;assurance décennale en demandant l&apos;attestation directement à l&apos;artisan. Verifio n&apos;est pas responsable des décisions prises sur la base de ces données.
             </p>
           </div>
