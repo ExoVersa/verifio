@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const { plan, siret, nom, chantierId } = body
   const baseUrl = getBaseUrl(req)
 
-  // ── Pack Sérénité — paiement unique 19,90€ ──────────────────────────────
+  // ── Pack Sérénité — paiement unique 4,90€ ───────────────────────────────
   if (!plan || plan === 'serenite') {
     if (!siret && !chantierId) {
       return NextResponse.json({ error: 'SIRET ou chantierId requis pour le Pack Sérénité' }, { status: 400 })
@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: 'eur',
-            unit_amount: 1990,
+            unit_amount: 490,
             product_data: {
-              name: 'Pack Sérénité' + (nom ? ` — ${nom}` : ''),
-              description: 'Analyse IA de votre devis PDF + rapport complet artisan + surveillance 6 mois.',
+              name: 'Pack Sérénité — 4,90€' + (nom ? ` · ${nom}` : ''),
+              description: 'Rapport complet artisan + analyse IA de devis + alertes BODACC + carnet de chantier illimité.',
               images: [],
             },
           },

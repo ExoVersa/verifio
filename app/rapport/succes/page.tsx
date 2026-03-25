@@ -1,5 +1,8 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, Sparkles, ArrowLeft } from 'lucide-react'
+import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
 import { fetchCompany } from '@/lib/fetchCompany'
 import ScoreRing from '@/components/ScoreRing'
 import type { SearchResult, Alert, AlertType, BodaccAnnonce } from '@/types'
@@ -73,7 +76,49 @@ export default async function SuccesPage({
 }) {
   const params = await searchParams
   const siret = params.siret
+  const session_id = params.session_id
 
+  // ── Vérification Stripe obligatoire ─────────────────────────────────────
+  if (!session_id) {
+    redirect('/recherche')
+  }
+
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-02-25.clover',
+    })
+    const stripeSession = await stripe.checkout.sessions.retrieve(session_id)
+
+    if (stripeSession.payment_status !== 'paid') {
+      redirect('/recherche')
+    }
+
+    // ── Persistance dans la table rapports ──────────────────────────────
+    if (siret) {
+      try {
+        const supabaseAdmin = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        )
+        await supabaseAdmin.from('rapports').upsert(
+          {
+            siret,
+            stripe_session_id: session_id,
+            montant: 490,
+            statut: 'genere',
+          },
+          { onConflict: 'stripe_session_id', ignoreDuplicates: true },
+        )
+      } catch {
+        // Non bloquant — le rapport s'affiche même si l'insert échoue
+      }
+    }
+  } catch {
+    // Session Stripe invalide, expirée ou clé manquante
+    redirect('/recherche')
+  }
+
+  // ── Chargement des données entreprise ────────────────────────────────────
   if (!siret) {
     return (
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--color-bg)' }}>
@@ -90,11 +135,7 @@ export default async function SuccesPage({
   let aiSummary = ''
 
   try {
-    [result, aiSummary] = await Promise.all([
-      fetchCompany(siret),
-      // AI summary will be fetched after we have the result — run sequentially
-      Promise.resolve(''),
-    ])
+    result = await fetchCompany(siret)
     aiSummary = await getAISummary(result)
   } catch (err: any) {
     fetchError = err.message || 'Erreur lors du chargement des données.'
@@ -117,7 +158,7 @@ export default async function SuccesPage({
       }}>
         <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
         <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-          ArtisanCheck
+          Verifio
         </span>
         <span style={{
           marginLeft: 'auto',
@@ -369,7 +410,7 @@ export default async function SuccesPage({
 
             {/* Disclaimer */}
             <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
-              Données issues de l'INSEE (Sirene), de l'ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l'assurance décennale en demandant l'attestation directement à l'artisan. ArtisanCheck n'est pas responsable des décisions prises sur la base de ces données.
+              Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l&apos;assurance décennale en demandant l&apos;attestation directement à l&apos;artisan. Verifio n&apos;est pas responsable des décisions prises sur la base de ces données.
             </p>
           </div>
         )}
