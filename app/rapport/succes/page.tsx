@@ -776,7 +776,10 @@ export default async function SuccesPage({
 
               {/* CTAs */}
               <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <a href="/mes-chantiers" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px', background: 'var(--color-accent)', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+                <a
+                  href={`/nouveau-chantier?siret=${siret}&nom=${encodeURIComponent(result?.nom ?? '')}&adresse=${encodeURIComponent(result?.adresse ?? '')}&from=rapport&session_id=${session_id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px', background: 'var(--color-accent)', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}
+                >
                   <FolderOpen size={15} strokeWidth={1.5} />
                   Ouvrir un carnet de chantier
                 </a>

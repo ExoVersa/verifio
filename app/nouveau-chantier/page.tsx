@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, HardHat } from 'lucide-react'
+import { ArrowLeft, HardHat, CheckCircle2 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
 import { TYPE_TRAVAUX } from '@/types/chantier'
@@ -13,11 +13,14 @@ function NouveauChantierForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const fromRapport = params.get('from') === 'rapport'
+  const sessionId = params.get('session_id') ?? ''
+
   const [form, setForm] = useState({
     nom_artisan: params.get('nom') || '',
     siret: params.get('siret') || '',
     type_travaux: params.get('type') || '',
-    adresse_chantier: '',
+    adresse_chantier: params.get('adresse') || '',
     date_debut: '',
     date_fin_prevue: '',
     montant_total: '',
@@ -115,6 +118,41 @@ function NouveauChantierForm() {
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>Suivez vos travaux, paiements et documents</p>
           </div>
         </div>
+
+        {fromRapport && form.nom_artisan && (
+          <div style={{
+            background: 'rgba(45,185,110,0.08)',
+            border: '1px solid var(--color-safe)',
+            borderRadius: 10,
+            padding: '12px 16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+          }}>
+            <CheckCircle2 size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>
+                Formulaire pré-rempli depuis votre rapport
+              </p>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
+                Artisan : <strong style={{ color: 'var(--color-text)' }}>{form.nom_artisan}</strong>
+                {form.siret && <> · SIRET {form.siret}</>}
+                {sessionId && (
+                  <>
+                    {' · '}
+                    <a
+                      href={`/rapport/succes?session_id=${sessionId}&siret=${form.siret}&from=rapport`}
+                      style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      Retour au rapport →
+                    </a>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
