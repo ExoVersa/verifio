@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Sparkles, CheckCircle, AlertCircle } from 'lucide-react'
 import type { SyntheseInput, SyntheseResult } from '@/app/api/rapport-synthese/route'
+import PackBadge from '@/components/PackBadge'
 
 interface SyntheseIAProps {
   input: SyntheseInput
@@ -27,6 +28,7 @@ function Skeleton() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Sparkles size={20} color="var(--color-accent)" strokeWidth={1.5} />
         <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Verifio</span>
+        <PackBadge />
         <span style={{
           fontSize: '11px', color: 'var(--color-muted)',
           background: 'var(--color-neutral-bg)',
@@ -83,6 +85,7 @@ export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <Sparkles size={20} color="var(--color-accent)" strokeWidth={1.5} />
         <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Verifio</span>
+        <PackBadge />
         <span style={{
           fontSize: '11px', fontWeight: 700,
           background: recomm.bg,

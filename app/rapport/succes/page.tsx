@@ -4,7 +4,7 @@ import {
   ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar,
   Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft, Shield, FileText,
   CreditCard, ClipboardCheck, FileSignature, LifeBuoy, FolderOpen,
-  Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, Upload, FileSearch,
+  Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, FileSearch,
   Search, MessageSquare,
 } from 'lucide-react'
 import Stripe from 'stripe'
@@ -19,6 +19,8 @@ import ModeleContrat from '@/components/ModeleContrat'
 import GuideRecours from '@/components/GuideRecours'
 import BodaccSection from '@/components/BodaccSection'
 import WelcomeModal from '@/components/WelcomeModal'
+import PackBadge from '@/components/PackBadge'
+import AnalyserDevisButton from '@/components/AnalyserDevisButton'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -85,7 +87,7 @@ function getRgeIcon(domaine: string): React.ReactNode {
 }
 
 // ── Section title helper ──────────────────────────────────────────────────────
-function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
+function SectionTitle({ icon, title }: { icon: React.ReactNode; title: React.ReactNode }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '10px',
@@ -602,7 +604,7 @@ export default async function SuccesPage({
 
             {/* 8. Vos droits avant de signer */}
             <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-              <SectionTitle icon={<Scale size={18} />} title="Vos droits avant de signer" />
+              <SectionTitle icon={<Scale size={18} />} title={<>Vos droits avant de signer<PackBadge /></>} />
               <p style={{ margin: '-8px 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>Ce que la loi vous garantit</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                 {[
@@ -660,8 +662,8 @@ export default async function SuccesPage({
               {/* Analyse de devis */}
               <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: devisUploads.length > 0 ? '10px' : '8px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Analyse de devis
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
+                    Analyser un devis<PackBadge />
                   </p>
                   {devisUploads.length > 0 && (
                     <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>{devisUploads.length} version{devisUploads.length > 1 ? 's' : ''}</span>
@@ -688,12 +690,10 @@ export default async function SuccesPage({
                     Importez votre devis pour détecter les clauses abusives et mentions manquantes.
                   </p>
                 )}
-                <a
+                <AnalyserDevisButton
                   href={`/analyser-devis?siret=${siret}&rapport_id=${rapportId ?? ''}&version=${(devisUploads[0]?.version ?? 0) + 1}&nom=${encodeURIComponent(result?.nom ?? '')}`}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid var(--color-accent)', color: 'var(--color-accent)', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-                  <Upload size={14} strokeWidth={1.5} />
-                  {devisUploads.length > 0 ? 'Analyser une nouvelle version' : 'Analyser mon devis'}
-                </a>
+                  label={devisUploads.length > 0 ? 'Analyser une nouvelle version' : 'Analyser mon devis'}
+                />
               </div>
 
               {/* Score résumé */}
@@ -733,8 +733,8 @@ export default async function SuccesPage({
 
               {/* Checklist rapide */}
               <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
-                <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Checklist avant de signer
+                <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
+                  Checklist avant de signer<PackBadge />
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   {[

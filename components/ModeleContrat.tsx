@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { FileSignature, Copy, Check, Printer } from 'lucide-react'
+import PackBadge from '@/components/PackBadge'
 
 interface ModeleContratProps {
   nomEntreprise: string
@@ -120,8 +121,9 @@ export default function ModeleContrat({
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
         <FileSignature size={20} color="var(--color-accent)" strokeWidth={1.5} />
-        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center' }}>
           Modèle de contrat simplifié
+          <PackBadge />
         </h2>
       </div>
       <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
@@ -200,7 +202,7 @@ export default function ModeleContrat({
         </button>
 
         <a
-          href={`/api/rapport-pdf?type=contrat&session_id=${sessionId}`}
+          href={`/api/rapport-pdf?type=contrat&session_id=${sessionId}&siret=${siret}`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

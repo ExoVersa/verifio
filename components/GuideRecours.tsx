@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { LifeBuoy, Mail, Users, Shield, Gavel, X, Copy, Check, ExternalLink } from 'lucide-react'
+import PackBadge from '@/components/PackBadge'
 
 const MODELE_MISE_EN_DEMEURE = `Objet : Mise en demeure — Malfaçons / Travaux non conformes
 
@@ -94,8 +95,9 @@ export default function GuideRecours() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
         <LifeBuoy size={20} color="var(--color-danger)" strokeWidth={1.5} />
-        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center' }}>
           Si ça se passe mal
+          <PackBadge />
         </h2>
       </div>
       <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--color-muted)' }}>
