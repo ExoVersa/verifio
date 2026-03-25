@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
   Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
-  Check, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
+  Check, CheckCircle, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
   Smartphone, Link, Download,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { supabase } from '@/lib/supabase'
 import { dirigeantSlug } from '@/lib/dirigeant'
 import { calculateScore, getYears as getYearsUtil, scoreColor } from '@/lib/score'
 import type { SearchResult } from '@/types'
@@ -323,6 +324,7 @@ export default function ArtisanFichePage() {
   const [financialData, setFinancialData] = useState<Record<string, unknown> | null>(null)
   const [financialLoading, setFinancialLoading] = useState(false)
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
+  const [rapportExistant, setRapportExistant] = useState<{ id: string; stripe_session_id: string } | null>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -331,7 +333,28 @@ export default function ArtisanFichePage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Vérifie si l'utilisateur a déjà acheté un rapport pour ce SIRET
+  useEffect(() => {
+    if (!siret) return
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('rapports')
+        .select('id, stripe_session_id')
+        .eq('user_id', user.id)
+        .eq('siret', siret)
+        .maybeSingle()
+        .then(({ data }) => { if (data) setRapportExistant(data) })
+    })
+  }, [siret])
+
   async function startSerenite() {
+    // Vérifier la connexion avant le checkout
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/auth?redirect=/artisan/${siret}`)
+      return
+    }
     setCheckoutLoading(true)
     try {
       const res = await fetch('/api/checkout', {
@@ -1554,6 +1577,30 @@ export default function ArtisanFichePage() {
                   {/* Action buttons */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Pack Sérénité — bloc contextuel */}
+                    {rapportExistant ? (
+                      <div style={{
+                        background: 'var(--color-safe)',
+                        color: 'white',
+                        borderRadius: '16px',
+                        padding: '20px 16px',
+                        textAlign: 'center',
+                      }}>
+                        <CheckCircle size={24} strokeWidth={1.5} style={{ marginBottom: '8px' }} />
+                        <p style={{ fontWeight: 700, margin: '0 0 4px', fontSize: '15px' }}>Rapport déjà acheté</p>
+                        <p style={{ fontSize: '13px', opacity: 0.9, margin: '0 0 14px' }}>Accédez à votre rapport complet</p>
+                        <button
+                          onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}`)}
+                          style={{
+                            background: 'white', color: 'var(--color-safe)',
+                            border: 'none', borderRadius: '10px',
+                            padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                            cursor: 'pointer', width: '100%',
+                          }}
+                        >
+                          Accéder au rapport →
+                        </button>
+                      </div>
+                    ) : (
                     <div style={{
                       background: isRisque ? '#FFF5F5' : '#F0FDF4',
                       border: `1.5px solid ${isRisque ? '#fca5a5' : '#86efac'}`,
@@ -1621,6 +1668,7 @@ export default function ArtisanFichePage() {
                         Paiement sécurisé · Satisfait ou remboursé 14j
                       </p>
                     </div>
+                    )}
 
                     {/* Alerte */}
                     <button
@@ -1736,23 +1784,38 @@ export default function ArtisanFichePage() {
               <AlertTriangle size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: '4px' }} /> {nbProcedures} procédure{nbProcedures > 1 ? 's' : ''} judiciaire{nbProcedures > 1 ? 's' : ''} détectée{nbProcedures > 1 ? 's' : ''}
             </p>
           )}
-          <button
-            onClick={startSerenite}
-            disabled={checkoutLoading}
-            style={{
-              width: '100%',
-              background: '#52B788', color: 'white',
-              border: 'none', borderRadius: '12px',
-              padding: '14px', fontSize: '15px', fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'var(--font-body)',
-              opacity: checkoutLoading ? 0.7 : 1,
-              transition: 'background 0.15s ease',
-            }}
-            onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLButtonElement).style.background = '#2D6A4F' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#52B788' }}
-          >
-            {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
-          </button>
+          {rapportExistant ? (
+            <button
+              onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}`)}
+              style={{
+                width: '100%',
+                background: 'var(--color-safe)', color: 'white',
+                border: 'none', borderRadius: '12px',
+                padding: '14px', fontSize: '15px', fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'var(--font-body)',
+              }}
+            >
+              Accéder au rapport →
+            </button>
+          ) : (
+            <button
+              onClick={startSerenite}
+              disabled={checkoutLoading}
+              style={{
+                width: '100%',
+                background: '#52B788', color: 'white',
+                border: 'none', borderRadius: '12px',
+                padding: '14px', fontSize: '15px', fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'var(--font-body)',
+                opacity: checkoutLoading ? 0.7 : 1,
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLButtonElement).style.background = '#2D6A4F' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#52B788' }}
+            >
+              {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
+            </button>
+          )}
         </div>
       )}
     </main>

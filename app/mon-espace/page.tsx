@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   User, HardHat, Bell, Clock, Search, Plus, LogOut, Trash2,
   KeyRound, ChevronRight, CheckCircle2, XCircle, AlertCircle, ExternalLink,
-  LayoutDashboard, History, Shield,
+  LayoutDashboard, History, Shield, FileText,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
@@ -34,13 +34,24 @@ interface ChantierWithStats extends Chantier {
   derniere_activite?: string
 }
 
-type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'profil'
+type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'rapports' | 'profil'
+
+interface Rapport {
+  id: string
+  siret: string
+  stripe_session_id: string
+  montant: number
+  statut: string
+  created_at: string
+  nom_entreprise?: string
+}
 
 const TABS: { id: TabId; label: string; Icon: React.ComponentType<{ size: number }> }[] = [
   { id: 'dashboard', label: 'Tableau de bord', Icon: LayoutDashboard },
   { id: 'chantiers', label: 'Mes chantiers', Icon: HardHat },
   { id: 'surveillances', label: 'Mes surveillances', Icon: Bell },
   { id: 'historique', label: 'Mon historique', Icon: History },
+  { id: 'rapports', label: 'Mes rapports', Icon: FileText },
   { id: 'profil', label: 'Mon profil', Icon: User },
 ]
 
@@ -662,6 +673,87 @@ function HistoriqueTab({ searches }: { searches: SearchRecord[] }) {
   )
 }
 
+// ── Tab: Mes rapports ──────────────────────────────────────────────────────
+
+function RapportsTab({
+  rapports,
+  router,
+}: {
+  rapports: Rapport[]
+  router: ReturnType<typeof useRouter>
+}) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+  if (rapports.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+        <FileText size={40} color="var(--color-border)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+        <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600 }}>Aucun rapport pour l&apos;instant</p>
+        <p style={{ margin: '0 0 24px', fontSize: '14px', color: 'var(--color-muted)' }}>
+          Vérifiez un artisan pour sécuriser votre chantier.
+        </p>
+        <button
+          onClick={() => router.push('/recherche')}
+          style={{
+            background: 'var(--color-accent)', color: 'white',
+            border: 'none', borderRadius: '10px',
+            padding: '12px 24px', fontSize: '14px', fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Rechercher un artisan →
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
+        {rapports.length} rapport{rapports.length > 1 ? 's' : ''} acheté{rapports.length > 1 ? 's' : ''}
+      </p>
+      {rapports.map(r => (
+        <div
+          key={r.id}
+          style={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            transform: hoveredId === r.id ? 'translateY(-2px)' : 'none',
+            boxShadow: hoveredId === r.id ? '0 4px 16px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={() => setHoveredId(r.id)}
+          onMouseLeave={() => setHoveredId(null)}
+          onClick={() => router.push(`/rapport/succes?session_id=${r.stripe_session_id}&siret=${r.siret}`)}
+        >
+          <Shield size={20} color="var(--color-accent)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {r.nom_entreprise || `SIRET ${r.siret}`}
+            </p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
+              {formatDate(r.created_at)} · {(r.montant / 100).toFixed(2).replace('.', ',')}€
+            </p>
+          </div>
+          <span style={{
+            fontSize: '13px', fontWeight: 600,
+            color: 'var(--color-accent)',
+            whiteSpace: 'nowrap',
+          }}>
+            Voir →
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Tab: Mon profil ────────────────────────────────────────────────────────
 
 function ProfilTab({
@@ -799,7 +891,7 @@ function ProfilTab({
 function MonEspaceInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'profil']
+  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'rapports', 'profil']
   const tabParam = searchParams.get('tab') as TabId | null
   const [tab, setTabState] = useState<TabId>(
     tabParam && validTabs.includes(tabParam) ? tabParam : 'dashboard'
@@ -810,6 +902,7 @@ function MonEspaceInner() {
   const [chantiers, setChantiers] = useState<ChantierWithStats[]>([])
   const [surveillances, setSurveillances] = useState<Surveillance[]>([])
   const [searches, setSearches] = useState<SearchRecord[]>([])
+  const [rapports, setRapports] = useState<Rapport[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -828,7 +921,7 @@ function MonEspaceInner() {
   async function loadAll(u: SupabaseUser) {
     setPageLoading(true)
 
-    const [chantiersRes, survRes, searchRes] = await Promise.all([
+    const [chantiersRes, survRes, searchRes, rapportsRes] = await Promise.all([
       supabase
         .from('chantiers')
         .select('*, chantier_paiements(montant), chantier_evenements(date_evenement)')
@@ -843,6 +936,11 @@ function MonEspaceInner() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20),
+      supabase
+        .from('rapports')
+        .select('*')
+        .eq('user_id', u.id)
+        .order('created_at', { ascending: false }),
     ])
 
     if (chantiersRes.data) {
@@ -860,6 +958,7 @@ function MonEspaceInner() {
 
     setSurveillances(survRes.data ?? [])
     setSearches(searchRes.data ?? [])
+    setRapports(rapportsRes.data ?? [])
     setPageLoading(false)
   }
 
@@ -990,6 +1089,9 @@ function MonEspaceInner() {
         )}
         {tab === 'historique' && (
           <HistoriqueTab searches={searches} />
+        )}
+        {tab === 'rapports' && (
+          <RapportsTab rapports={rapports} router={router} />
         )}
         {tab === 'profil' && (
           <ProfilTab

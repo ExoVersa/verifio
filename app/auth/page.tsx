@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, Zap, Gift } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -540,8 +540,10 @@ function SignupForm({
 }
 
 /* ── Page principale ────────────────────────────────────────── */
-export default function AuthPage() {
+function AuthPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
 
   // Login
@@ -572,7 +574,7 @@ export default function AuthPage() {
     setLoading(true); setError(null)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) setError('E-mail ou mot de passe incorrect.')
-    else router.push('/')
+    else router.push(redirectTo || '/')
     setLoading(false)
   }
 
@@ -654,5 +656,13 @@ export default function AuthPage() {
         </div>
       </main>
     </>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#F8F4EF' }} />}>
+      <AuthPageInner />
+    </Suspense>
   )
 }
