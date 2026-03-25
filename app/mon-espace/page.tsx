@@ -21,11 +21,13 @@ import {
 
 interface Surveillance {
   id: string
-  email: string
+  user_id: string | null
+  email: string | null
   siret: string
   nom_artisan: string | null
   statut_initial: string | null
   score_initial: number | null
+  expires_at: string | null
   created_at: string
 }
 
@@ -531,17 +533,28 @@ function SurveillancesTab({
                   <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.nom_artisan || `SIRET ${s.siret}`}
                   </p>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0,
-                    background: s.statut_initial === 'actif' ? 'var(--color-safe-bg)' : '#fef2f2',
-                    color: s.statut_initial === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)',
-                    border: `1px solid ${s.statut_initial === 'actif' ? 'var(--color-safe-border)' : '#fecaca'}`,
-                  }}>
-                    {s.statut_initial === 'actif' ? '● Actif' : '● Fermé'}
-                  </span>
+                  {/* Badge Active / Expirée */}
+                  {s.expires_at ? (
+                    new Date(s.expires_at) > new Date() ? (
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0, background: 'var(--color-safe-bg)', color: 'var(--color-safe)', border: '1px solid var(--color-safe-border)' }}>
+                        Active
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0, background: 'var(--color-neutral-bg)', color: 'var(--color-muted)', border: '1px solid var(--color-border)' }}>
+                        Expirée
+                      </span>
+                    )
+                  ) : (
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0, background: 'var(--color-safe-bg)', color: 'var(--color-safe)', border: '1px solid var(--color-safe-border)' }}>
+                      Active
+                    </span>
+                  )}
                 </div>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
-                  SIRET {s.siret} · Depuis le {formatDate(s.created_at)}
+                  SIRET {s.siret}
+                  {s.expires_at && (
+                    <> · Jusqu&apos;au {new Date(s.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</>
+                  )}
                 </p>
               </div>
 
@@ -950,7 +963,7 @@ function MonEspaceInner() {
       supabase
         .from('surveillances')
         .select('*')
-        .eq('email', u.email!)
+        .eq('user_id', u.id)
         .order('created_at', { ascending: false }),
       supabase
         .from('searches')
@@ -989,7 +1002,7 @@ function MonEspaceInner() {
       .from('surveillances')
       .delete()
       .eq('id', id)
-      .eq('email', user?.email ?? '')
+      .eq('user_id', user?.id ?? '')
     if (error) {
       setToast('Erreur lors de la suppression. Réessayez.')
       setTimeout(() => setToast(null), 4000)

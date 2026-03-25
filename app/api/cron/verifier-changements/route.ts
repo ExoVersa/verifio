@@ -132,6 +132,7 @@ export async function GET(req: NextRequest) {
     const { data: surveillances, error } = await supabase
       .from('surveillances')
       .select('*')
+      .gt('expires_at', new Date().toISOString())
 
     if (error || !surveillances) {
       return NextResponse.json({ error: 'DB error' }, { status: 500 })
