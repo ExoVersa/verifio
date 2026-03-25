@@ -19,6 +19,7 @@ import ModeleContrat from '@/components/ModeleContrat'
 import GuideRecours from '@/components/GuideRecours'
 import BodaccSection from '@/components/BodaccSection'
 import WelcomeModal from '@/components/WelcomeModal'
+import SiteHeader from '@/components/SiteHeader'
 import PackBadge from '@/components/PackBadge'
 import AnalyserDevisButton from '@/components/AnalyserDevisButton'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
@@ -206,7 +207,7 @@ export default async function SuccesPage({
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--color-bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ color: 'var(--color-muted)', marginBottom: '16px' }}>Paramètre SIRET manquant.</p>
-          <Link href="/" style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}>← Retour</Link>
+          <Link href="/" style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><ArrowLeft size={14} strokeWidth={1.5} />Retour</Link>
         </div>
       </main>
     )
@@ -315,7 +316,7 @@ export default async function SuccesPage({
   } : null
 
   // Bouton retour contextuel
-  const backLabel = from === 'mon-espace' ? '← Mes rapports' : `← Retour à la fiche`
+  const backLabel = from === 'mon-espace' ? 'Mes rapports' : 'Retour à la fiche'
   const backHref = from === 'mon-espace' ? '/mon-espace?tab=rapports' : `/artisan/${siret}`
 
   // Score label pour sidebar
@@ -340,9 +341,11 @@ export default async function SuccesPage({
   }
 
   return (
+    <>
+    <SiteHeader />
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
 
-      {/* Header */}
+      {/* Sub-header rapport */}
       <header style={{
         padding: '14px 24px', borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-surface)',
@@ -797,5 +800,6 @@ export default async function SuccesPage({
         />
       )}
     </main>
+    </>
   )
 }
