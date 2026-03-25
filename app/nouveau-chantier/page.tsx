@@ -80,11 +80,19 @@ function NouveauChantierForm() {
     router.push(`/chantier/${data.id}`)
   }
 
+  const siretParam = params.get('siret') || ''
+  const nomParam = params.get('nom') || ''
+
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '11px 14px', border: '1.5px solid var(--color-border)',
     borderRadius: '10px', fontSize: '14px', fontFamily: 'var(--font-body)',
     background: 'var(--color-surface)', color: 'var(--color-text)', outline: 'none',
     boxSizing: 'border-box',
+  }
+  const prefilledStyle: React.CSSProperties = {
+    ...inputStyle,
+    border: '1.5px solid var(--color-safe)',
+    background: 'rgba(45,185,110,0.04)',
   }
   const labelStyle: React.CSSProperties = {
     display: 'block', fontSize: '13px', fontWeight: 600,
@@ -119,38 +127,33 @@ function NouveauChantierForm() {
           </div>
         </div>
 
-        {fromRapport && form.nom_artisan && (
+        {fromRapport && nomParam && (
           <div style={{
             background: 'rgba(45,185,110,0.08)',
             border: '1px solid var(--color-safe)',
             borderRadius: 10,
             padding: '12px 16px',
-            marginBottom: '24px',
             display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 24,
           }}>
-            <CheckCircle2 size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
-            <div>
-              <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>
-                Formulaire pré-rempli depuis votre rapport
-              </p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
-                Artisan : <strong style={{ color: 'var(--color-text)' }}>{form.nom_artisan}</strong>
-                {form.siret && <> · SIRET {form.siret}</>}
-                {sessionId && (
-                  <>
-                    {' · '}
-                    <a
-                      href={`/rapport/succes?session_id=${sessionId}&siret=${form.siret}&from=rapport`}
-                      style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}
-                    >
-                      Retour au rapport →
-                    </a>
-                  </>
-                )}
-              </p>
-            </div>
+            <CheckCircle2 size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 14 }}>
+              Chantier pré-rempli depuis votre rapport Verifio —{' '}
+              <strong>{nomParam}</strong> a été vérifié et validé.
+              {sessionId && (
+                <>
+                  {' '}
+                  <a
+                    href={`/rapport/succes?session_id=${sessionId}&siret=${siretParam}&from=rapport`}
+                    style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    Retour au rapport →
+                  </a>
+                </>
+              )}
+            </span>
           </div>
         )}
 
@@ -163,7 +166,7 @@ function NouveauChantierForm() {
                 Nom de l'artisan <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
               <input
-                style={inputStyle}
+                style={nomParam ? prefilledStyle : inputStyle}
                 type="text"
                 placeholder="Ex : Bonsens Plomberie SARL"
                 value={form.nom_artisan}
@@ -175,18 +178,21 @@ function NouveauChantierForm() {
             {/* SIRET */}
             <div>
               <label style={labelStyle}>
-                SIRET <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}>(optionnel — permet d'accéder à la fiche Verifio)</span>
+                SIRET
+                {!siretParam && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> (optionnel — permet d'accéder à la fiche Verifio)</span>}
+                {siretParam && <span style={{ color: 'var(--color-safe)', fontWeight: 400 }}> · Artisan vérifié</span>}
               </label>
               <input
-                style={inputStyle}
+                style={siretParam ? prefilledStyle : inputStyle}
                 type="text"
                 placeholder="14 chiffres"
                 value={form.siret}
                 onChange={e => set('siret', e.target.value)}
                 maxLength={14}
                 pattern="[0-9]*"
+                readOnly={!!siretParam}
               />
-              {form.siret.length >= 9 && (
+              {form.siret.length >= 9 && !siretParam && (
                 <a
                   href={`/?q=${form.siret}`}
                   target="_blank"
@@ -215,9 +221,12 @@ function NouveauChantierForm() {
 
             {/* Adresse */}
             <div>
-              <label style={labelStyle}>Adresse du chantier</label>
+              <label style={labelStyle}>
+                Adresse du chantier
+                {params.get('adresse') && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> · Pré-remplie avec le siège de l'artisan, modifiable</span>}
+              </label>
               <input
-                style={inputStyle}
+                style={params.get('adresse') ? prefilledStyle : inputStyle}
                 type="text"
                 placeholder="Ex : 12 rue de la Paix, 75001 Paris"
                 value={form.adresse_chantier}
