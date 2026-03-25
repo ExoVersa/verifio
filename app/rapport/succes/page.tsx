@@ -5,6 +5,7 @@ import {
   Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft, Shield, FileText,
   CreditCard, ClipboardCheck, FileSignature, LifeBuoy, FolderOpen,
   Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, Upload, FileSearch,
+  Search, MessageSquare,
 } from 'lucide-react'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -353,6 +354,40 @@ export default async function SuccesPage({
 
           {/* ══════════════ COLONNE PRINCIPALE ══════════════ */}
           <div className="rapport-main">
+
+            {/* 0. Bandeau features débloquées */}
+            <div style={{
+              background: '#1B4332', borderRadius: '12px',
+              padding: '16px 20px', marginBottom: '16px',
+            }}>
+              <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 700, color: '#D8F3DC', letterSpacing: '-0.01em' }}>
+                Pack Sérénité activé — 6 fonctionnalités débloquées
+              </p>
+              <div style={{
+                display: 'flex', gap: '8px',
+                overflowX: 'auto', paddingBottom: '2px',
+                scrollbarWidth: 'none',
+              }}>
+                {([
+                  { Icon: FileText, label: 'PDF' },
+                  { Icon: Search, label: 'Analyse devis' },
+                  { Icon: BellRing, label: 'Surveillance 6 mois' },
+                  { Icon: Scale, label: 'Droits & recours' },
+                  { Icon: ClipboardCheck, label: 'Checklist' },
+                  { Icon: MessageSquare, label: 'Questions' },
+                ] as const).map(({ Icon, label }) => (
+                  <div key={label} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '20px', padding: '6px 12px',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>
+                    <Icon size={13} color="#D8F3DC" strokeWidth={1.5} />
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#D8F3DC' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* 1. Bannière confirmation */}
             <div style={{
