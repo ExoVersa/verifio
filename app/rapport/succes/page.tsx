@@ -137,6 +137,31 @@ function buildConfirmationEmail({ nomEntreprise, siret, score, scoreLabel, rappo
       <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1e40af;">Surveillance activée</p>
       <p style="margin:0;font-size:12px;color:#1d4ed8;">Vous serez alerté de tout changement jusqu'au ${exp}.</p>
     </div>` : ''}
+    <div style="margin:0 0 24px;">
+      <p style="font-weight:700;font-size:14px;color:#111827;margin:0 0 12px;">Ce que vous avez débloqué :</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#374151;">Rapport PDF complet</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#2DB96E;text-align:right;font-weight:600;">Disponible</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#374151;">Analyse juridique de devis</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#2DB96E;text-align:right;font-weight:600;">Disponible</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#374151;">Surveillance 6 mois</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#2DB96E;text-align:right;font-weight:600;">${exp ? `Activée jusqu'au ${exp}` : 'Disponible'}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#374151;">Checklist personnalisée</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;color:#2DB96E;text-align:right;font-weight:600;">Disponible</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#374151;">Guide droits &amp; recours</td>
+          <td style="padding:8px 0;color:#2DB96E;text-align:right;font-weight:600;">Disponible</td>
+        </tr>
+      </table>
+    </div>
     <div style="text-align:center;margin-bottom:20px;">
       <a href="${rapportUrl}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:#1B4332;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">
         Accéder au rapport complet →
