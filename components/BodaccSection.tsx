@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, ChevronDown, ChevronUp, Scale } from 'lucide-react'
+import { Scale, AlertTriangle, ChevronRight } from 'lucide-react'
 import type { BodaccAnnonce } from '@/types'
 
 const LIBELLES: Record<string, string> = {
@@ -18,29 +18,88 @@ const LIBELLES: Record<string, string> = {
 }
 
 function getLibelle(annonce: BodaccAnnonce): string {
+  if (annonce.familleLible) return annonce.familleLible
   if (annonce.famille) return annonce.famille
   const key = (annonce.type || '').toLowerCase().trim()
   return LIBELLES[key] || (key.charAt(0).toUpperCase() + key.slice(1))
 }
 
-function isProc(annonce: BodaccAnnonce): boolean {
+function getAnnonceStyle(annonce: BodaccAnnonce): {
+  borderColor: string
+  background: string
+  badgeBg: string
+  badgeColor: string
+  isProc: boolean
+} {
   const f = (annonce.famille ?? '').toLowerCase()
   const t = (annonce.type ?? '').toLowerCase()
-  return (
+
+  const isProc =
     f.includes('procédure') || f.includes('collective') || f.includes('redressement') ||
     f.includes('liquidation') || f.includes('sauvegarde') ||
     t === 'collective' || t === 'redressement' || t === 'liquidation' || t === 'sauvegarde'
-  )
-}
 
-function isDpc(annonce: BodaccAnnonce): boolean {
-  return (annonce.type ?? '').toLowerCase() === 'dpc' || (annonce.famille ?? '').toLowerCase().includes('dépôt')
-}
+  if (isProc) return {
+    borderColor: '#ef4444',
+    background: 'rgba(239,68,68,0.04)',
+    badgeBg: '#fee2e2',
+    badgeColor: '#dc2626',
+    isProc: true,
+  }
 
-function isModif(annonce: BodaccAnnonce): boolean {
-  const t = (annonce.type ?? '').toLowerCase()
-  const f = (annonce.famille ?? '').toLowerCase()
-  return t === 'modification' || f.includes('modification')
+  const isDpc = t === 'dpc' || f.includes('dépôt')
+  if (isDpc) return {
+    borderColor: '#3B82F6',
+    background: '#fff',
+    badgeBg: '#eff6ff',
+    badgeColor: '#1d4ed8',
+    isProc: false,
+  }
+
+  const isModif = t === 'modification' || f.includes('modification')
+  if (isModif) return {
+    borderColor: '#F59E0B',
+    background: '#fff',
+    badgeBg: '#fffbeb',
+    badgeColor: '#92400e',
+    isProc: false,
+  }
+
+  const isVente = t === 'vente' || f.includes('vente') || f.includes('cession')
+  if (isVente) return {
+    borderColor: '#8B5CF6',
+    background: '#fff',
+    badgeBg: '#f5f3ff',
+    badgeColor: '#6d28d9',
+    isProc: false,
+  }
+
+  const isImmat = t === 'immatriculation' || f.includes('immatriculation')
+  if (isImmat) return {
+    borderColor: 'var(--color-safe)',
+    background: '#fff',
+    badgeBg: 'var(--color-safe-bg)',
+    badgeColor: 'var(--color-safe)',
+    isProc: false,
+  }
+
+  const isRadiation = t === 'radiation' || f.includes('radiation')
+  if (isRadiation) return {
+    borderColor: 'var(--color-danger)',
+    background: '#fff',
+    badgeBg: 'var(--color-danger-bg)',
+    badgeColor: 'var(--color-danger)',
+    isProc: false,
+  }
+
+  // default
+  return {
+    borderColor: 'var(--color-border)',
+    background: '#fff',
+    badgeBg: 'var(--color-neutral-bg)',
+    badgeColor: 'var(--color-muted)',
+    isProc: false,
+  }
 }
 
 function getDetails(a: BodaccAnnonce): string[] {
@@ -56,24 +115,23 @@ function getDetails(a: BodaccAnnonce): string[] {
   if (a.personnesActivite) lines.push(a.personnesActivite)
   if (a.radiationDate) lines.push(`Date radiation : ${a.radiationDate}`)
   if (a.radiationCommentaire) lines.push(a.radiationCommentaire)
-  if (a.tribunal) lines.push(`Tribunal : ${a.tribunal}`)
   if (a.details && !lines.some(l => l === a.details)) lines.push(a.details)
   return lines.filter(Boolean)
 }
 
-const LIMIT = 5
+const PAGE_SIZE = 5
 
 export default function BodaccSection({ annonces }: { annonces: BodaccAnnonce[] }) {
-  const [showAll, setShowAll] = useState(false)
-  const visible = showAll ? annonces : annonces.slice(0, LIMIT)
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  const visible = annonces.slice(0, limit)
+  const remaining = annonces.length - limit
 
   return (
     <div>
+      {/* Titre */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Scale size={20} color="var(--color-accent)" strokeWidth={1.5} />
-        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>
-          Historique BODACC
-        </h2>
+        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Historique BODACC</h2>
         <span style={{
           marginLeft: 4, fontSize: '11px', fontWeight: 600,
           background: 'var(--color-neutral-bg)', color: 'var(--color-muted)',
@@ -88,101 +146,87 @@ export default function BodaccSection({ annonces }: { annonces: BodaccAnnonce[] 
           Aucune annonce BODACC trouvée.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {visible.map((a, i) => {
-            const proc = isProc(a)
-            const dpc = !proc && isDpc(a)
-            const modif = !proc && !dpc && isModif(a)
+            const { borderColor, background, badgeBg, badgeColor, isProc } = getAnnonceStyle(a)
             const libelle = getLibelle(a)
             const details = getDetails(a)
-
-            let dotColor = 'var(--color-muted)'
-            let bg = 'transparent'
-            let border = '1px solid var(--color-border)'
-            let badgeEl: React.ReactNode = null
-
-            if (proc) {
-              dotColor = 'var(--color-danger)'
-              bg = 'rgba(239,68,68,0.04)'
-              border = '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)'
-              badgeEl = (
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: 'var(--color-danger-bg)', color: 'var(--color-danger)', flexShrink: 0 }}>
-                  Procédure collective
-                </span>
-              )
-            } else if (dpc) {
-              dotColor = '#3b82f6'
-              badgeEl = (
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: '#eff6ff', color: '#1d4ed8', flexShrink: 0 }}>
-                  Dépôt de comptes
-                </span>
-              )
-            } else if (modif) {
-              dotColor = '#f59e0b'
-              badgeEl = (
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: '#fffbeb', color: '#92400e', flexShrink: 0 }}>
-                  Modification
-                </span>
-              )
-            }
+            const dateLabel = a.date
+              ? new Date(a.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+              : '—'
 
             return (
-              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                {/* Ligne + puce */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, marginTop: 4 }} />
-                  {i < visible.length - 1 && (
-                    <div style={{ width: 1, flex: 1, background: 'var(--color-border)', marginTop: 4, minHeight: 20 }} />
-                  )}
+              <div key={i} style={{
+                background,
+                borderLeft: `3px solid ${borderColor}`,
+                borderRadius: '0 8px 8px 0',
+                padding: '12px 16px',
+                marginBottom: 8,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: isProc || details.length > 0 ? '8px' : 0, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {isProc && <AlertTriangle size={14} color="#dc2626" strokeWidth={2} style={{ flexShrink: 0 }} />}
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      fontSize: '11px', fontWeight: 700,
+                      padding: '2px 8px', borderRadius: '4px',
+                      background: badgeBg, color: badgeColor,
+                    }}>
+                      {libelle}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--color-muted)', flexShrink: 0 }}>
+                    {dateLabel}
+                  </span>
                 </div>
 
-                {/* Contenu */}
-                <div style={{
-                  flex: 1,
-                  paddingBottom: '12px',
-                  padding: '10px 12px',
-                  background: bg,
-                  border,
-                  borderRadius: '10px',
-                  marginBottom: i < visible.length - 1 ? '4px' : 0,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
-                        {a.date ? new Date(a.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                      </span>
-                    </div>
-                    {badgeEl}
-                  </div>
-                  <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: proc ? 700 : 600, color: proc ? 'var(--color-danger)' : 'var(--color-text)' }}>
-                    {libelle}
+                {/* Procédure collective — mention rouge */}
+                {isProc && (
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                    Procédure judiciaire détectée
                   </p>
-                  {details.map((line, j) => (
-                    <p key={j} style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.5 }}>
-                      {line}
-                    </p>
-                  ))}
-                </div>
+                )}
+
+                {/* Corps */}
+                {(a.tribunal || details.length > 0) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {a.tribunal && (
+                      <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
+                        {a.tribunal}
+                      </span>
+                    )}
+                    {details.map((line, j) => (
+                      <p key={j} style={{ margin: 0, fontSize: '12px', color: 'var(--color-text)', lineHeight: 1.5 }}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
 
-          {annonces.length > LIMIT && (
+          {remaining > 0 && (
             <button
-              onClick={() => setShowAll(v => !v)}
+              onClick={() => setLimit(l => l + PAGE_SIZE)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'transparent', border: '1.5px solid var(--color-border)',
-                borderRadius: '8px', padding: '8px 16px',
-                cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                color: 'var(--color-accent)', alignSelf: 'flex-start',
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                alignSelf: 'flex-start',
+                background: 'transparent',
+                border: '1.5px solid var(--color-border)',
+                borderRadius: '8px',
+                padding: '7px 14px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--color-accent)',
                 marginTop: '4px',
               }}
             >
-              {showAll
-                ? <><ChevronUp size={14} strokeWidth={1.5} /> Réduire</>
-                : <><ChevronDown size={14} strokeWidth={1.5} /> Voir toutes les {annonces.length} annonces</>
-              }
+              Voir les {Math.min(remaining, PAGE_SIZE)} annonces suivantes
+              <ChevronRight size={13} strokeWidth={2} />
             </button>
           )}
         </div>
