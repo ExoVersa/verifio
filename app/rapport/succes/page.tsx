@@ -17,6 +17,7 @@ import BoutonPartage from '@/components/BoutonPartage'
 import ModeleContrat from '@/components/ModeleContrat'
 import GuideRecours from '@/components/GuideRecours'
 import BodaccSection from '@/components/BodaccSection'
+import WelcomeModal from '@/components/WelcomeModal'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -153,12 +154,13 @@ function buildConfirmationEmail({ nomEntreprise, siret, score, scoreLabel, rappo
 export default async function SuccesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ siret?: string; session_id?: string; from?: string }>
+  searchParams: Promise<{ siret?: string; session_id?: string; from?: string; new?: string }>
 }) {
   const params = await searchParams
   const siret = params.siret
   const session_id = params.session_id
   const from = params.from
+  const isNew = params.new === 'true'
 
   if (!session_id) redirect('/recherche')
 
@@ -724,6 +726,15 @@ export default async function SuccesPage({
           </div>
 
         </div>
+      )}
+
+      {/* Modal bienvenue — premier chargement uniquement */}
+      {session_id && (
+        <WelcomeModal
+          sessionId={session_id}
+          isNew={isNew}
+          nomEntreprise={result?.nom}
+        />
       )}
     </main>
   )

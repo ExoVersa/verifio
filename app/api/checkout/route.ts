@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
       ],
       mode: 'payment',
       success_url: siret
-        ? `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}&siret=${siret}`
-        : `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}`,
+        ? `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}&siret=${siret}&new=true`
+        : `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}&new=true`,
       cancel_url: siret
         ? `${baseUrl}/artisan/${siret}`
         : `${baseUrl}/pricing`,
