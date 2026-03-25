@@ -6,9 +6,10 @@ import { Download, Loader } from 'lucide-react'
 interface BoutonPDFProps {
   siret: string
   sessionId: string
+  fullWidth?: boolean
 }
 
-export default function BoutonPDF({ siret, sessionId }: BoutonPDFProps) {
+export default function BoutonPDF({ siret, sessionId, fullWidth }: BoutonPDFProps) {
   const [loading, setLoading] = useState(false)
   const [hovered, setHovered] = useState(false)
 
@@ -39,7 +40,9 @@ export default function BoutonPDF({ siret, sessionId }: BoutonPDFProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'inline-flex',
+        display: fullWidth ? 'flex' : 'inline-flex',
+        width: fullWidth ? '100%' : undefined,
+        justifyContent: fullWidth ? 'center' : undefined,
         alignItems: 'center',
         gap: '8px',
         background: hovered && !loading ? '#22a85f' : 'var(--color-accent)',

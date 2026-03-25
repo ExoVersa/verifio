@@ -6,6 +6,7 @@ import type { SyntheseInput, SyntheseResult } from '@/app/api/rapport-synthese/r
 
 interface SyntheseIAProps {
   input: SyntheseInput
+  compact?: boolean
 }
 
 const RECOMMANDATION_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -49,7 +50,7 @@ function Skeleton() {
   )
 }
 
-export default function SyntheseIA({ input }: SyntheseIAProps) {
+export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
   const [synthese, setSynthese] = useState<SyntheseResult | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -94,12 +95,12 @@ export default function SyntheseIA({ input }: SyntheseIAProps) {
       </div>
 
       {/* Résumé */}
-      <p style={{ margin: '0 0 16px', fontSize: '15px', lineHeight: 1.7, color: 'var(--color-text)' }}>
+      <p style={{ margin: '0 0 16px', fontSize: compact ? '13px' : '15px', lineHeight: 1.7, color: 'var(--color-text)' }}>
         {synthese.resume}
       </p>
 
       {/* Points forts */}
-      {synthese.points_forts.length > 0 && (
+      {!compact && synthese.points_forts.length > 0 && (
         <div style={{ marginBottom: synthese.points_attention.length > 0 ? '12px' : '0' }}>
           <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--color-safe)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Points forts
@@ -116,7 +117,7 @@ export default function SyntheseIA({ input }: SyntheseIAProps) {
       )}
 
       {/* Points d'attention */}
-      {synthese.points_attention.length > 0 && (
+      {!compact && synthese.points_attention.length > 0 && (
         <div style={{ marginTop: synthese.points_forts.length > 0 ? '12px' : '0' }}>
           <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Points d&apos;attention
@@ -133,9 +134,11 @@ export default function SyntheseIA({ input }: SyntheseIAProps) {
       )}
 
       {/* Recommandation texte */}
-      <p style={{ margin: '14px 0 0', fontSize: '12px', color: 'var(--color-muted)', fontStyle: 'italic' }}>
-        {synthese.recommandation_texte}
-      </p>
+      {!compact && (
+        <p style={{ margin: '14px 0 0', fontSize: '12px', color: 'var(--color-muted)', fontStyle: 'italic' }}>
+          {synthese.recommandation_texte}
+        </p>
+      )}
     </div>
   )
 }

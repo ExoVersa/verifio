@@ -339,3 +339,38 @@ main {
 /* ── Z-index hierarchy globale ── */
 /* Barres de recherche sticky dans les pages (jamais au-dessus du header) */
 .sticky-search { z-index: 10 !important; }
+
+/* ── Rapport 2 colonnes ── */
+.rapport-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.rapport-main { flex: 1 1 0; min-width: 0; }
+.rapport-sidebar {
+  flex: 0 0 340px;
+  width: 340px;
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+@media (max-width: 900px) {
+  .rapport-layout { flex-direction: column; padding: 20px 16px; gap: 24px; }
+  .rapport-sidebar { flex: none; width: 100%; position: static; max-height: none; }
+}
+
+/* ── Shimmer animation ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}

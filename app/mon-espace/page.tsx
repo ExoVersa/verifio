@@ -683,6 +683,24 @@ function RapportsTab({
   router: ReturnType<typeof useRouter>
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [noms, setNoms] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const missing = rapports.filter(r => !r.nom_entreprise && r.siret)
+    if (missing.length === 0) return
+    Promise.all(
+      missing.map(r =>
+        fetch(`/api/artisan/public?siret=${encodeURIComponent(r.siret)}`)
+          .then(res => res.json())
+          .then(data => ({ siret: r.siret, nom: data?.nom || data?.name || '' }))
+          .catch(() => ({ siret: r.siret, nom: '' }))
+      )
+    ).then(results => {
+      const map: Record<string, string> = {}
+      for (const { siret, nom } of results) if (nom) map[siret] = nom
+      setNoms(map)
+    })
+  }, [rapports])
 
   if (rapports.length === 0) {
     return (
@@ -730,14 +748,17 @@ function RapportsTab({
           }}
           onMouseEnter={() => setHoveredId(r.id)}
           onMouseLeave={() => setHoveredId(null)}
-          onClick={() => router.push(`/rapport/succes?session_id=${r.stripe_session_id}&siret=${r.siret}`)}
+          onClick={() => router.push(`/rapport/succes?session_id=${r.stripe_session_id}&siret=${r.siret}&from=mon-espace`)}
         >
           <Shield size={20} color="var(--color-accent)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {r.nom_entreprise || `SIRET ${r.siret}`}
+            <p style={{ margin: '0 0 2px', fontSize: '16px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {r.nom_entreprise || noms[r.siret] || `SIRET ${r.siret}`}
             </p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
+              SIRET {r.siret}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>
               {formatDate(r.created_at)} · {(r.montant / 100).toFixed(2).replace('.', ',')}€
             </p>
           </div>
