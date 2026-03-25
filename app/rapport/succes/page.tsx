@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar, Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft, Shield, FileText, CreditCard, ClipboardCheck, FileSignature, LifeBuoy, FolderOpen } from 'lucide-react'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { fetchCompany } from '@/lib/fetchCompany'
@@ -8,6 +8,8 @@ import ScoreRing from '@/components/ScoreRing'
 import SyntheseIA from '@/components/SyntheseIA'
 import BoutonPDF from '@/components/BoutonPDF'
 import BoutonPartage from '@/components/BoutonPartage'
+import ModeleContrat from '@/components/ModeleContrat'
+import GuideRecours from '@/components/GuideRecours'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -164,6 +166,10 @@ export default async function SuccesPage({
 
   const statutColor = result?.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
   const statutBg = result?.statut === 'actif' ? 'var(--color-safe-bg)' : 'var(--color-danger-bg)'
+
+  const nomDirigeant = result && result.dirigeants.length > 0
+    ? [result.dirigeants[0].prenoms, result.dirigeants[0].nom].filter(Boolean).join(' ')
+    : ''
 
   const syntheseInput = result ? {
     nom: result.nom,
@@ -526,10 +532,177 @@ export default async function SuccesPage({
               </div>
             </div>
 
-            {/* Boutons bas de page */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', margin: '24px 0 8px' }}>
+            {/* ── 15. Vos droits avant de signer ─────────────────────────── */}
+            <div style={{ marginTop: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <Scale size={20} color="var(--color-accent)" strokeWidth={1.5} />
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                  Vos droits avant de signer
+                </h2>
+              </div>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>
+                Ce que la loi vous garantit
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+
+                {/* Carte 1 — Garantie décennale */}
+                <div style={{
+                  flex: '1 1 calc(50% - 6px)', minWidth: '200px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '12px', padding: '16px', position: 'relative',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    fontSize: '10px', fontWeight: 700,
+                    padding: '2px 8px', borderRadius: '4px',
+                    background: 'var(--color-danger-bg)', color: 'var(--color-danger)',
+                  }}>
+                    Obligatoire par la loi
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '120px' }}>
+                    <Shield size={16} color="var(--color-danger)" strokeWidth={1.5} />
+                    <span style={{ fontSize: '13px', fontWeight: 700 }}>Garantie décennale — obligatoire</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+                    Tout artisan du bâtiment doit être couvert par une assurance décennale. Elle couvre les dommages compromettant la solidité de l&apos;ouvrage pendant 10 ans après réception des travaux. Exigez l&apos;attestation avant signature.
+                  </p>
+                </div>
+
+                {/* Carte 2 — Devis écrit */}
+                <div style={{
+                  flex: '1 1 calc(50% - 6px)', minWidth: '200px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '12px', padding: '16px', position: 'relative',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    fontSize: '10px', fontWeight: 700,
+                    padding: '2px 8px', borderRadius: '4px',
+                    background: '#ffedd5', color: '#c2410c',
+                  }}>
+                    Au-dessus de 150€
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '110px' }}>
+                    <FileText size={16} color="#c2410c" strokeWidth={1.5} />
+                    <span style={{ fontSize: '13px', fontWeight: 700 }}>Devis écrit obligatoire</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+                    Pour tout chantier supérieur à 150€, le devis doit être écrit et détaillé : nature des travaux, matériaux utilisés, prix unitaires, délai d&apos;exécution, conditions de paiement.
+                  </p>
+                </div>
+
+                {/* Carte 3 — Acompte */}
+                <div style={{
+                  flex: '1 1 calc(50% - 6px)', minWidth: '200px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '12px', padding: '16px', position: 'relative',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    fontSize: '10px', fontWeight: 700,
+                    padding: '2px 8px', borderRadius: '4px',
+                    background: '#ffedd5', color: '#c2410c',
+                  }}>
+                    30% maximum
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '100px' }}>
+                    <CreditCard size={16} color="#c2410c" strokeWidth={1.5} />
+                    <span style={{ fontSize: '13px', fontWeight: 700 }}>Acompte limité à 30%</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+                    Aucun artisan ne peut légalement exiger plus de 30% d&apos;acompte avant le début des travaux. Un acompte supérieur est un signal d&apos;alarme. Le solde se règle à la réception.
+                  </p>
+                </div>
+
+                {/* Carte 4 — PV réception */}
+                <div style={{
+                  flex: '1 1 calc(50% - 6px)', minWidth: '200px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '12px', padding: '16px', position: 'relative',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    fontSize: '10px', fontWeight: 700,
+                    padding: '2px 8px', borderRadius: '4px',
+                    background: 'var(--color-safe-bg)', color: 'var(--color-safe)',
+                  }}>
+                    Déclenche vos garanties
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '140px' }}>
+                    <ClipboardCheck size={16} color="var(--color-safe)" strokeWidth={1.5} />
+                    <span style={{ fontSize: '13px', fontWeight: 700 }}>Procès-verbal de réception</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+                    À la fin du chantier, exigez un procès-verbal de réception signé par les deux parties. Ce document déclenche les garanties légales (parfait achèvement 1 an, biennale 2 ans, décennale 10 ans).
+                  </p>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ── 16. Modèle de contrat simplifié ────────────────────────── */}
+            <ModeleContrat
+              nomEntreprise={result.nom}
+              siret={result.siret}
+              adresse={result.adresse || ''}
+              nomDirigeant={nomDirigeant}
+              sessionId={session_id}
+            />
+
+            {/* ── 17. Guide si ça se passe mal ───────────────────────────── */}
+            <GuideRecours />
+
+            {/* ── 18. Boutons bas de page ─────────────────────────────────── */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', margin: '32px 0 8px' }}>
               <BoutonPDF siret={siret} sessionId={session_id} />
               <BoutonPartage sessionId={session_id} />
+            </div>
+
+            {/* CTAs navigation fin de page */}
+            <div style={{
+              display: 'flex', gap: '10px', flexWrap: 'wrap',
+              padding: '20px', borderRadius: '12px',
+              background: 'var(--color-neutral-bg)',
+              border: '1px solid var(--color-border)',
+              marginBottom: '12px',
+            }}>
+              <a href="/mes-chantiers" style={{
+                flex: '1 1 160px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '12px 16px', borderRadius: '10px',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                textDecoration: 'none', color: 'var(--color-text)',
+                fontSize: '13px', fontWeight: 600,
+                transition: 'border-color 0.15s',
+              }}>
+                <FolderOpen size={16} color="var(--color-accent)" strokeWidth={1.5} />
+                Ouvrir le carnet de chantier
+              </a>
+              <a href="/mon-espace" style={{
+                flex: '1 1 160px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '12px 16px', borderRadius: '10px',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                textDecoration: 'none', color: 'var(--color-text)',
+                fontSize: '13px', fontWeight: 600,
+              }}>
+                <FileSignature size={16} color="var(--color-muted)" strokeWidth={1.5} />
+                Mes rapports
+              </a>
+              <a href="/recherche" style={{
+                flex: '1 1 160px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '12px 16px', borderRadius: '10px',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                textDecoration: 'none', color: 'var(--color-text)',
+                fontSize: '13px', fontWeight: 600,
+              }}>
+                <ArrowLeft size={16} color="var(--color-muted)" strokeWidth={1.5} />
+                Nouvelle recherche
+              </a>
             </div>
 
             {/* Disclaimer */}
