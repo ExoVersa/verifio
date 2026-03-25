@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
       ],
       mode: 'payment',
       success_url: siret
-        ? `${baseUrl}/artisan/${siret}?pack=serenite&session_id={CHECKOUT_SESSION_ID}`
-        : `${baseUrl}/mes-chantiers?pack=serenite&session_id={CHECKOUT_SESSION_ID}`,
+        ? `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}&siret=${siret}`
+        : `${baseUrl}/rapport/succes?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: siret
         ? `${baseUrl}/artisan/${siret}`
         : `${baseUrl}/pricing`,
