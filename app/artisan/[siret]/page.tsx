@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   MapPin, Building2, Banknote, Store, Leaf, HardHat, User, Scale,
-  Share2, Mail, Bell, BarChart2, AlertTriangle, AlertCircle, Info,
+  Share2, Mail, Bell, BellRing, Lock, BarChart2, AlertTriangle, AlertCircle, Info,
   Check, CheckCircle, FileText, ClipboardList, Users, Shield, ArrowLeft, X,
-  Smartphone, Link, Download,
+  Smartphone, Link, Download, Star,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
@@ -325,6 +325,7 @@ export default function ArtisanFichePage() {
   const [financialLoading, setFinancialLoading] = useState(false)
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
   const [rapportExistant, setRapportExistant] = useState<{ id: string; stripe_session_id: string } | null>(null)
+  const [surveillanceActive, setSurveillanceActive] = useState<{ expires_at: string } | null>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -333,23 +334,15 @@ export default function ArtisanFichePage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Vérifie si l'utilisateur a déjà acheté un rapport pour ce SIRET
+  // Vérifie rapport existant + surveillance active
   useEffect(() => {
     if (!siret) return
     supabase.auth.getUser().then(({ data: { user } }) => {
-      console.log('CHECK RAPPORT pour SIRET:', siret)
-      console.log('USER ID:', user?.id)
       if (!user) return
-      supabase
-        .from('rapports')
-        .select('id, stripe_session_id')
-        .eq('user_id', user.id)
-        .eq('siret', siret)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          console.log('RAPPORT FOUND:', data, error)
-          if (data) setRapportExistant(data)
-        })
+      supabase.from('rapports').select('id, stripe_session_id').eq('user_id', user.id).eq('siret', siret).maybeSingle()
+        .then(({ data }) => { if (data) setRapportExistant(data) })
+      supabase.from('surveillances').select('expires_at').eq('user_id', user.id).eq('siret', siret).maybeSingle()
+        .then(({ data }) => { if (data) setSurveillanceActive(data) })
     })
   }, [siret])
 
@@ -1612,8 +1605,13 @@ export default function ArtisanFichePage() {
                       borderRadius: '16px',
                       padding: '18px 16px 16px',
                     }}>
-                      {/* En-tête contextuel */}
-                      <div style={{ marginBottom: '14px' }}>
+                      {/* Badge + En-tête contextuel */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, background: '#fef9c3', color: '#854d0e', padding: '2px 8px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Star size={9} strokeWidth={1.5} /> Le plus populaire
+                          </span>
+                        </div>
                         <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: isRisque ? '#991b1b' : '#14532d', fontFamily: 'var(--font-body)', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {isRisque ? <><AlertCircle size={16} strokeWidth={1.5} /> Vous allez signer un contrat risqué</> : <><Shield size={16} strokeWidth={1.5} /> Sécurisez votre chantier pour 4,90€</>}
                         </p>
@@ -1624,15 +1622,18 @@ export default function ArtisanFichePage() {
                         </p>
                       </div>
 
-                      {/* 3 arguments visuels */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px', textAlign: 'left' }}>
+                      {/* 6 arguments visuels */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '14px', textAlign: 'left' }}>
                         {[
-                          { Icon: Download, titre: 'Rapport PDF complet', desc: "Rapport complet de l'artisan en PDF" },
+                          { Icon: Download, titre: 'Rapport PDF complet', desc: "Toutes les données de l'artisan en PDF" },
                           { Icon: FileText, titre: 'Analyse juridique du devis', desc: 'Clauses abusives, mentions manquantes' },
-                          { Icon: Bell, titre: 'Surveillance 6 mois', desc: "Alerté si l'artisan change de statut" },
+                          { Icon: BellRing, titre: 'Surveillance 6 mois', desc: "Alerté si statut, dirigeant ou procédure change" },
+                          { Icon: Scale, titre: 'Historique BODACC complet', desc: 'Toutes les annonces légales' },
+                          { Icon: Shield, titre: 'Synthèse IA complète', desc: 'Analyse rédigée par intelligence artificielle' },
+                          { Icon: ClipboardList, titre: 'Carnet de chantier illimité', desc: 'Suivi photos, paiements, documents' },
                         ].map(({ Icon, titre, desc }) => (
-                          <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                            <Icon size={16} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px', color: '#1f2937' }} />
+                          <div key={titre} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <Icon size={14} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px', color: '#1f2937' }} />
                             <div style={{ textAlign: 'left' }}>
                               <div style={{ fontSize: '12px', fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>{titre}</div>
                               <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>
@@ -1670,28 +1671,58 @@ export default function ArtisanFichePage() {
                         {checkoutLoading ? 'Redirection…' : 'Activer le Pack Sérénité — 4,90€ →'}
                       </button>
                       <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'center' }}>
-                        Paiement sécurisé · Satisfait ou remboursé 14j
+                        Achat unique · Valable à vie · Satisfait ou remboursé 14j
                       </p>
                     </div>
                     )}
 
-                    {/* Alerte */}
-                    <button
-                      style={{
-                        width: '100%',
-                        background: hoveredBtn === 'alerte' ? 'rgba(45,185,110,0.06)' : 'white',
-                        color: '#1B4332',
-                        border: `1.5px solid ${hoveredBtn === 'alerte' ? 'var(--color-accent)' : '#1B4332'}`,
-                        borderRadius: '12px', padding: '13px',
-                        fontSize: '15px', fontWeight: 700,
-                        cursor: 'pointer', fontFamily: 'var(--font-body)',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={() => setHoveredBtn('alerte')}
-                      onMouseLeave={() => setHoveredBtn(null)}
-                    >
-                      <Bell size={15} strokeWidth={1.5} style={{ display: 'inline', marginRight: '6px' }} /> Recevoir une alerte
-                    </button>
+                    {/* Surveillance */}
+                    {rapportExistant && surveillanceActive ? (
+                      <div style={{
+                        background: 'var(--color-safe-bg)',
+                        border: '1px solid color-mix(in srgb, var(--color-safe) 35%, transparent)',
+                        borderRadius: '12px', padding: '12px 14px',
+                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                      }}>
+                        <BellRing size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div>
+                          <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Surveillance active</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
+                            Valable jusqu&apos;au {new Date(surveillanceActive.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                    ) : rapportExistant ? (
+                      <div style={{
+                        background: '#f9fafb', border: '1px solid #e5e7eb',
+                        borderRadius: '12px', padding: '12px 14px',
+                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                      }}>
+                        <Bell size={16} color="#9ca3af" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div>
+                          <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Surveillance non active</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>Contactez le support pour réactiver</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        background: '#f9fafb', border: '1.5px dashed #d1d5db',
+                        borderRadius: '12px', padding: '12px 14px',
+                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                      }}>
+                        <Lock size={14} color="#9ca3af" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: '0 0 1px', fontSize: '12px', fontWeight: 700, color: '#374151' }}>Surveillance — Incluse dans le Pack</p>
+                          <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#6b7280' }}>Alerté si statut, dirigeant ou procédure change</p>
+                          <button
+                            onClick={startSerenite}
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent)', fontFamily: 'var(--font-body)' }}
+                          >
+                            Débloquer avec le Pack Sérénité →
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Row of 2 small buttons */}
                     <div style={{ display: 'flex', gap: '8px' }}>

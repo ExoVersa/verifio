@@ -4,10 +4,11 @@ import {
   ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar,
   Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft, Shield, FileText,
   CreditCard, ClipboardCheck, FileSignature, LifeBuoy, FolderOpen,
-  Flame, Thermometer, Sun, Home, Wind, Zap, Droplets,
+  Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, Upload, FileSearch,
 } from 'lucide-react'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
 import { fetchCompany } from '@/lib/fetchCompany'
 import ScoreRing from '@/components/ScoreRing'
 import SyntheseIA from '@/components/SyntheseIA'
@@ -97,6 +98,57 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
   )
 }
 
+// ── Email de confirmation ─────────────────────────────────────────────────────
+function buildConfirmationEmail({ nomEntreprise, siret, score, scoreLabel, rapportUrl, surveillanceExpiry }: {
+  nomEntreprise: string; siret: string; score: number; scoreLabel: string
+  rapportUrl: string; surveillanceExpiry: string | null
+}) {
+  const scoreColor = score >= 75 ? '#15803d' : score >= 45 ? '#92400e' : '#dc2626'
+  const scoreEmoji = score >= 75 ? '✓' : score >= 45 ? '⚠' : '✗'
+  const exp = surveillanceExpiry
+    ? new Date(surveillanceExpiry).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'DM Sans',Arial,sans-serif;">
+<div style="max-width:580px;margin:0 auto;padding:32px 16px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.04em;">
+      Verifio
+    </div>
+  </div>
+  <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #e5e7eb;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#111827;">Rapport débloqué !</h1>
+      <p style="margin:0;font-size:15px;color:#6B7280;">Votre rapport complet pour <strong style="color:#111827;">${nomEntreprise}</strong> est prêt.</p>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:20px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:${scoreColor};display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;flex-shrink:0;">${score}</div>
+        <div>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#14532d;">Score de fiabilité : ${scoreEmoji} ${scoreLabel}</p>
+          <p style="margin:0;font-size:12px;color:#166534;">SIRET : ${siret}</p>
+        </div>
+      </div>
+    </div>
+    ${exp ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1e40af;">Surveillance activée</p>
+      <p style="margin:0;font-size:12px;color:#1d4ed8;">Vous serez alerté de tout changement jusqu'au ${exp}.</p>
+    </div>` : ''}
+    <div style="text-align:center;margin-bottom:20px;">
+      <a href="${rapportUrl}" style="display:inline-block;padding:13px 28px;border-radius:12px;background:#1B4332;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">
+        Accéder au rapport complet →
+      </a>
+    </div>
+    <p style="margin:0;font-size:12px;color:#9CA3AF;text-align:center;border-top:1px solid #f3f4f6;padding-top:16px;">
+      Données officielles · INSEE · ADEME · BODACC<br>
+      © Verifio ${new Date().getFullYear()}
+    </p>
+  </div>
+</div>
+</body></html>`.trim()
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function SuccesPage({
   searchParams,
@@ -110,33 +162,13 @@ export default async function SuccesPage({
 
   if (!session_id) redirect('/recherche')
 
+  // 1. Stripe verification
+  let userId: string | null = null
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
     const stripeSession = await stripe.checkout.sessions.retrieve(session_id)
-
     if (stripeSession.payment_status !== 'paid') redirect('/recherche')
-
-    const userId = stripeSession.metadata?.user_id || null
-    console.log('USER ID from Stripe metadata:', userId)
-    console.log('SESSION ID:', session_id)
-    console.log('SIRET:', siret)
-
-    if (siret) {
-      try {
-        const supabaseAdmin = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        )
-        const { data, error } = await supabaseAdmin
-          .from('rapports')
-          .upsert(
-            { user_id: userId, siret, stripe_session_id: session_id, montant: 490, statut: 'genere' },
-            { onConflict: 'stripe_session_id', ignoreDuplicates: false },
-          )
-        console.log('INSERT RAPPORT RESULT:', data, error)
-        if (error) console.error('INSERT RAPPORT ERROR:', error)
-      } catch (e) { console.error('INSERT RAPPORT EXCEPTION:', e) }
-    }
+    userId = stripeSession.metadata?.user_id || null
   } catch { redirect('/recherche') }
 
   if (!siret) {
@@ -150,6 +182,7 @@ export default async function SuccesPage({
     )
   }
 
+  // 2. Company data
   let result: SearchResult | null = null
   let fetchError = ''
   let etablissements: InseeEtab[] = []
@@ -159,6 +192,79 @@ export default async function SuccesPage({
     if (result.siren) etablissements = await fetchEtablissements(result.siren)
   } catch (err: any) {
     fetchError = err.message || 'Erreur lors du chargement des données.'
+  }
+
+  // 3. Rapport persistence + surveillance + email
+  let rapportId: string | null = null
+  let surveillanceExpiresAt: string | null = null
+  let devisUploads: Array<{ id: string; version: number; nom_fichier: string | null; created_at: string }> = []
+
+  if (userId) {
+    try {
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+
+      // Check existing rapport
+      const { data: existing } = await supabaseAdmin
+        .from('rapports').select('id').eq('stripe_session_id', session_id).maybeSingle()
+
+      if (!existing) {
+        // New rapport — insert
+        const { data: inserted } = await supabaseAdmin.from('rapports').insert({
+          user_id: userId, siret, stripe_session_id: session_id, montant: 490, statut: 'genere',
+        }).select('id').single()
+        rapportId = inserted?.id ?? null
+
+        // Auto-activate surveillance 6 months
+        const exp = new Date()
+        exp.setMonth(exp.getMonth() + 6)
+        surveillanceExpiresAt = exp.toISOString()
+        await supabaseAdmin.from('surveillances').insert({
+          user_id: userId, siret,
+          nom_artisan: result?.nom || siret,
+          expires_at: surveillanceExpiresAt,
+        }).then(() => {})
+
+        // Send confirmation email
+        try {
+          const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
+          const userEmail = authData?.user?.email
+          if (userEmail && result) {
+            const resend = new Resend(process.env.RESEND_API_KEY)
+            const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
+            const scoreLabel = result.score >= 75 ? 'Fiable' : result.score >= 45 ? 'Vigilance' : 'Risque'
+            await resend.emails.send({
+              from: 'Verifio <onboarding@resend.dev>',
+              to: userEmail,
+              subject: `Votre rapport complet — ${result.nom}`,
+              html: buildConfirmationEmail({
+                nomEntreprise: result.nom, siret,
+                score: result.score, scoreLabel,
+                rapportUrl: `${BASE_URL}/rapport/succes?siret=${siret}&session_id=${session_id}`,
+                surveillanceExpiry: surveillanceExpiresAt,
+              }),
+            })
+          }
+        } catch (emailErr) { console.error('EMAIL ERROR:', emailErr) }
+      } else {
+        rapportId = existing.id
+        // Fetch existing surveillance
+        const { data: surv } = await supabaseAdmin.from('surveillances')
+          .select('expires_at').eq('user_id', userId).eq('siret', siret).maybeSingle()
+        surveillanceExpiresAt = surv?.expires_at ?? null
+      }
+
+      // Devis uploads for this rapport
+      if (rapportId) {
+        const { data: uploads } = await supabaseAdmin.from('devis_uploads')
+          .select('id, version, nom_fichier, created_at')
+          .eq('rapport_id', rapportId)
+          .order('created_at', { ascending: false })
+        devisUploads = (uploads ?? []) as typeof devisUploads
+      }
+    } catch (e) { console.error('RAPPORT PERSISTENCE ERROR:', e) }
   }
 
   const statutColor = result?.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
@@ -489,6 +595,45 @@ export default async function SuccesPage({
                 <BoutonPartage sessionId={session_id} />
               </div>
 
+              {/* Analyse de devis */}
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: devisUploads.length > 0 ? '10px' : '8px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Analyse de devis
+                  </p>
+                  {devisUploads.length > 0 && (
+                    <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>{devisUploads.length} version{devisUploads.length > 1 ? 's' : ''}</span>
+                  )}
+                </div>
+                {devisUploads.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '10px' }}>
+                    {devisUploads.slice(0, 3).map((d) => (
+                      <a key={d.id}
+                        href={`/analyser-devis?siret=${siret}&rapport_id=${rapportId}&version=${d.version}`}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', textDecoration: 'none' }}>
+                        <FileSearch size={13} color="var(--color-accent)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: '12px', color: 'var(--color-text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {d.nom_fichier || `Devis v${d.version}`}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--color-muted)', flexShrink: 0 }}>
+                          {new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: '0 0 10px', fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.5 }}>
+                    Importez votre devis pour détecter les clauses abusives et mentions manquantes.
+                  </p>
+                )}
+                <a
+                  href={`/analyser-devis?siret=${siret}&rapport_id=${rapportId ?? ''}&version=${(devisUploads[0]?.version ?? 0) + 1}&nom=${encodeURIComponent(result?.nom ?? '')}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid var(--color-accent)', color: 'var(--color-accent)', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+                  <Upload size={14} strokeWidth={1.5} />
+                  {devisUploads.length > 0 ? 'Analyser une nouvelle version' : 'Analyser mon devis'}
+                </a>
+              </div>
+
               {/* Score résumé */}
               {scoreLabel && (
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -549,6 +694,19 @@ export default async function SuccesPage({
                   ))}
                 </div>
               </div>
+
+              {/* Surveillance */}
+              {surveillanceExpiresAt && (
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <BellRing size={15} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700, color: 'var(--color-safe)' }}>Surveillance activée</p>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>
+                      Valable jusqu&apos;au {new Date(surveillanceExpiresAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* CTAs */}
               <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
