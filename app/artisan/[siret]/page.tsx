@@ -338,11 +338,19 @@ export default function ArtisanFichePage() {
   useEffect(() => {
     if (!siret) return
     supabase.auth.getUser().then(({ data: { user } }) => {
+      console.log('CHECK RAPPORT — user:', user?.id)
+      console.log('CHECK RAPPORT — siret:', siret)
       if (!user) return
       supabase.from('rapports').select('id, stripe_session_id').eq('user_id', user.id).eq('siret', siret).maybeSingle()
-        .then(({ data }) => { if (data) setRapportExistant(data) })
+        .then(({ data, error }) => {
+          console.log('RAPPORT FOUND:', data, 'ERROR:', error)
+          if (data) setRapportExistant(data)
+        })
       supabase.from('surveillances').select('expires_at').eq('user_id', user.id).eq('siret', siret).maybeSingle()
-        .then(({ data }) => { if (data) setSurveillanceActive(data) })
+        .then(({ data, error }) => {
+          console.log('SURVEILLANCE FOUND:', data, 'ERROR:', error)
+          if (data) setSurveillanceActive(data)
+        })
     })
   }, [siret])
 
@@ -1577,25 +1585,29 @@ export default function ArtisanFichePage() {
                     {/* Pack Sérénité — bloc contextuel */}
                     {rapportExistant ? (
                       <div style={{
-                        background: 'var(--color-safe)',
-                        color: 'white',
-                        borderRadius: '16px',
-                        padding: '20px 16px',
+                        background: 'rgba(45,185,110,0.06)',
+                        border: '1.5px solid var(--color-safe)',
+                        borderRadius: 12,
+                        padding: 20,
                         textAlign: 'center',
                       }}>
-                        <CheckCircle size={24} strokeWidth={1.5} style={{ marginBottom: '8px' }} />
-                        <p style={{ fontWeight: 700, margin: '0 0 4px', fontSize: '15px' }}>Rapport déjà acheté</p>
-                        <p style={{ fontSize: '13px', opacity: 0.9, margin: '0 0 14px' }}>Accédez à votre rapport complet</p>
+                        <CheckCircle size={24} color="var(--color-safe)" strokeWidth={1.5} />
+                        <p style={{ fontWeight: 700, fontSize: 16, margin: '10px 0 4px' }}>Rapport déjà acheté</p>
+                        <p style={{ fontSize: 13, color: 'var(--color-muted)', marginBottom: 16 }}>
+                          Vous avez accès au rapport complet de cet artisan
+                        </p>
                         <button
-                          onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}`)}
+                          onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}&from=fiche`)}
                           style={{
-                            background: 'white', color: 'var(--color-safe)',
-                            border: 'none', borderRadius: '10px',
-                            padding: '10px 20px', fontSize: '14px', fontWeight: 700,
-                            cursor: 'pointer', width: '100%',
+                            width: '100%',
+                            background: 'var(--color-accent)', color: 'white',
+                            border: 'none', borderRadius: 10,
+                            padding: '12px 16px', cursor: 'pointer',
+                            fontWeight: 600, fontSize: 15,
+                            fontFamily: 'var(--font-body)',
                           }}
                         >
-                          Accéder au rapport →
+                          Accéder à mon rapport →
                         </button>
                       </div>
                     ) : (
@@ -1679,29 +1691,28 @@ export default function ArtisanFichePage() {
                     {/* Surveillance */}
                     {rapportExistant && surveillanceActive ? (
                       <div style={{
-                        background: 'var(--color-safe-bg)',
-                        border: '1px solid color-mix(in srgb, var(--color-safe) 35%, transparent)',
-                        borderRadius: '12px', padding: '12px 14px',
-                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                        border: '1.5px solid var(--color-safe)',
+                        borderRadius: 12, padding: 16,
+                        display: 'flex', alignItems: 'center', gap: 10,
                       }}>
-                        <BellRing size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <BellRing size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
                         <div>
-                          <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Surveillance active</p>
-                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
-                            Valable jusqu&apos;au {new Date(surveillanceActive.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>Surveillance active</p>
+                          <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: 0 }}>
+                            Alertes email activées pour cet artisan
                           </p>
                         </div>
                       </div>
                     ) : rapportExistant ? (
                       <div style={{
-                        background: '#f9fafb', border: '1px solid #e5e7eb',
-                        borderRadius: '12px', padding: '12px 14px',
-                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 12, padding: 16,
+                        display: 'flex', alignItems: 'center', gap: 10,
                       }}>
-                        <Bell size={16} color="#9ca3af" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <Bell size={16} color="#9ca3af" strokeWidth={1.5} style={{ flexShrink: 0 }} />
                         <div>
-                          <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Surveillance non active</p>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>Contactez le support pour réactiver</p>
+                          <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>Surveillance inactive</p>
+                          <p style={{ fontSize: 12, color: 'var(--color-muted)', margin: 0 }}>Contactez le support pour réactiver</p>
                         </div>
                       </div>
                     ) : (
@@ -1822,16 +1833,16 @@ export default function ArtisanFichePage() {
           )}
           {rapportExistant ? (
             <button
-              onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}`)}
+              onClick={() => router.push(`/rapport/succes?session_id=${rapportExistant.stripe_session_id}&siret=${siret}&from=fiche`)}
               style={{
                 width: '100%',
-                background: 'var(--color-safe)', color: 'white',
+                background: 'var(--color-accent)', color: 'white',
                 border: 'none', borderRadius: '12px',
                 padding: '14px', fontSize: '15px', fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'var(--font-body)',
               }}
             >
-              Accéder au rapport →
+              Accéder à mon rapport →
             </button>
           ) : (
             <button
