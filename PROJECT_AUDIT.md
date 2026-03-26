@@ -1,5 +1,6 @@
 # PROJECT_AUDIT.md — Verifio
-> Audit technique complet — état réel du code au 24 mars 2026.
+> Audit technique complet — état réel du code au 26 mars 2026.
+> Inclut toutes les modifications effectuées les 24, 25 et 26 mars 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
 ---
@@ -11,13 +12,13 @@
 **Fichier :** `app/auth/page.tsx`
 
 1. L'utilisateur saisit email + mot de passe dans `LoginForm`
-2. Submit → `handleLogin()` dans `AuthPage`
+2. Submit → `handleLogin()` dans `AuthPageInner`
 3. Appel Supabase :
    ```typescript
    supabase.auth.signInWithPassword({ email, password })
    ```
-4. Succès → `router.push('/')` (landing)
-5. Erreur → `setError(err.message)` affiché dans le formulaire
+4. Succès → `router.push(redirectTo || '/')` (supporte `?redirect=/artisan/[siret]`)
+5. Erreur → `setError('E-mail ou mot de passe incorrect.')`
 
 ### Flow signup email + password
 
@@ -33,9 +34,7 @@
      options: { data: { prenom, nom } }
    })
    ```
-   - `prenom` et `nom` stockés dans les **metadata** de `auth.users`
-4. Succès → message `"Compte créé ! Vérifiez votre e-mail pour confirmer."` (pas de redirection automatique)
-5. Erreur Supabase → message d'erreur affiché
+4. Succès → message `"Compte créé ! Vérifiez votre e-mail pour confirmer."`
 
 ### Indicateur de force du mot de passe
 
@@ -49,10 +48,29 @@ Score 0–4 → 4 barres colorées (rouge → vert)
 
 ### Flow Google OAuth
 
-⚠️ **Incomplet** — Le bouton Google OAuth est présent dans `LoginForm` (SVG inline) mais :
-- Aucun appel `supabase.auth.signInWithOAuth()` n'est implémenté dans le code
-- **Le fichier `/app/auth/callback/route.ts` n'existe pas** dans le projet
-- Le bouton est affiché mais non fonctionnel
+**Statut : fonctionnel (implémenté le 24 mars 2026)**
+
+- `handleGoogleAuth()` dans `AuthPageInner` :
+  ```typescript
+  supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/auth/callback` }
+  })
+  ```
+- Route callback **`app/auth/callback/route.ts`** existe et gère le code OAuth → session
+- Bouton "Continuer avec Google" branché dans `LoginForm` (onClick)
+- Bouton "S'inscrire avec Google" ajouté dans `SignupForm` (même handler)
+- `onGoogleAuth` passé en prop aux deux formulaires depuis `AuthPageInner`
+
+⚠️ **À configurer en prod** : Supabase Dashboard → Authentication → Providers → Google (Client ID + Secret). Callback URL à autoriser dans Google Console : `https://eflaghdxvrfenyqkrfnt.supabase.co/auth/v1/callback`
+
+### Architecture des composants Auth
+
+`LoginForm` et `SignupForm` sont définis **au niveau MODULE** (hors du composant parent `AuthPageInner`). C'est intentionnel : si définis à l'intérieur, React les recrée à chaque render, cassant le focus des inputs. Les props nécessaires sont passées explicitement.
+
+### Paramètre `?redirect`
+
+La page `/auth` supporte `?redirect=/artisan/[siret]` — après login, redirige vers l'URL souhaitée au lieu de `/`.
 
 ### Table `auth.users` (Supabase built-in)
 
@@ -63,200 +81,17 @@ Score 0–4 → 4 barres colorées (rouge → vert)
 | `encrypted_password` | Hash du mot de passe |
 | `raw_user_meta_data` | JSON — contient `{ prenom, nom }` depuis le signup |
 | `email_confirmed_at` | Timestamp de confirmation email |
-| Autres | Colonnes Supabase standard (created_at, last_sign_in_at…) |
-
-### Table `profiles`
-
-⚠️ **Inexistante** — Aucune table `profiles` n'est trouvée dans les migrations SQL ni dans le code. Les données utilisateur (prenom, nom) sont stockées uniquement dans `auth.users.raw_user_meta_data`. Il n'y a pas de table profil dédiée.
 
 ### Gestion des rôles utilisateur
 
-⚠️ **Inexistante** — Pas de système de rôles dans `auth.users`. La seule distinction de rôle est :
-- **Admin** : comparaison d'email hardcodé (`process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'couratincharlie@gmail.com'`) dans les routes `/api/artisan/*`
-- **Artisan vérifié** : présence d'un enregistrement dans la table `artisans` avec `statut = 'verifie'`
+Pas de système de rôles custom. Distinction :
+- **Admin** : comparaison d'email hardcodé (`NEXT_PUBLIC_ADMIN_EMAIL || 'couratincharlie@gmail.com'`)
+- **Artisan vérifié** : enregistrement dans `artisans` avec `statut = 'verifie'`
 - **Particulier** : tout autre utilisateur authentifié
 
-La détection artisan dans `SiteHeader.tsx` se fait via une requête sur la table `artisans` au chargement du header.
-
 ---
 
-## 2. Flow Revendication Fiche Artisan
-
-### Ce que fait le lien "Revendiquez cette fiche →"
-
-**Fichier :** `app/artisan/[siret]/page.tsx`
-
-C'est un simple `<a href="/espace-artisan">`. **Il ne transmet pas le SIRET en paramètre URL, ne pré-remplit aucun champ, ne déclenche aucune logique.** L'artisan arrive sur la landing de l'espace artisan et doit naviguer manuellement vers le formulaire d'inscription, puis saisir son SIRET à la main.
-
-⚠️ **UX manquante** : le lien devrait pointer vers `/espace-artisan/inscription?siret=${result.siret}` pour pré-remplir le formulaire.
-
-### Formulaire d'inscription artisan
-
-**Fichier :** `app/espace-artisan/inscription/page.tsx`
-
-Formulaire 2 étapes.
-
-**Interface FormData :**
-```typescript
-{
-  siret: string
-  nomEntreprise: string
-  adresse: string
-  typesTravaux: string[]
-  zoneIntervention: string
-  siteWeb: string
-  nomDirigeant: string
-  email: string
-  telephone: string
-  motDePasse: string
-  motDePasseConfirm: string
-  cguAcceptees: boolean
-}
-```
-
-**Étape 1 — Entreprise :**
-- `siret` → auto-popule `nomEntreprise` + `adresse` via `https://recherche-entreprises.api.gouv.fr/search?q=${siret}&per_page=1` quand 14 chiffres saisis
-- `typesTravaux` : sélection multiple parmi Plomberie, Électricité, Maçonnerie, Peinture, Isolation, Toiture, Menuiserie, Carrelage, Chauffage, Climatisation, Jardinage, Façade, Charpente, Serrurerie, Démolition, Autre
-- `zoneIntervention` : texte libre (départements)
-- `siteWeb` : optionnel
-
-**Validations étape 1 :**
-- SIRET 14 chiffres obligatoire
-- `nomEntreprise` obligatoire
-- Au moins 1 type de travaux sélectionné
-
-**Étape 2 — Identité :**
-- `nomDirigeant`, `email`, `telephone` obligatoires
-- `justificatif` : upload fichier (Kbis < 3 mois OU pièce d'identité), max 5 Mo, formats PDF/JPG/PNG
-- `motDePasse` min 8 chars, confirmation obligatoire
-- `cguAcceptees` checkbox obligatoire
-
-**Submit :** `POST /api/artisan/register` (FormData multipart, inclut le fichier)
-
-### Routes `/api/artisan/*`
-
-#### `POST /api/artisan/register`
-
-1. Valide les champs requis
-2. Crée un compte Supabase Auth :
-   ```typescript
-   supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true })
-   ```
-   - Si email déjà existant → retourne 409 `"Email déjà enregistré"`
-3. Upload du justificatif vers le bucket Supabase Storage `justificatifs` :
-   - Path : `${siret}/${Date.now()}.${ext}`
-   - Non bloquant si échec
-4. Insère dans `artisans` avec `statut = 'en_attente'`
-5. Si insertion DB échoue → supprime l'utilisateur Auth créé (cleanup)
-6. Envoie email de notification admin via Resend
-
-#### `GET /api/artisan/list`
-
-- **Auth** : Bearer token + email admin
-- Paramètre query : `?statut=en_attente|verifie|refuse`
-- Retourne tous les artisans filtrés, triés par `created_at DESC`
-- Colonnes retournées : `id, siret, nom_entreprise, nom_dirigeant, email, telephone, statut, justificatif_url, abonnement_actif, badge_actif, essai_fin, created_at, motif_refus`
-
-#### `POST /api/artisan/validate`
-
-- **Auth** : Bearer token + email admin obligatoire
-- Input JSON : `{ artisanId: string }`
-- Calcule 14 jours d'essai (`essai_fin = now() + 14 jours`)
-- Met à jour `artisans` :
-  ```typescript
-  { statut: 'verifie', badge_actif: true, essai_debut: now, essai_fin, abonnement_actif: true }
-  ```
-- Envoie email de confirmation à l'artisan via Resend
-
-#### `POST /api/artisan/refuse`
-
-- **Auth** : Bearer token + email admin obligatoire
-- Input JSON : `{ artisanId: string, motif?: string }`
-- Met à jour `artisans` :
-  ```typescript
-  { statut: 'refuse', motif_refus: motif }
-  ```
-- Envoie email de refus à l'artisan (avec motif en encadré rouge) via Resend
-
-#### `PATCH /api/artisan/profile`
-
-- **Auth** : Bearer token utilisateur (pas admin)
-- Input JSON : `{ description?: string, telephone?: string }`
-- Met à jour `artisans` WHERE `user_id = auth_user.id`
-
-#### `GET /api/artisan/public`
-
-- **Auth** : Aucune (public)
-- Query param : `?siret=...`
-- Retourne : `{ verifie: boolean, badgeActif: boolean, nomEntreprise: string|null, description: string|null }`
-- Vérifie `statut = 'verifie'` ET `badge_actif = true`
-- Si SIRET inconnu → retourne `{ verifie: false, badgeActif: false, nomEntreprise: null, description: null }`
-
-#### `POST /api/artisan/devis/create`
-
-- **Auth** : Bearer token utilisateur
-- Vérifie que l'artisan est `statut = 'verifie'` (sinon 403)
-- Compte les devis existants pour incrémenter `numero_devis`
-- Insère dans `devis_artisan`
-- Input : `{ clientNom, clientEmail?, clientTelephone?, clientAdresse?, lignes[], totalHt, tvaTaux, totalTtc, acompte, statut? }`
-
-### Structure de la table `artisans`
-
-> Note : la table s'appelle **`artisans`** (pas `artisan_profiles`)
-
-```sql
-CREATE TYPE statut_artisan AS ENUM ('en_attente', 'verifie', 'refuse');
-
-TABLE artisans:
-  id                      uuid          PK, gen_random_uuid()
-  user_id                 uuid          FK → auth.users(id) ON DELETE CASCADE
-  siret                   text          UNIQUE NOT NULL
-  nom_entreprise          text          NOT NULL
-  adresse                 text
-  types_travaux           text[]        DEFAULT {}
-  zone_intervention       text[]        DEFAULT {}
-  site_web                text
-  nom_dirigeant           text          NOT NULL
-  email                   text          NOT NULL
-  telephone               text          NOT NULL
-  justificatif_url        text          — URL bucket 'justificatifs'
-  statut                  statut_artisan DEFAULT 'en_attente'
-  motif_refus             text
-  stripe_customer_id      text
-  stripe_subscription_id  text
-  essai_debut             timestamptz
-  essai_fin               timestamptz
-  abonnement_actif        boolean       DEFAULT false
-  badge_actif             boolean       DEFAULT false
-  photo_url               text
-  description             text
-  created_at              timestamptz   DEFAULT now()
-```
-
-**RLS policies :**
-- Lecture/écriture sur ses propres lignes (`user_id = auth.uid()`)
-- Lecture publique des artisans vérifiés (`statut = 'verifie'`)
-- `service_role` : accès total (utilisé par les routes API)
-
-⚠️ `photo_url` n'est jamais alimenté (ni dans l'inscription, ni dans le dashboard)
-⚠️ `stripe_customer_id` / `stripe_subscription_id` présents mais aucun flow Stripe B2B implémenté
-
-### Validation dans `/app/admin/page.tsx`
-
-- **Auth** : session Supabase + `user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL` (défaut `couratincharlie@gmail.com`)
-- Si non-admin → affiche "Accès refusé"
-
-**Section "En attente" :**
-- Affiche : SIRET, nom entreprise, dirigeant, email, téléphone, date, lien Kbis
-- Bouton **Valider** → `POST /api/artisan/validate` avec `{ artisanId }`
-- Bouton **Refuser** → prompt JS pour saisir motif → `POST /api/artisan/refuse`
-
-**Section "Artisans validés" :**
-- Tableau : nom, SIRET, abonnement actif, date fin essai, badge actif
-
----
-
-## 3. Flow Paiement Stripe
+## 2. Flow Paiement Stripe
 
 ### `POST /api/checkout`
 
@@ -265,71 +100,179 @@ TABLE artisans:
 Input JSON :
 ```typescript
 {
-  plan: 'serenite' | 'tranquillite',
+  plan: 'serenite',
   siret?: string,
   nom?: string,
-  chantierId?: string
+  user_id: string  // id Supabase auth, stocké en metadata Stripe
 }
 ```
 
 **Pack Sérénité :**
 - Mode : `'payment'` (one-time)
-- Montant : **1990 cents (€19,90)**
+- Montant : **490 cents (€4,90)** — corrigé le 24 mars (était 1990 = €19,90)
 - Nom produit : `"Pack Sérénité — ${nom}"`
-- Description : `"Analyse IA de votre devis PDF + rapport complet artisan + surveillance 6 mois."`
-- Success URL : `/artisan/${siret}?pack=serenite&session_id={CHECKOUT_SESSION_ID}` (si siret fourni) ou `/mes-chantiers?pack=serenite&session_id={CHECKOUT_SESSION_ID}`
-- Metadata Stripe : `{ plan: 'serenite', siret, nom, chantierId }`
-- Retourne 400 si `siret` ET `chantierId` tous les deux absents
-
-**Pack Tranquillité :**
-- Mode : `'subscription'` (récurrent)
-- Montant : **490 cents (€4,90/mois)**
-- `recurring: { interval: 'month' }`
-- Success URL : `/mon-espace?plan=tranquillite&session_id={CHECKOUT_SESSION_ID}`
-
-**Résolution de l'URL de base :**
-1. `process.env.NEXT_PUBLIC_BASE_URL` si défini
-2. Sinon détection depuis `request.headers` (proto + host)
-3. Fallback : `http://localhost:3000`
-
-⚠️ **Incohérence de prix** : L'interface affiche **4,90€** (mis à jour récemment) mais `api/checkout` facture **€19,90 (1990 cents)** pour le Pack Sérénité. Prix non synchronisé.
+- Success URL : `/rapport/succes?siret=${siret}&session_id={CHECKOUT_SESSION_ID}&new=true`
+- Metadata Stripe : `{ plan: 'serenite', siret, nom, user_id }`
 
 ### Page `/rapport/succes`
 
-**Fichier :** `app/rapport/succes/page.tsx`
+**Fichier :** `app/rapport/succes/page.tsx` — Server Component (`force-dynamic`)
 
-Paramètres URL attendus : `?siret=...` (requis) + `?session_id=...` (optionnel, non vérifié)
+**Vérification Stripe :** La page vérifie `payment_status === 'paid'` via `stripe.checkout.sessions.retrieve(session_id)`. Si non payé → `redirect('/recherche')`. Si `session_id` absent → `redirect('/recherche')`.
 
-**Workflow :**
-1. Lit `siret` depuis `searchParams`
-2. Lance en parallèle :
-   - `fetchCompany(siret)` → données complètes de l'artisan
-   - `getAISummary(result)` → synthèse Anthropic
-3. Génère une page HTML avec rapport complet débloqué
+**Récupération `user_id` :** `stripeSession.metadata?.user_id` (transmis lors du checkout)
 
-**Fonction `getAISummary()` :**
-```typescript
-// Model: claude-sonnet-4-6
-// Max tokens: 300
-// Input: nom, statut, score, activité, ancienneté, capital, effectif, RGE, BODACC, dirigeants, alerts
-// Output: résumé 3-4 phrases pour décision de confiance
+**Workflow complet :**
+1. Vérification Stripe → paiement confirmé ou redirect
+2. `fetchCompany(siret)` → données artisan complètes
+3. Si `userId` présent :
+   - `supabaseAdmin.auth.admin.getUserById(userId)` → récupère `userEmail`
+   - Vérifie si rapport déjà inséré (`stripe_session_id` unique) → évite les doublons
+   - Si nouveau : INSERT dans `rapports` (service role, bypass RLS)
+   - INSERT/UPSERT dans `surveillances` avec `email` + `user_id` + `expires_at` (6 mois)
+   - Envoi email de confirmation via Resend (`buildConfirmationEmail`)
+4. Génération synthèse IA via Anthropic claude-sonnet-4-6 (fallback vide si pas de clé)
+
+**Client Supabase utilisé :** `createClient(url, SUPABASE_SERVICE_ROLE_KEY)` — bypass RLS complet
+
+**Sections du rapport affiché :**
+1. `SiteHeader` en haut de page
+2. Sub-header sticky : "Verifio · Rapport complet · [Nom entreprise]" + boutons PDF / Partage
+3. Bouton retour contextuel (`?from=mon-espace` → "Mes rapports", sinon → "Retour à la fiche")
+4. Bandeau features débloquées : 6 items avec icônes (PDF, Analyse devis, Surveillance, BODACC, Synthèse IA, Carnet chantier)
+5. Score + statut (ScoreRing animé)
+6. Synthèse IA (skeleton pendant chargement, fallback "indisponible" si pas de clé)
+7. Données identité (SIRET, forme juridique, date création, adresse, capital, effectif)
+8. Certifications RGE (cards avec icônes thématiques)
+9. Régularité financière / Procédures collectives BODACC
+10. Dirigeants (jusqu'à 5)
+11. Historique changements statut
+12. Annonces BODACC redesign — cards colorées par type :
+    - `dpc` → bleu `#3B82F6`
+    - `modification` → orange `#F59E0B`
+    - `vente` → violet `#8B5CF6`
+    - `immatriculation` → vert `var(--color-safe)`
+    - `radiation` → rouge `var(--color-danger)`
+    - procédure collective → rouge avec fond alert + icône AlertTriangle
+    - Pagination 5 par page
+13. Checklist personnalisée avant de signer (10 items, cochables)
+14. Questions à poser à l'artisan (liste)
+15. "Vos droits avant de signer" — 4 cartes avec badge Pack Sérénité
+16. Modèle de contrat pré-rempli (avec badge Pack Sérénité)
+17. Guide recours si ça se passe mal (avec badge Pack Sérénité)
+18. Sidebar : score, surveillance active/expiry, CTA "Ouvrir un carnet de chantier" (→ `/nouveau-chantier?siret=&nom=&adresse=&from=rapport&session_id=`)
+19. `WelcomeModal` premier achat (`isNew=true`)
+
+**`PackBadge` :** composant partagé `components/PackBadge.tsx` — badge vert translucide avec icône Shield, affiché sur les sections premium.
+
+**`AnalyserDevisButton` :** composant client `components/AnalyserDevisButton.tsx` avec hover state.
+
+### Email de confirmation (Resend)
+
+Envoyé depuis `/rapport/succes` après un nouvel achat. Contenu :
+- Score de fiabilité coloré
+- SIRET
+- Liste des features débloquées
+- Lien "Accéder au rapport"
+- Info surveillance si activée
+- From : `Verifio <onboarding@resend.dev>`
+
+⚠️ **À tester** : nécessite `RESEND_API_KEY` configurée dans Vercel
+
+### PDF rapport
+
+**Fichier :** `app/api/rapport-pdf/route.tsx`
+
+- `?siret=` + `?session_id=` requis
+- Vérifie paiement Stripe avant génération
+- `?type=contrat` → génère `ContratPDF` uniquement
+- Par défaut → génère `RapportPDF` complet
+- Retourne `new Response(new Uint8Array(buffer), { headers: { Content-Disposition: attachment } })`
+
+⚠️ **À tester** : vérifier que le téléchargement fonctionne en prod
+
+---
+
+## 3. Tables Supabase
+
+### Table `rapports`
+
+**Migration :** `supabase/migrations/20260325000000_create_rapports.sql`
+
+```sql
+TABLE rapports:
+  id                uuid          PK, gen_random_uuid()
+  user_id           uuid          FK → auth.users(id) ON DELETE SET NULL (nullable)
+  siret             text          NOT NULL
+  nom_entreprise    text          — ajouté le 26 mars 2026
+  stripe_session_id text          UNIQUE NOT NULL
+  montant           integer       NOT NULL DEFAULT 490
+  statut            text          NOT NULL DEFAULT 'genere'
+  created_at        timestamptz   DEFAULT now()
 ```
-- Import dynamique du SDK Anthropic : `await import('@anthropic-ai/sdk')`
-- Retourne `""` si `ANTHROPIC_API_KEY` absent ou erreur API
 
-**Sections du rapport :**
-1. Badge "Rapport complet débloqué" + confirmation paiement
-2. ScoreRing animé + verdicts + alerts
-3. Résumé IA (si disponible) — fond gradient avec icône Sparkles
-4. Informations légales (SIRET, forme juridique, date création, adresse, capital, effectif)
-5. Certifications RGE
-6. Procédures collectives (si présentes, encadré rouge)
-7. Dirigeants (jusqu'à 5)
-8. Timeline BODACC
+**RLS policies :**
+- SELECT : `auth.uid() = user_id`
+- ALL (service role) : `true`
 
-⚠️ **Absence de vérification paiement** : La page `/rapport/succes` n'appelle pas Stripe pour confirmer que `session_id` correspond à un paiement réel complété. N'importe qui connaissant un SIRET peut accéder à `/rapport/succes?siret=XXX` sans avoir payé.
+⚠️ **À appliquer** : si la table n'existe pas encore, exécuter la migration dans Supabase Dashboard → SQL Editor
 
-⚠️ **Table `rapports`** : Référencée dans CLAUDE.md mais **aucune migration SQL trouvée**. La page succès ne persiste rien en base. Il n'y a pas de table `rapports`.
+### Table `surveillances`
+
+Existait avant le 24 mars. Colonnes ajoutées :
+
+**Migration :** `supabase/migrations/20260325000000_surveillance_devis.sql`
+
+```sql
+ALTER TABLE surveillances ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id);
+ALTER TABLE surveillances ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+```
+
+Colonnes notables :
+- `email` : NOT NULL (requis pour les alertes cron)
+- `siret` : NOT NULL
+- `nom_artisan` : texte
+- `statut_initial` : statut au moment de l'activation (utilisé par le cron pour détecter changements)
+- `user_id` : ajouté pour requêtes par utilisateur (auth.uid())
+- `expires_at` : date d'expiration de la surveillance (6 mois après achat)
+
+L'upsert utilisé lors de l'achat :
+```typescript
+supabaseAdmin.from('surveillances').upsert({
+  user_id, siret, email, nom_artisan, expires_at
+}, { onConflict: 'email,siret', ignoreDuplicates: false })
+```
+
+### Table `devis_uploads`
+
+**Migration :** `supabase/migrations/20260325000000_surveillance_devis.sql`
+
+```sql
+TABLE devis_uploads:
+  id           uuid    PK
+  user_id      uuid    FK → auth.users(id) NOT NULL
+  rapport_id   uuid    FK → rapports(id)
+  siret        text    NOT NULL
+  version      int     DEFAULT 1
+  nom_fichier  text
+  analyse_json jsonb
+  created_at   timestamptz
+```
+
+RLS : users can manage own devis (auth.uid() = user_id)
+
+### Table `artisans`
+
+```sql
+TABLE artisans:
+  id, user_id, siret (UNIQUE), nom_entreprise, adresse,
+  types_travaux[], zone_intervention[], site_web,
+  nom_dirigeant, email, telephone, justificatif_url,
+  statut (en_attente|verifie|refuse), motif_refus,
+  stripe_customer_id, stripe_subscription_id,
+  essai_debut, essai_fin, abonnement_actif, badge_actif,
+  photo_url, description, created_at
+```
 
 ---
 
@@ -337,23 +280,16 @@ Paramètres URL attendus : `?siret=...` (requis) + `?session_id=...` (optionnel,
 
 ### `lib/score.ts`
 
-**Interface d'entrée :**
 ```typescript
 interface ScoreInput {
   statut: string          // 'actif'|'A' = actif ; tout autre = fermé
   dateCreation?: string
   procedures: {
-    collectives: number   // nb de procédures BODACC de type collectif
-    disponible: boolean   // false → BODACC pas encore chargé
+    collectives: number   // nb de procédures BODACC famille collectif
+    disponible: boolean   // false → score = -1 (loading)
   }
 }
 ```
-
-**Retour loading :**
-- Si `procedures.disponible === false` → `{ score: -1, loading: true }`
-- `ScoreRing` affiche alors un anneau gris `#9ca3af`
-
-**Calcul du score (3 critères) :**
 
 | Critère | Points max | Conditions |
 |---------|-----------|------------|
@@ -361,479 +297,275 @@ interface ScoreInput {
 | Ancienneté | 35 | ≥10 ans = 35, ≥5 = 28, ≥2 = 17, <2 = 7 |
 | Procédures BODACC | 25 | 0 proc = 25, 1 proc = 5, ≥2 proc = 0 |
 
-Score final = `Math.round((totalPoints / 100) * 100)` → plage 0–100
-
-**Couleurs :**
-- `scoreColor(score)` : ≥70 → `#52B788` (vert), ≥50 → `#F4A261` (orange), <50 → `#E63946` (rouge), <0 → `#9ca3af` (gris)
-- `scoreBg(score)` : versions pastel des mêmes couleurs
-
-**Fonction helper :**
-- `getYears(dateStr)` : calcule les années entières entre `dateStr` et aujourd'hui
-
-### Appel depuis la fiche artisan
-
-**Fichier :** `app/artisan/[siret]/page.tsx`
-
-1. Appel initial `fetchCompany(siret)` depuis l'API `/api/enrich`
-2. `result.score` est pré-calculé dans `fetchCompany.ts` (appelé dans la route `/api/enrich`)
-3. La fiche re-calcule le score localement avec :
-   ```typescript
-   const scoreResult = calculateScore({
-     statut: result.statut,
-     dateCreation: result.dateCreation,
-     procedures: {
-       disponible: result.bodacc?.fetched ?? false,
-       collectives: result.bodacc?.annonces?.filter(a => a.famille === 'collective').length ?? 0
-     }
-   })
-   ```
-4. `ScoreRing` reçoit `score` et `strokeColor`
-
-### Comment BODACC est fetché et filtré
-
-**Fichier :** `lib/fetchCompany.ts`
-
-Appel API :
-```
-https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records
-  ?where=registre like "${siren}"
-  &order_by=dateparution desc
-  &limit=20
-```
-
-**Filtrage pour procédures collectives** (pour le score) :
-```typescript
-annonces.filter(a =>
-  a.famille === 'collective'
-  || a.type?.toLowerCase().includes('liquidation')
-  || a.type?.toLowerCase().includes('redressement')
-  || a.type?.toLowerCase().includes('sauvegarde')
-)
-```
-
-**Détection de changement de dirigeant récent** (6 mois) :
-- Recherche dans `modificationsgenerales` les mots-clés : `administration|gérant|président|directeur`
-- Seulement pour les annonces de moins de 6 mois
-
-**Détection de cession** :
-- Annonces `famille === 'Ventes et cessions'` dans les 3 dernières années
-
-**Champ `fetched`** : `true` si l'appel BODACC a réussi, `false` si erreur → déclenche le score `-1`
+- `score = -1` si `procedures.disponible === false` → ScoreRing gris
+- Couleurs breakdown : ratio ≥ 0.8 → vert, ≥ 0.5 → orange, < 0.5 → rouge
 
 ---
 
-## 5. Carnet de Chantier
+## 5. Fiche Artisan `/artisan/[siret]`
 
-### Structure des tables
+**Fichier :** `app/artisan/[siret]/page.tsx` (`'use client'`)
 
-#### Table `chantiers`
-```
-id               uuid         PK
-user_id          uuid         FK → auth.users
-siret            text         nullable (lien vers artisan)
-nom_artisan      text         NOT NULL
-type_travaux     text         NOT NULL
-description      text
-adresse_chantier text
-date_debut       date
-date_fin_prevue  date
-montant_total    numeric
-statut           text         'en_cours'|'termine'|'litige'|'en_attente'
-created_at       timestamptz
-```
+### Détection rapport existant
 
-#### Table `chantier_evenements`
-```
-id               uuid         PK
-chantier_id      uuid         FK → chantiers
-titre            text         NOT NULL
-description      text
-type             text         'note'|'alerte'|'appel'|'visite'|'probleme'|'document'|'photo'
-date_evenement   timestamptz  NOT NULL
-created_at       timestamptz
+`useEffect` au montage (dépendance `[siret]`) :
+```typescript
+console.log('useEffect check rapport — siret:', siret)
+supabase.auth.getUser().then(({ data: { user } }) => {
+  console.log('CHECK RAPPORT — user:', user?.id)
+  if (!user) return
+  supabase.from('rapports')
+    .select('id, stripe_session_id')
+    .eq('user_id', user.id).eq('siret', siret).maybeSingle()
+    .then(({ data, error }) => {
+      console.log('RAPPORT FOUND:', data, 'ERROR:', error)
+      if (data) setRapportExistant(data)
+    })
+  supabase.from('surveillances')
+    .select('expires_at')
+    .eq('user_id', user.id).eq('siret', siret).maybeSingle()
+    .then(({ data, error }) => {
+      console.log('SURVEILLANCE FOUND:', data, 'ERROR:', error)
+      if (data) setSurveillanceActive(data)
+    })
+})
 ```
 
-#### Table `chantier_paiements`
-```
-id               uuid         PK
-chantier_id      uuid         FK → chantiers
-montant          numeric      NOT NULL
-date_paiement    date         NOT NULL
-type             text         'acompte'|'avancement'|'solde'
-description      text
-photo_url        text         nullable (reçu photo)
-created_at       timestamptz
-```
+### Affichage conditionnel Pack Sérénité
 
-#### Table `chantier_photos`
-```
-id               uuid         PK
-chantier_id      uuid         FK → chantiers
-url              text         NOT NULL (path Supabase Storage)
-legende          text
-phase            text         'avant'|'pendant'|'apres'
-created_at       timestamptz
-```
+- `rapportExistant !== null` → bloc "Rapport déjà acheté" (fond vert translucide, bouton "Accéder à mon rapport →")
+- `rapportExistant === null` → bloc d'achat contextuel (vert si OK, rouge si risque, liste 6 features, CTA 4,90€)
+- `rapportExistant && surveillanceActive` → bloc "Surveillance active" (bordure verte)
+- `rapportExistant && !surveillanceActive` → bloc "Surveillance inactive"
+- Ni l'un ni l'autre → teaser surveillance verrouillé + lien "Débloquer avec le Pack Sérénité"
 
-#### Table `chantier_documents`
-```
-id               uuid         PK
-chantier_id      uuid         FK → chantiers
-nom              text         NOT NULL
-type             text         'devis'|'contrat'|'decennale'|'facture'|'pv_reception'|'correspondance'|'autre'
-url              text         NOT NULL (path Supabase Storage)
-taille           integer      nullable (bytes)
-created_at       timestamptz
-```
+### Revendication fiche artisan
 
-**Storage buckets :**
-- `chantier-photos` — URLs signées (expiry 3600s), path : `{user_id}/{chantier_id}/{timestamp}.{ext}`
-- `chantier-documents` — idem
+Le lien "Revendiquez cette fiche →" pointe vers `/espace-artisan/inscription?siret=${result.siret}` — le SIRET est transmis en param URL.
 
-### Les 5 onglets de `/app/chantier/[id]`
+### Prix corrigé
 
-**Fichier :** `app/chantier/[id]/page.tsx`
-
-Le chargement initial fait 5 requêtes Supabase en parallèle (chantier + 4 tables liées). Auth obligatoire (redirect vers `/auth` si non connecté).
-
-**Onglet 1 — Journal** (`FileText`)
-- Affiche la liste chronologique des `chantier_evenements` + alertes automatiques calculées
-- Modal d'ajout : titre, description, type (icône colorée par type), date
-- Insert dans `chantier_evenements`
-
-**Onglet 2 — Paiements** (`CreditCard`)
-- Résumé : total payé / montant total / barre de progression / % payé
-- Avertissement rouge si acomptes > 30% du total
-- Modal d'ajout : montant, date, type (acompte/avancement/solde), description
-- Insert dans `chantier_paiements` + auto-log dans `chantier_evenements`
-
-**Onglet 3 — Photos** (`Camera`)
-- Filtre par phase (avant, pendant, apres, toutes)
-- Zone de drop ou clic pour upload
-- Sélecteur de phase + légende optionnelle avant envoi
-- Upload vers bucket `chantier-photos`, insert métadonnées
-- Visionneuse plein écran (lightbox) + bouton suppression
-- URLs résolues via `resolveSignedUrls('chantier-photos', photos, 3600)`
-
-**Onglet 4 — Documents** (`Download`)
-- Filtre par type
-- Sélecteur de type + nom, puis upload
-- Formats acceptés : PDF, JPG, JPEG, PNG, DOC, DOCX
-- Upload vers bucket `chantier-documents`, insert métadonnées
-- Lien de téléchargement + bouton suppression par document
-
-**Onglet 5 — Checklist** (`ClipboardCheck`)
-- Intègre le composant `<GuideChantier />` (4 phases interactives)
-- Contenu identique à l'ancienne page `/guide-chantier` (maintenant redirigée)
-
-**Changement de statut :**
-- Dropdown de statut éditable
-- `supabase.from('chantiers').update({ statut })`
-- Si statut → `'litige'` : insère automatiquement un événement alerte avec lien vers `/assistant-juridique`
-
-**Export :**
-- `window.print()` (impression navigateur, pas de PDF généré côté serveur)
-
-### Alertes automatiques
-
-Calculées **côté client à l'affichage** (non persistées en base) dans une fonction `computeAutoAlerts()` :
-
-1. **14 jours sans activité** : si le dernier événement journal date de plus de 14 jours
-2. **Fin de chantier dans 7 jours** : si `date_fin_prevue` est dans moins de 7 jours
-3. **Acompte > 30%** : si la somme des paiements de type `acompte` dépasse 30% du `montant_total` (référence loi Hoguet)
-
-Ces alertes s'affichent dans l'onglet Journal avec un style `type: 'alerte'` et le flag `_auto: true`.
-
-**Alerte à la création d'un chantier :**
-Lors du `POST` de création (`app/nouveau-chantier`), un événement est automatiquement inséré :
-```
-titre: "Chantier créé — vérifiez l'attestation décennale"
-type: "alerte"
-```
+Prix affiché dans la sidebar : 4,90€ (était 19,90€)
 
 ---
 
-## 6. Surveillance Artisans
+## 6. Mon Espace `/mon-espace`
 
-### `POST /api/surveillance` — Abonnement
+**Fichier :** `app/mon-espace/page.tsx` (`'use client'`)
 
-Input : `{ email, siret, nom?, score?, statut? }`
+### Onglets
 
-Validation : regex email + siret requis
+1. **Mes surveillances** — requête `.eq('user_id', u.id)` (corrigé, était `.eq('email', ...)`)
+   - Badge "Active" (vert) si `expires_at > now()`, "Expirée" (gris) sinon
+   - Affiche "Jusqu'au [date]"
+   - Bouton "Arrêter la surveillance" → DELETE `.eq('user_id', ...)`
 
-Opération Supabase :
-```typescript
-supabase.from('surveillances').upsert(
-  { email, siret, nom_artisan: nom, score_initial: score, statut_initial: statut },
-  { onConflict: 'email,siret', ignoreDuplicates: true }
-)
+2. **Mes rapports** — requête `.eq('user_id', u.id).order('created_at', desc)`
+   - Pour chaque rapport : appel `GET /api/artisan/public?siret=` → `nomEntreprise`
+   - Affiche nom entreprise ou fallback 'Entreprise inconnue' (plus `SIRET [...]`)
+   - Bouton "Accéder au rapport →" → `/rapport/succes?session_id=...&siret=...&from=mon-espace`
+
+3. **Profil** — données utilisateur auth
+
+---
+
+## 7. Pricing
+
+### Cohérence des prix
+
+- Landing page (`/`) : Pack Sérénité affiché à **4,90€** ✅
+- Page `/pricing` : **4,90€** ✅
+- Fiche artisan sidebar : **4,90€** ✅
+- `POST /api/checkout` : **490 cents = 4,90€** ✅ (corrigé le 24 mars)
+
+### Pack Gratuit
+- Recherche artisan
+- Score de fiabilité
+- Statut INSEE
+- Certifications RGE
+
+### Pack Sérénité — 4,90€ (one-time)
+- Rapport PDF complet
+- Analyse juridique du devis IA
+- Surveillance 6 mois (alertes email)
+- Historique BODACC complet
+- Synthèse IA (claude-sonnet-4-6)
+- Carnet de chantier illimité
+- Modèle de contrat pré-rempli
+- Guide recours
+
+### Pack Tranquillité
+- Statut : "Bientôt" — non implémenté
+
+---
+
+## 8. Carnet de Chantier
+
+### Page `/mes-chantiers`
+
+Liste des chantiers de l'utilisateur avec statut, montant, dates.
+
+### Page `/nouveau-chantier`
+
+**Fichier :** `app/nouveau-chantier/page.tsx`
+
+**Pré-remplissage depuis `/rapport/succes`** (implémenté le 25 mars) :
+
+Le CTA "Ouvrir un carnet de chantier" depuis le rapport pointe vers :
 ```
-- Contrainte unique : `(email, siret)` → pas de doublons
-- Pas de `user_id` : la surveillance est liée à l'email uniquement (fonctionne sans compte)
-
-Email de confirmation envoyé via Resend :
-- From : `'Verifio <onboarding@resend.dev>'`
-- Contient : lien de désinscription `/api/surveillance/unsubscribe?email=${email}&siret=${siret}`
-
-### `GET /api/surveillance/unsubscribe` — Désinscription
-
-Params : `?email=...&siret=...`
-
-```typescript
-supabase.from('surveillances').delete().eq('email', email).eq('siret', siret)
+/nouveau-chantier?siret=[siret]&nom=[nom]&adresse=[adresse]&from=rapport&session_id=[session_id]
 ```
 
-Retourne une page HTML (200 succès / 400 lien invalide / 500 erreur DB)
+Dans `NouveauChantierForm` :
+- `fromRapport` = `params.get('from') === 'rapport'`
+- `nomParam`, `siretParam`, `adresse` pré-remplis depuis query params
+- Style `prefilledStyle` : bordure verte + fond vert translucide sur les champs pré-remplis
+- SIRET : `readOnly={!!siretParam}` + label "· Artisan vérifié"
+- Adresse : label "· Pré-remplie avec le siège de l'artisan, modifiable"
+- Bandeau vert si `fromRapport && nomParam` : "Chantier pré-rempli depuis votre rapport Verifio — **[nom]** a été vérifié et validé." + lien "Retour au rapport →"
 
-### Structure de la table `surveillances`
+### Page `/chantier/[id]`
 
-```
-id               uuid         PK
-email            text         NOT NULL
-siret            text         NOT NULL
-nom_artisan      text
-score_initial    integer
-statut_initial   text
-created_at       timestamptz
-UNIQUE (email, siret)
-```
+5 onglets : Journal, Paiements, Photos, Documents, Checklist (GuideChantier intégré)
 
-**RLS policies :**
-- SELECT / INSERT / DELETE : `auth.email() = email`
+---
 
-⚠️ La surveillance fonctionne sans authentification (email comme clé) mais la RLS exige une session. Les routes API bypasse la RLS via `supabaseAdmin` (service_role).
-
-### Cron `/api/cron/verifier-changements`
+## 9. Cron Surveillance
 
 **Fichier :** `app/api/cron/verifier-changements/route.ts`
 
-**Authentification cron :**
-```typescript
-if (process.env.CRON_SECRET) {
-  return authHeader === `Bearer ${process.env.CRON_SECRET}`
-}
-return true // Si pas de secret configuré → tout le monde peut déclencher
-```
+- Authentification : `Authorization: Bearer ${CRON_SECRET}` (optionnel en dev)
+- Récupère toutes les surveillances avec `.gt('expires_at', now())`
+- Groupe par SIRET (une seule requête API par SIRET)
+- Appelle `https://recherche-entreprises.api.gouv.fr/search?q=${siret}`
+- Si `statut_initial !== current.statut` → envoie email d'alerte via Resend + UPDATE `statut_initial`
 
-⚠️ Sans `CRON_SECRET` configuré, la route est accessible publiquement.
-
-**Workflow :**
-1. `supabase.from('surveillances').select('*')` → toutes les surveillances
-2. Groupe par SIRET (pour consolider les emails)
-3. Pour chaque SIRET :
-   - Appel `https://recherche-entreprises.api.gouv.fr/search?q=${siret}` pour le statut actuel
-   - Compare avec `statut_initial` stocké
-   - Si changement → envoie email d'alerte + `supabase.from('surveillances').update({ statut_initial: nouveauStatut }).eq('id', surveillance.id)`
-
-**Email d'alerte :**
-- Sujet : `⚠️ Alerte : ${nom} a changé de statut`
-- Avant/après avec badges colorés (vert/rouge)
-- Lien vers fiche + lien désinscription
-
-**Réponse JSON :**
-```typescript
+**Configuration Vercel :** `vercel.json` à la racine :
+```json
 {
-  ok: boolean,
-  sirets_checked: number,
-  alertes_sent: number,
-  results: Array<{ siret, changed, error? }>
+  "crons": [{ "path": "/api/cron/verifier-changements", "schedule": "0 8 * * *" }]
 }
 ```
 
-⚠️ **Cron non configuré dans Vercel** : La route existe mais aucun déclencheur automatique Vercel Cron n'est en place (pas de `vercel.json` avec `crons`).
+Email d'alerte : design HTML avec avant/après du statut en badges colorés, lien vers fiche, guide "Que faire ?", lien désinscription.
+
+⚠️ **Non testé** en production
 
 ---
 
-## 7. APIs Externes
+## 10. Variables d'Environnement
 
-### INSEE — `recherche-entreprises.api.gouv.fr`
+| Variable | Utilisée dans | Obligatoire |
+|----------|--------------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | partout | Oui |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client Supabase | Oui |
+| `SUPABASE_SERVICE_ROLE_KEY` | insertions server-side (rapports, surveillances, artisans) | **Critique** |
+| `STRIPE_SECRET_KEY` | checkout, vérification paiement, PDF | Oui |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (non utilisé côté client actuellement) | Non |
+| `ANTHROPIC_API_KEY` | synthèse IA rapport | Non (dégradé si absent) |
+| `RESEND_API_KEY` | emails confirmation, alertes, admin | Non (silent fail) |
+| `NEXT_PUBLIC_BASE_URL` | `https://verifio-eight.vercel.app` | Recommandé |
+| `CRON_SECRET` | authentification route cron | Recommandé |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | accès admin | Optionnel |
 
-**Utilisée dans :** `lib/fetchCompany.ts`, `app/espace-artisan/inscription/page.tsx`, `app/api/cron/verifier-changements`
-
-**Paramètres de recherche :**
-```
-GET https://recherche-entreprises.api.gouv.fr/search
-  ?q={siret_ou_nom}
-  &page=1
-  &per_page=5     (recherche générale)
-  &per_page=1     (lookup SIRET)
-```
-
-**Détection SIRET :** regex `/^\d{9,14}$/`
-
-**Champs utilisés dans la réponse :**
-- `results[0].matching_etablissements[0].siret`
-- `results[0].siren`
-- `results[0].nom_complet` → `nom`
-- `results[0].etat_administratif` → `'A'` (actif) ou `'F'` (fermé)
-- `results[0].nature_juridique` → code forme juridique (mapé via `FORMES_JURIDIQUES`)
-- `results[0].date_creation`
-- `results[0].siege.adresse` (reconstitué depuis rue + cp + ville)
-- `results[0].activite_principale` → code NAF + libellé
-- `results[0].convention_collective_renseignee`
-- `results[0].tranche_effectif_salarie` → mapé via `TRANCHES`
-- `results[0].capital_social`
-- `results[0].dirigeants[]` → nom, prénom, qualité, type, année naissance
-
-**Cache :** `next: { revalidate: 3600 }` (1 heure)
-
-**Pas d'authentification** (API publique)
-
-### ADEME — RGE Certifications
-
-**Utilisée dans :** `lib/fetchCompany.ts`
-
-```
-GET https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines
-  ?q={siret}
-  &q_fields=siret
-  &size=10
-```
-
-**Champs utilisés :**
-- `results[].domaine` → domaine de certification
-- `results[].domaine_travaux`
-- `results[].organisme` → organisme certificateur
-
-**Retour :** `{ certifie: boolean, domaines: string[], organismes: string[] }`
-
-**Graceful degradation :** retourne `null` si l'API échoue (pas de plantage)
-
-**Cache :** `next: { revalidate: 3600 }` (1 heure)
-
-### BODACC — Annonces légales
-
-**Utilisée dans :** `lib/fetchCompany.ts`
-
-```
-GET https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records
-  ?where=registre like "{siren}"
-  &order_by=dateparution desc
-  &limit=20
-```
-
-Recherche par **SIREN** (9 chiffres, extrait du SIRET).
-
-**Extraction (`extractBodaccAnnonce()`) :** mappe ~40 champs de la réponse vers `BodaccAnnonce` :
-- `jugement` : nature, date, complement
-- `acte` : descriptif, typeActe, dateImmatriculation
-- `modificationsgenerales` : descriptif
-- `radiationaurcs` : dateCessation, dateRadiation
-- `listepersonnes` : denomination, nom, prenom, capital, formeJuridique, administration
-- `listeetablissements` : activite, origineFonds, adresse
-- `familleavis_lib` → `famille` (type d'annonce)
-
-**Logique de filtrage :**
-- **Procédures collectives** : `famille === 'collective'` OU `type` inclut `liquidation|redressement|sauvegarde`
-- **Changement de dirigeant** : `modificationsgenerales` inclut `administration|gérant|président|directeur`, annonce < 6 mois
-- **Cession** : `famille === 'Ventes et cessions'`, annonce < 3 ans
-
-**Cache :** `next: { revalidate: 3600 }` (1 heure)
+**Note importante :** `SUPABASE_SERVICE_ROLE_KEY` est la variable la plus critique pour le bon fonctionnement des achats. Sans elle, aucune insertion en base n'est possible après paiement.
 
 ---
 
-## 8. Bugs Connus Réels (observés dans le code)
+## 11. URLs de déploiement
 
-### ⚠️ BUG CRITIQUE — Incohérence de prix Stripe
-**Fichier :** `app/api/checkout/route.ts` ligne 30
-
-Le checkout facture **€19,90 (1990 cents)** pour le Pack Sérénité. L'interface (fiche artisan, landing, page pricing) affiche **4,90€** depuis la mise à jour récente. Le prix dans Stripe n'a pas été mis à jour.
-
----
-
-### ⚠️ BUG CRITIQUE — Page rapport/succes accessible sans paiement
-**Fichier :** `app/rapport/succes/page.tsx`
-
-Aucune vérification côté serveur que `session_id` correspond à un paiement Stripe complété. N'importe qui peut accéder à `/rapport/succes?siret=XXXXX` et voir le rapport complet sans payer.
+- **Production :** `https://verifio-eight.vercel.app`
+- **Repo GitHub :** `https://github.com/ExoVersa/verifio`
+- **Supabase :** `https://eflaghdxvrfenyqkrfnt.supabase.co`
+- **Worktree actif :** `/Users/CharlieCouratin/artisancheck/.claude/worktrees/focused-haslett`
 
 ---
 
-### ⚠️ BUG — Google OAuth non fonctionnel
-**Fichier :** `app/auth/page.tsx`
+## 12. Bugs Corrigés (24–26 mars 2026)
 
-Le bouton Google OAuth est affiché mais `supabase.auth.signInWithOAuth()` n'est pas implémenté. Le fichier `/app/auth/callback/route.ts` **n'existe pas**.
-
----
-
-### ⚠️ BUG — Revendication fiche ne transmet pas le SIRET
-**Fichier :** `app/artisan/[siret]/page.tsx` ligne ~1671
-
-Lien `<a href="/espace-artisan">` sans `?siret=${result.siret}`. L'artisan doit re-saisir manuellement son SIRET sur le formulaire d'inscription.
-
----
-
-### ⚠️ BUG — Cron vérification sans sécurité si CRON_SECRET absent
-**Fichier :** `app/api/cron/verifier-changements/route.ts`
-
-Si `CRON_SECRET` n'est pas défini dans les variables d'environnement, la route est accessible publiquement sans authentification. Peut déclencher des appels API massifs.
-
----
-
-### ⚠️ BUG — Cron non déclenché automatiquement
-Le fichier `vercel.json` n'existe pas ou ne contient pas de configuration `crons`. Le cron de surveillance ne s'exécute jamais automatiquement.
+| Bug | Correction |
+|-----|-----------|
+| Prix Stripe 19,90€ | Corrigé → 490 cents (4,90€) dans `/api/checkout` |
+| `/rapport/succes` accessible sans paiement | Ajout vérification `payment_status === 'paid'` via Stripe |
+| Focus inputs cassé sur `/auth` | `LoginForm` et `SignupForm` déplacés au niveau module |
+| Google OAuth non fonctionnel | `handleGoogleAuth()` implémenté + route `/auth/callback` créée |
+| Bouton Google absent sur inscription | Ajouté dans `SignupForm` avec même handler |
+| Emoji dans titre auth | "Bon retour 👋" → "Bon retour" |
+| Revendication fiche sans SIRET | Lien pointe vers `/espace-artisan/inscription?siret=...` |
+| Surveillance gratuite | Maintenant liée au Pack Sérénité (payant) |
+| Insertions Supabase silencieuses | `supabaseAdmin` avec service role key + logs diagnostics |
+| `nom_entreprise` absent de la table `rapports` | Colonne ajoutée en migration |
+| Surveillance échouait (email NOT NULL manquant) | `email` inclus dans upsert depuis `auth.admin.getUserById` |
+| Doublons de rapport à chaque refresh | Vérification `stripe_session_id` unique avant insert |
+| Surveillance visible seulement par email | Query modifiée → `.eq('user_id', ...)` |
+| Nom entreprise "SIRET XXXX" dans Mon Espace | Appel `/api/artisan/public` → `nomEntreprise` |
+| Double flèche bouton retour rapport | Retrait des `← ` hardcodés dans `backLabel` |
+| `SiteHeader` absent de `/rapport/succes` | Ajouté avec Fragment wrapper |
+| URL prod `verifio.vercel.app` incorrecte | Remplacé par `verifio-eight.vercel.app` partout |
 
 ---
 
-### ⚠️ BUG MINEUR — ScoreRing flash gris
-**Fichier :** `app/artisan/[siret]/page.tsx`
+## 13. Bugs Connus Restants
 
-Bref flash gris au chargement de la fiche avant que BODACC soit disponible. `procedures.disponible = false` → score = -1 → anneau gris. Normal par design mais visible.
-
----
-
-### ⚠️ BUG — Table `rapports` inexistante
-Le fichier `CLAUDE.md` référence une table `rapports` dans Supabase. **Aucune migration SQL pour cette table n'existe.** La page `/rapport/succes` ne persiste rien en base.
-
----
-
-### ⚠️ BUG — `photo_url` artisan jamais alimentée
-**Table :** `artisans`
-
-La colonne `photo_url` existe dans le schéma SQL mais n'est jamais écrite par le formulaire d'inscription, ni par `/api/artisan/profile`. Elle est toujours `null`.
-
----
-
-### ⚠️ BUG — Stripe B2B artisan non implémenté
-**Table :** `artisans`
-
-Les colonnes `stripe_customer_id` et `stripe_subscription_id` existent mais aucun flow Stripe pour l'abonnement artisan n'est implémenté. `abonnement_actif` est mis à `true` manuellement lors de la validation admin, sans Stripe.
+| Bug | Priorité | Description |
+|-----|----------|-------------|
+| PDF téléchargeable | À tester | Route `/api/rapport-pdf` implémentée mais non validée en prod |
+| Email confirmation | À tester | Resend implémenté, nécessite `RESEND_API_KEY` en prod |
+| Partage sécurisé | À tester | `share_token` + `share_expires_at` dans rapports à vérifier |
+| Modal bienvenue | À tester | `WelcomeModal` affiché sur `?new=true`, logique à valider |
+| Détection rapport sur fiche | En cours | `useEffect` OK, logs diagnostics en place — cause racine à confirmer |
+| Synthèse IA | Indisponible | `ANTHROPIC_API_KEY` non configurée → fallback affiché |
+| Cron surveillance | Non testé | `vercel.json` configuré, non déclenché en prod |
+| Migrations Supabase | À appliquer | `20260325000000_create_rapports.sql` + `20260326_add_nom_entreprise_rapports.sql` + `20260325000000_surveillance_devis.sql` à exécuter dans Supabase Dashboard si pas déjà fait |
+| Google OAuth prod | À tester | Nécessite config Google Console + Supabase Providers |
+| ScoreRing flash | Mineur | Bref flash gris avant que BODACC charge |
+| Timeline mobile | Mineur | 2 colonnes ne passent pas toujours en 1 colonne |
+| Pricing responsive | Mineur | `.pricing-grid` media query ne cible pas les divs inline |
 
 ---
 
-### ⚠️ BUG MINEUR — Timeline responsive
-**Fichier :** `app/page.tsx`
+## 14. Flow Revendication Fiche Artisan
 
-La section Timeline utilise `style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr' }}` en inline. La classe CSS `.timeline-two-col` est définie dans le `<style>` block mais les divs utilisent des styles inline → le media query ne s'applique pas correctement sur mobile.
+### Inscription artisan
 
----
+**Fichier :** `app/espace-artisan/inscription/page.tsx`
 
-### ⚠️ BUG MINEUR — Ancienne mention "ArtisanCheck"
-**Fichier :** `app/rapport/succes/page.tsx`
+Formulaire 2 étapes. Le SIRET est pré-rempli si passé en `?siret=...`.
 
-Le disclaimer en bas de page mentionne "ArtisanCheck" (ancien nom) au lieu de "Verifio".
+**Route :** `POST /api/artisan/register`
+1. Crée compte Supabase Auth (`supabaseAdmin.auth.admin.createUser`)
+2. Upload justificatif → bucket `justificatifs`
+3. Insert dans `artisans` (statut `en_attente`)
+4. Email notification admin via Resend
 
----
+### Validation admin
 
-## Récapitulatif des tables Supabase
+**Page :** `/admin` — auth email admin hardcodé
 
-| Table | Clé | Usage |
-|-------|-----|-------|
-| `auth.users` | id (uuid) | Authentification (Supabase built-in) |
-| `chantiers` | id + user_id | Carnets de chantier utilisateurs |
-| `chantier_evenements` | id + chantier_id | Journal d'événements |
-| `chantier_paiements` | id + chantier_id | Suivi des paiements |
-| `chantier_photos` | id + chantier_id | Photos avec phase |
-| `chantier_documents` | id + chantier_id | Documents uploadés |
-| `surveillances` | id + (email,siret) unique | Alertes email (sans user_id) |
-| `user_plans` | id + user_id | Achats Pack Sérénité/Tranquillité |
-| `artisans` | id + user_id + siret unique | Profils artisans B2B |
-| `devis_artisan` | id + artisan_id | Devis créés par les artisans |
-| `analyses_devis` | id + user_id | Historique analyses IA devis |
-| `alertes_abus` | id + user_id | Détection fraude (service_role only) |
-| `recherches` | id + user_id | Historique des recherches |
-| `rapports` | — | **N'existe pas** (référencée dans CLAUDE.md) |
-| `profiles` | — | **N'existe pas** (données dans auth.users metadata) |
+- Valider → `POST /api/artisan/validate` → statut `verifie`, badge actif, 14j essai
+- Refuser → `POST /api/artisan/refuse` → statut `refuse` + motif
+
+### Dashboard artisan
+
+**Page :** `/artisan/dashboard`
+
+- Affiche SIRET, nom entreprise, badge, essai restant
+- Création de devis (`POST /api/artisan/devis/create`)
 
 ---
 
-*Audit généré le 24 mars 2026 par inspection statique du code.*
+## 15. Composants Partagés Clés
+
+| Composant | Fichier | Rôle |
+|-----------|---------|------|
+| `ScoreRing` | `components/ScoreRing.tsx` | Anneau SVG animé, gris si score=-1 |
+| `SyntheseIA` | `components/SyntheseIA.tsx` | Bloc synthèse IA avec skeleton |
+| `BodaccSection` | `components/BodaccSection.tsx` | Cards colorées par type + pagination |
+| `PackBadge` | `components/PackBadge.tsx` | Badge "Pack Sérénité" inline, server-compatible |
+| `AnalyserDevisButton` | `components/AnalyserDevisButton.tsx` | Bouton client avec hover state |
+| `SiteHeader` | `components/SiteHeader.tsx` | Header mega-menu, auth, mobile |
+| `GuideChantier` | `components/GuideChantier.tsx` | Checklist 4 phases intégrable |
+| `WelcomeModal` | `components/WelcomeModal.tsx` | Modal premier achat |
+| `ModeleContrat` | `components/ModeleContrat.tsx` | Modèle contrat pré-rempli avec badge |
+| `GuideRecours` | `components/GuideRecours.tsx` | Guide recours avec badge |
+| `BoutonPDF` | `components/BoutonPDF.tsx` | Déclencheur téléchargement PDF |
