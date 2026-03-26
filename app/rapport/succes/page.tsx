@@ -230,6 +230,13 @@ export default async function SuccesPage({
   let surveillanceExpiresAt: string | null = null
   let devisUploads: Array<{ id: string; version: number; nom_fichier: string | null; created_at: string }> = []
 
+  console.log('=== RAPPORT SUCCES DEBUG ===')
+  console.log('session_id:', session_id)
+  console.log('siret:', siret)
+  console.log('userId from Stripe metadata:', userId)
+  console.log('SUPABASE_SERVICE_ROLE_KEY set:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+  console.log('NEXT_PUBLIC_SUPABASE_URL set:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+
   if (userId) {
     try {
       const supabaseAdmin = createClient(
@@ -238,31 +245,39 @@ export default async function SuccesPage({
       )
 
       // Check existing rapport
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingErr } = await supabaseAdmin
         .from('rapports').select('id').eq('stripe_session_id', session_id).maybeSingle()
+      if (existingErr) console.error('CHECK EXISTING ERROR:', existingErr)
 
       if (!existing) {
         // New rapport — insert
-        const { data: inserted } = await supabaseAdmin.from('rapports').insert({
+        console.log('Tentative insertion rapport...')
+        const { data: inserted, error: rapportError } = await supabaseAdmin.from('rapports').insert({
           user_id: userId, siret, stripe_session_id: session_id, montant: 490, statut: 'genere',
           nom_entreprise: result?.nom || null,
         }).select('id').single()
+        console.log('Rapport inséré:', inserted)
+        console.log('Rapport erreur:', rapportError)
         rapportId = inserted?.id ?? null
 
         // Auto-activate surveillance 6 months
         const exp = new Date()
         exp.setMonth(exp.getMonth() + 6)
         surveillanceExpiresAt = exp.toISOString()
-        await supabaseAdmin.from('surveillances').insert({
+        console.log('Tentative insertion surveillance...')
+        const { data: survData, error: survError } = await supabaseAdmin.from('surveillances').insert({
           user_id: userId, siret,
           nom_artisan: result?.nom || siret,
           expires_at: surveillanceExpiresAt,
-        }).then(() => {})
+        }).select('id').single()
+        console.log('Surveillance insérée:', survData)
+        console.log('Surveillance erreur:', survError)
 
         // Send confirmation email
         try {
           const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
           const userEmail = authData?.user?.email
+          console.log('User email for confirmation:', userEmail)
           if (userEmail && result) {
             const resend = new Resend(process.env.RESEND_API_KEY)
             const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
@@ -278,9 +293,11 @@ export default async function SuccesPage({
                 surveillanceExpiry: surveillanceExpiresAt,
               }),
             })
+            console.log('Email de confirmation envoyé à', userEmail)
           }
         } catch (emailErr) { console.error('EMAIL ERROR:', emailErr) }
       } else {
+        console.log('Rapport déjà en base, id:', existing.id)
         rapportId = existing.id
         // Fetch existing surveillance
         const { data: surv } = await supabaseAdmin.from('surveillances')
@@ -297,6 +314,8 @@ export default async function SuccesPage({
         devisUploads = (uploads ?? []) as typeof devisUploads
       }
     } catch (e) { console.error('RAPPORT PERSISTENCE ERROR:', e) }
+  } else {
+    console.error('userId null — insertion ignorée. Vérifier Stripe metadata.user_id dans le checkout.')
   }
 
   const statutColor = result?.statut === 'actif' ? 'var(--color-safe)' : 'var(--color-danger)'
