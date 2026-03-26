@@ -19,7 +19,7 @@ export async function GET() {
   const { data: rapportData, error: rapportError } = await supabaseAdmin
     .from('rapports')
     .insert({
-      user_id: '00000000-0000-0000-0000-000000000001',
+      user_id: null,
       siret: 'TEST00000000000',
       stripe_session_id: testSessionId,
       montant: 490,
@@ -38,7 +38,7 @@ export async function GET() {
   const { data: survData, error: survError } = await supabaseAdmin
     .from('surveillances')
     .insert({
-      user_id: '00000000-0000-0000-0000-000000000001',
+      user_id: null,
       siret: 'TEST00000000000',
       nom_artisan: 'Test artisan',
       expires_at: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(),

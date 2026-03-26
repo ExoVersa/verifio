@@ -2,6 +2,7 @@ CREATE TABLE rapports (
   id                uuid          PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           uuid          REFERENCES auth.users(id) ON DELETE SET NULL,
   siret             text          NOT NULL,
+  nom_entreprise    text,
   stripe_session_id text          UNIQUE NOT NULL,
   montant           integer       NOT NULL DEFAULT 490,
   statut            text          NOT NULL DEFAULT 'genere',
