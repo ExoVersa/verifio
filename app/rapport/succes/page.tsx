@@ -260,23 +260,26 @@ export default async function SuccesPage({
         console.log('Rapport erreur:', rapportError)
         rapportId = inserted?.id ?? null
 
+        // Récupérer l'email de l'utilisateur (requis pour surveillances)
+        const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
+        const userEmail = authData?.user?.email
+
         // Auto-activate surveillance 6 months
         const exp = new Date()
         exp.setMonth(exp.getMonth() + 6)
         surveillanceExpiresAt = exp.toISOString()
         console.log('Tentative insertion surveillance...')
-        const { data: survData, error: survError } = await supabaseAdmin.from('surveillances').insert({
+        const { data: survData, error: survError } = await supabaseAdmin.from('surveillances').upsert({
           user_id: userId, siret,
+          email: userEmail ?? null,
           nom_artisan: result?.nom || siret,
           expires_at: surveillanceExpiresAt,
-        }).select('id').single()
+        }, { onConflict: 'email,siret', ignoreDuplicates: false }).select('id').single()
         console.log('Surveillance insérée:', survData)
         console.log('Surveillance erreur:', survError)
 
         // Send confirmation email
         try {
-          const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
-          const userEmail = authData?.user?.email
           console.log('User email for confirmation:', userEmail)
           if (userEmail && result) {
             const resend = new Resend(process.env.RESEND_API_KEY)

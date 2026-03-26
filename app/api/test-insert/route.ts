@@ -37,12 +37,13 @@ export async function GET() {
   // Test insert surveillances via service role
   const { data: survData, error: survError } = await supabaseAdmin
     .from('surveillances')
-    .insert({
+    .upsert({
       user_id: null,
+      email: 'test@test.com',
       siret: 'TEST00000000000',
       nom_artisan: 'Test artisan',
       expires_at: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    })
+    }, { onConflict: 'email,siret', ignoreDuplicates: false })
     .select()
 
   console.log('INSERT surveillances data:', survData)
