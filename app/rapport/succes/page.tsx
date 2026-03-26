@@ -269,11 +269,20 @@ export default async function SuccesPage({
         exp.setMonth(exp.getMonth() + 6)
         surveillanceExpiresAt = exp.toISOString()
         console.log('Tentative insertion surveillance...')
+        // Normaliser le statut pour éviter les faux positifs (A → actif, F → ferme)
+        const normalizeStatut = (s: string | null | undefined): string => {
+          if (!s) return 'actif'
+          const l = s.toLowerCase().trim()
+          if (l === 'a' || l === 'actif' || l === 'active') return 'actif'
+          if (l === 'f' || l === 'fermé' || l === 'ferme' || l === 'ceased') return 'ferme'
+          return l
+        }
         const { data: survData, error: survError } = await supabaseAdmin.from('surveillances').upsert({
           user_id: userId, siret,
           email: userEmail ?? null,
           nom_artisan: result?.nom || siret,
           expires_at: surveillanceExpiresAt,
+          statut_initial: normalizeStatut(result?.statut),
         }, { onConflict: 'email,siret', ignoreDuplicates: false }).select('id').single()
         console.log('Surveillance insérée:', survData)
         console.log('Surveillance erreur:', survError)

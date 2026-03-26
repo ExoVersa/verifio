@@ -145,6 +145,15 @@ export async function GET(req: NextRequest) {
       bySiret.get(s.siret)!.push(s)
     }
 
+    // ── Normalisation du statut pour éviter les faux positifs ──────────────────
+    const normalizeStatut = (s: string | null | undefined): string => {
+      if (!s) return 'inconnu'
+      const l = s.toLowerCase().trim()
+      if (l === 'a' || l === 'actif' || l === 'active') return 'actif'
+      if (l === 'f' || l === 'fermé' || l === 'ferme' || l === 'ceased') return 'ferme'
+      return l
+    }
+
     let alertesSent = 0
     const results: { siret: string; changed: boolean; error?: string }[] = []
 
@@ -155,30 +164,42 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      const changed = group.some(s => s.statut_initial !== current.statut)
-      results.push({ siret, changed })
+      const statutActuel = normalizeStatut(current.statut)
+      results.push({ siret, changed: false })
 
-      if (changed) {
-        for (const surveillance of group) {
-          if (surveillance.statut_initial !== current.statut) {
-            try {
-              await sendAlertEmail(resend, BASE_URL, {
-                email: surveillance.email,
-                siret,
-                nom: current.nom || surveillance.nom_artisan || siret,
-                statutAvant: surveillance.statut_initial || 'inconnu',
-                statutApres: current.statut,
-              })
-              alertesSent++
+      for (const surveillance of group) {
+        // Si statut_initial est null → initialiser sans alerter
+        if (!surveillance.statut_initial) {
+          await supabase
+            .from('surveillances')
+            .update({ statut_initial: statutActuel })
+            .eq('id', surveillance.id)
+          continue
+        }
 
-              await supabase
-                .from('surveillances')
-                .update({ statut_initial: current.statut })
-                .eq('id', surveillance.id)
-            } catch (mailErr) {
-              console.error(`Email error for ${surveillance.email}:`, mailErr)
-            }
-          }
+        const statutInitial = normalizeStatut(surveillance.statut_initial)
+
+        // Pas de changement → skip
+        if (statutActuel === statutInitial) continue
+
+        // Changement détecté → alerte
+        try {
+          await sendAlertEmail(resend, BASE_URL, {
+            email: surveillance.email,
+            siret,
+            nom: current.nom || surveillance.nom_artisan || siret,
+            statutAvant: statutInitial,
+            statutApres: statutActuel,
+          })
+          alertesSent++
+          results[results.length - 1].changed = true
+
+          await supabase
+            .from('surveillances')
+            .update({ statut_initial: statutActuel })
+            .eq('id', surveillance.id)
+        } catch (mailErr) {
+          console.error(`Email error for ${surveillance.email}:`, mailErr)
         }
       }
     }
