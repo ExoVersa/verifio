@@ -336,6 +336,7 @@ export default function ArtisanFichePage() {
 
   // Vérifie rapport existant + surveillance active
   useEffect(() => {
+    console.log('useEffect check rapport — siret:', siret)
     if (!siret) return
     supabase.auth.getUser().then(({ data: { user } }) => {
       console.log('CHECK RAPPORT — user:', user?.id)
