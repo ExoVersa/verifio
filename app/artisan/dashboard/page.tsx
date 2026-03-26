@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
 
 interface ArtisanProfil {
   id: string

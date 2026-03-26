@@ -283,7 +283,7 @@ export default async function SuccesPage({
           console.log('User email for confirmation:', userEmail)
           if (userEmail && result) {
             const resend = new Resend(process.env.RESEND_API_KEY)
-            const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
+            const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
             const scoreLabel = result.score >= 75 ? 'Fiable' : result.score >= 45 ? 'Vigilance' : 'Risque'
             await resend.emails.send({
               from: 'Verifio <onboarding@resend.dev>',

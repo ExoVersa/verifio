@@ -150,7 +150,7 @@ function RapportPDF({
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.headerMeta}>Généré le {dateGeneration}</Text>
             <Text style={[styles.headerMeta, { marginTop: 2, fontFamily: 'Helvetica-Bold', color: '#2db96e' }]}>
-              verifio.vercel.app
+              verifio-eight.vercel.app
             </Text>
           </View>
         </View>
@@ -301,7 +301,7 @@ function RapportPDF({
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Données issues de l&apos;INSEE, ADEME et BODACC — verifio.vercel.app
+            Données issues de l&apos;INSEE, ADEME et BODACC — verifio-eight.vercel.app
           </Text>
           <Text style={styles.footerText}>
             Ce rapport ne garantit pas la qualité des travaux.
@@ -400,7 +400,7 @@ function ContratPDF({ lines, dateGeneration, nomEntreprise }: { lines: string[];
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={contratStyles.meta}>Généré le {dateGeneration}</Text>
-            <Text style={[contratStyles.meta, { color: '#2db96e', fontFamily: 'Helvetica-Bold', marginTop: 2 }]}>verifio.vercel.app</Text>
+            <Text style={[contratStyles.meta, { color: '#2db96e', fontFamily: 'Helvetica-Bold', marginTop: 2 }]}>verifio-eight.vercel.app</Text>
           </View>
         </View>
         {lines.map((line, i) => {
@@ -412,7 +412,7 @@ function ContratPDF({ lines, dateGeneration, nomEntreprise }: { lines: string[];
         })}
         <View style={contratStyles.footer} fixed>
           <Text style={contratStyles.footerText}>Modèle non contractuel — à adapter selon votre situation</Text>
-          <Text style={contratStyles.footerText}>Verifio · verifio.vercel.app</Text>
+          <Text style={contratStyles.footerText}>Verifio · verifio-eight.vercel.app</Text>
         </View>
       </Page>
     </Document>

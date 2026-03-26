@@ -10,7 +10,7 @@
 - Nom : **Verifio** (anciennement ArtisanCheck)
 - Repo : https://github.com/ExoVersa/verifio
 - Stack : Next.js 15 App Router, TypeScript, inline styles (pas Tailwind classes), Supabase, Stripe
-- Déploiement : Vercel (auto sur push main) → https://verifio.vercel.app
+- Déploiement : Vercel (auto sur push main) → https://verifio-eight.vercel.app
 - L'app sera aussi une app mobile (React Native plus tard)
 - Worktree actif : `/Users/CharlieCouratin/artisancheck/.claude/worktrees/focused-haslett`
 
@@ -23,7 +23,7 @@
 
 ## Variables d'environnement Vercel
 Aller sur https://vercel.com → Projet verifio → Settings → Environment Variables :
-- `NEXT_PUBLIC_BASE_URL` = https://verifio.vercel.app
+- `NEXT_PUBLIC_BASE_URL` = https://verifio-eight.vercel.app
 - `ANTHROPIC_API_KEY` = (clé secrète Anthropic)
 - `STRIPE_SECRET_KEY` = (clé secrète Stripe)
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` = (clé publique Stripe)
@@ -246,7 +246,7 @@ Alertes automatiques :
 ### 🔴 Critique
 - [ ] Configurer le cron Vercel pour `/api/cron/verifier-changements` (alertes surveillances)
 - [ ] Tester le flow Stripe complet en production (checkout → /rapport/succes → rapport généré)
-- [ ] Valider Google OAuth en production avec domaine verifio.vercel.app
+- [ ] Valider Google OAuth en production avec domaine verifio-eight.vercel.app
 
 ### 🟠 Important
 - [ ] Fixer le responsive de la section Pricing (remplacer style inline par className `.pricing-grid`)

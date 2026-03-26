@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio.vercel.app'
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
 
   try {
     const formData = await req.formData()
