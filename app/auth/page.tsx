@@ -222,13 +222,14 @@ interface LoginFormProps {
   error: string | null
   onSubmit: (e: React.FormEvent) => void
   onSwitchToSignup: () => void
+  onGoogleAuth: () => void
 }
 
 /* ── Formulaire connexion — défini au niveau MODULE ────────── */
 function LoginForm({
   email, setEmail, password, setPassword,
   showPwd, setShowPwd, loading, error,
-  onSubmit, onSwitchToSignup,
+  onSubmit, onSwitchToSignup, onGoogleAuth,
 }: LoginFormProps) {
   return (
     <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -238,7 +239,7 @@ function LoginForm({
           <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Verifio</span>
         </div>
         <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-          Bon retour 👋
+          Bon retour
         </h1>
         <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
           Connectez-vous pour accéder à vos chantiers
@@ -321,6 +322,7 @@ function LoginForm({
 
       <button
         type="button"
+        onClick={onGoogleAuth}
         style={{
           height: '52px', borderRadius: '12px',
           border: '1.5px solid #e5e7eb', background: 'white',
@@ -373,6 +375,7 @@ interface SignupFormProps {
   success: string | null
   onSubmit: (e: React.FormEvent) => void
   onSwitchToLogin: () => void
+  onGoogleAuth: () => void
 }
 
 /* ── Formulaire inscription — défini au niveau MODULE ──────── */
@@ -381,7 +384,7 @@ function SignupForm({
   emailS, setEmailS, passwordS, setPasswordS,
   showPwdS, setShowPwdS, confirmPwd, setConfirmPwd,
   showConfirmPwd, setShowConfirmPwd, cguChecked, setCguChecked,
-  loading, error, success, onSubmit, onSwitchToLogin,
+  loading, error, success, onSubmit, onSwitchToLogin, onGoogleAuth,
 }: SignupFormProps) {
   return (
     <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -525,6 +528,30 @@ function SignupForm({
         {loading ? 'Création…' : 'Créer mon compte →'}
       </button>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+        <span style={{ fontSize: '12px', color: '#9ca3af', flexShrink: 0 }}>ou</span>
+        <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+      </div>
+
+      <button
+        type="button"
+        onClick={onGoogleAuth}
+        style={{
+          height: '52px', borderRadius: '12px',
+          border: '1.5px solid #e5e7eb', background: 'white',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          fontSize: '15px', fontWeight: 600, color: '#374151',
+          cursor: 'pointer', fontFamily: 'var(--font-body)',
+          transition: 'border-color 0.15s, background 0.15s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f9fafb'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#d1d5db' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'white'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#e5e7eb' }}
+      >
+        <IconGoogle />
+        S&apos;inscrire avec Google
+      </button>
+
       <p style={{ margin: 0, textAlign: 'center', fontSize: '13px', color: '#6b7280' }}>
         Déjà un compte ?{' '}
         <button
@@ -576,6 +603,13 @@ function AuthPageInner() {
     if (error) setError('E-mail ou mot de passe incorrect.')
     else router.push(redirectTo || '/')
     setLoading(false)
+  }
+
+  async function handleGoogleAuth() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -636,6 +670,7 @@ function AuthPageInner() {
                 loading={loading} error={error}
                 onSubmit={handleLogin}
                 onSwitchToSignup={() => switchMode('signup')}
+                onGoogleAuth={handleGoogleAuth}
               />
             ) : (
               <SignupForm
@@ -650,6 +685,7 @@ function AuthPageInner() {
                 loading={loading} error={error} success={success}
                 onSubmit={handleSignup}
                 onSwitchToLogin={() => switchMode('login')}
+                onGoogleAuth={handleGoogleAuth}
               />
             )}
           </div>
