@@ -3,7 +3,7 @@
 ## Instructions pour Claude
 
 Ce fichier ne contient pas les règles du projet.
-La source de vérité est dans les fichiers partagés du repo.
+La source de vérité est dans les fichiers partagés du repo. 
 
 ---
 
