@@ -3,6 +3,21 @@
 > Inclut toutes les modifications effectuées les 24, 25 et 26 mars 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
+## Utilisation par les agents
+
+Ce fichier est la vérité technique du projet.
+
+Tout agent doit :
+- le lire avant toute modification importante
+- s’y référer pour éviter les régressions
+- ne jamais supposer un comportement sans vérifier ici
+
+Ce fichier fait autorité sur :
+- auth
+- Stripe
+- Supabase
+- flows critiques
+
 ---
 
 ## 1. Auth & Utilisateurs
