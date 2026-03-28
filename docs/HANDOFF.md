@@ -1,50 +1,9 @@
-# HANDOFF — Verifio
+# Handoff
 
-## Dernier état
+Ce fichier sert de point de passage entre sessions de travail.
 
-- Date :
-- Agent :
-- Branche :
-- Objectif :
+## Dernière session
+Voir `CHANGELOG.md` pour les modifications récentes.
 
----
-
-## Changements récents
-
--
-
----
-
-## Fichiers modifiés
-
--
-
----
-
-## Décisions
-
--
-
----
-
-## Migrations
-
--
-
----
-
-## Variables env
-
--
-
----
-
-## Bugs
-
--
-
----
-
-## Prochaine action
-
--
+## Contexte technique complet
+Voir `PROJECT_AUDIT.md`.

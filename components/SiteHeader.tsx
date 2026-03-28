@@ -19,6 +19,7 @@ interface NavItem {
   desc: string
   Icon: React.ComponentType<{ size: number; color?: string }>
   soon?: boolean
+  badge?: string
 }
 
 interface NavMenu {
@@ -59,7 +60,7 @@ const NAV_MENUS: NavMenu[] = [
     stat: { value: '3 500€', label: 'économisés en moyenne', tip: 'Grâce au simulateur de prix' },
     items: [
       { href: '/simulateur-prix', Icon: Calculator, label: 'Simulateur de prix', desc: 'Votre devis est-il au bon tarif ?' },
-      { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser un devis IA', desc: 'Conformité légale et mentions obligatoires' },
+      { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser & vérifier mon devis', desc: 'Prix du marché + conformité juridique en 1 clic', badge: 'Gratuit · 1/mois' },
       { href: '/calculateur-aides', Icon: Euro, label: "Calculateur d'aides État", desc: "MaPrimeRénov', CEE et plus" },
     ],
   },
@@ -157,6 +158,14 @@ function MegaMenuPanel({
                       borderRadius: '20px', background: '#fef3c7', color: '#92400e', flexShrink: 0,
                     }}>
                       Bientôt
+                    </span>
+                  )}
+                  {item.badge && !item.soon && (
+                    <span style={{
+                      fontSize: '10px', fontWeight: 700, padding: '2px 6px',
+                      borderRadius: '20px', background: 'rgba(45,185,110,0.12)', color: 'var(--color-accent)', flexShrink: 0,
+                    }}>
+                      {item.badge}
                     </span>
                   )}
                 </div>

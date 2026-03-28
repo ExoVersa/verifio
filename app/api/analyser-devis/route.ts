@@ -3,35 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 Mo
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 Mo
 const MAX_PAGES = 10
-
-const SYSTEM_PROMPT = `Tu es un expert juridique français spécialisé dans les contrats de travaux. Analyse ce devis et retourne UNIQUEMENT un JSON valide sans markdown ni backticks :
-{
-  "score": number (0-100),
-  "verdict": "conforme" | "vigilance" | "suspect",
-  "siret_trouve": string | null,
-  "mentions_legales": [{ "label": string, "present": boolean, "detail": string }],
-  "alertes": [{ "type": "danger" | "warn" | "info", "message": string }],
-  "recommandations": string[],
-  "prix_coherents": boolean | null,
-  "commentaire_prix": string | null,
-  "resume": string
-}
-
-Vérifie obligatoirement ces mentions légales (tableau de 9 éléments dans cet ordre) :
-1. Numéro SIRET de l'entreprise
-2. Assurance décennale (numéro de police + assureur)
-3. Numéro de TVA intracommunautaire
-4. Délai de rétractation 14 jours (obligatoire pour démarchage à domicile)
-5. Acompte ≤ 30% du montant total
-6. Coordonnées complètes de l'entreprise (adresse, téléphone)
-7. Description détaillée des travaux
-8. Matériaux et fournitures spécifiés
-9. Délai d'exécution et date de validité du devis
-
-Signale comme suspect si : devis vague, acompte > 30%, absence de décennale, pression temporelle ("offre valable 24h"), prix anormalement bas ou élevés, coordonnées incomplètes.
-Score : 80-100 = conforme, 50-79 = vigilance, 0-49 = suspect.`
 
 function estimatePdfPages(pdfBytes: Buffer): number {
   const str = pdfBytes.toString('latin1')
@@ -45,6 +18,11 @@ function getIpAddress(req: NextRequest): string {
     req.headers.get('x-real-ip') ||
     'unknown'
   )
+}
+
+function parseJson(raw: string): any {
+  const clean = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
+  return JSON.parse(clean)
 }
 
 export async function POST(req: NextRequest) {
@@ -83,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   if (fileBytes.length > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json({
-      error: 'Votre devis dépasse la taille autorisée (5 Mo). Un vrai devis artisan fait rarement plus de 3-4 pages.',
+      error: 'Votre devis dépasse la taille autorisée (10 Mo).',
     }, { status: 400 })
   }
 
@@ -120,25 +98,23 @@ export async function POST(req: NextRequest) {
             },
             {
               type: 'text',
-              text: 'Lis ce devis et retourne UNIQUEMENT un JSON : { "siret": "XXXXXXXXXXXXXXXX" ou null }. Ne retourne rien d\'autre. Le SIRET est un numéro à 14 chiffres présent dans les mentions légales du devis.',
+              text: 'Lis ce devis et retourne UNIQUEMENT un JSON : { "siret": "XXXXXXXXXXXXXXXX" ou null }. Ne retourne rien d\'autre. Le SIRET est un numéro à 14 chiffres dans les mentions légales.',
             },
           ],
         }],
       })
       const raw = extractResult.content[0].type === 'text' ? extractResult.content[0].text.trim() : '{}'
-      const clean = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
-      const parsed = JSON.parse(clean)
-      siretExtrait = typeof parsed.siret === 'string' && parsed.siret.length === 14 ? parsed.siret : null
-    } catch {
-      // SIRET extraction échouée — on continue sans
-    }
+      const parsed = parseJson(raw)
+      siretExtrait = typeof parsed.siret === 'string' && parsed.siret.replace(/\s/g, '').length === 14
+        ? parsed.siret.replace(/\s/g, '')
+        : null
+    } catch { /* SIRET extraction échouée */ }
   }
 
   // ── 5. Vérifier les droits d'analyse ─────────────────────────────────────
   let analyseGratuite = false
   let packSereniteActif = false
 
-  // Vérifier si Pack Sérénité acheté pour ce SIRET
   if (user && siretExtrait) {
     const { data: rapport } = await supabaseAdmin
       .from('rapports')
@@ -150,7 +126,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (!packSereniteActif) {
-    // Vérifier quota mensuel (1 analyse gratuite / mois)
     const debutMois = new Date()
     debutMois.setDate(1)
     debutMois.setHours(0, 0, 0, 0)
@@ -179,59 +154,100 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── 6. Analyse complète ───────────────────────────────────────────────────
-  const fileContent = mimeType === 'application/pdf'
-    ? {
-        type: 'document' as const,
-        source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 },
-      }
-    : {
-        type: 'image' as const,
-        source: {
-          type: 'base64' as const,
-          media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp',
-          data: fileBase64,
-        },
-      }
+  // ── 6. Analyses parallèles : prix + juridique ─────────────────────────────
+  const docContent = mimeType === 'application/pdf'
+    ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 } }
+    : { type: 'image' as const, source: { type: 'base64' as const, media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp', data: fileBase64 } }
 
-  let rawText = ''
+  let prixRaw: any = null
+  let juridiqueRaw: any = null
+
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
-      system: SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: [fileContent, { type: 'text', text: 'Analyse ce devis et retourne le JSON demandé.' }],
-      }],
-    })
-    rawText = message.content[0].type === 'text' ? message.content[0].text : ''
+    const [prixMsg, juridiqueMsg] = await Promise.all([
+      // Appel 1 — Analyse des prix
+      anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: [
+            docContent,
+            {
+              type: 'text',
+              text: `Analyse ce devis et retourne UNIQUEMENT ce JSON valide (sans markdown, sans backticks) :
+{
+  "siret": "14 chiffres ou null",
+  "nom_artisan": "string ou null",
+  "type_travaux": "string (ex: Isolation, Plomberie, Toiture...)",
+  "region": "région française ou null",
+  "montant_devis": number ou null,
+  "fourchette_basse": number,
+  "fourchette_haute": number,
+  "prix_moyen": number,
+  "verdict_prix": "normal" | "sous-evalue" | "surevalue",
+  "ecart_pourcentage": number,
+  "facteurs": ["string", "string", "string"],
+  "alerte": "string ou null"
+}
+Base-toi sur les prix du marché français 2024-2025 (main d'œuvre + matériaux). Si la région n'est pas précisée, utilise une moyenne nationale. Sois précis et réaliste.`,
+            },
+          ],
+        }],
+      }),
+      // Appel 2 — Analyse juridique
+      anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: [
+            docContent,
+            {
+              type: 'text',
+              text: `Analyse la conformité juridique de ce devis français et retourne UNIQUEMENT ce JSON valide (sans markdown, sans backticks) :
+{
+  "score_conformite": number (0-10),
+  "mentions_presentes": ["string", ...],
+  "mentions_manquantes": ["string", ...],
+  "clauses_abusives": ["string", ...],
+  "verdict_juridique": "conforme" | "a_corriger" | "non_conforme",
+  "recommandations": ["string", "string", "string"]
+}
+Vérifie obligatoirement : SIRET de l'artisan, numéro d'assurance décennale, délai d'exécution, conditions de paiement (acompte ≤ 30%), droit de rétractation 14 jours si démarchage, garanties mentionnées, coordonnées complètes artisan, description détaillée des travaux et matériaux.
+Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
+            },
+          ],
+        }],
+      }),
+    ])
+
+    const prixText = prixMsg.content[0].type === 'text' ? prixMsg.content[0].text : '{}'
+    const juridiqueText = juridiqueMsg.content[0].type === 'text' ? juridiqueMsg.content[0].text : '{}'
+
+    try { prixRaw = parseJson(prixText) } catch {
+      console.error('[analyser-devis] Prix JSON parse failed:', prixText.slice(0, 200))
+    }
+    try { juridiqueRaw = parseJson(juridiqueText) } catch {
+      console.error('[analyser-devis] Juridique JSON parse failed:', juridiqueText.slice(0, 200))
+    }
   } catch (err: any) {
     console.error('[analyser-devis] Erreur Claude:', err?.message)
     return NextResponse.json({ error: `Erreur IA : ${err?.message || 'Appel Claude échoué'}` }, { status: 500 })
   }
 
-  let analysis: any
-  try {
-    const jsonText = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
-    analysis = JSON.parse(jsonText)
-  } catch {
-    console.error('[analyser-devis] JSON.parse failed. Raw:', rawText.slice(0, 300))
+  if (!prixRaw || !juridiqueRaw) {
     return NextResponse.json({ error: 'Réponse IA invalide. Réessayez ou changez de fichier.' }, { status: 500 })
   }
 
-  // SIRET final : analyse principale en priorité, extraction légère en fallback
-  const siretFinal = analysis.siret_trouve || siretExtrait
+  // SIRET final : prix analysis en priorité, extraction légère en fallback
+  const siretFinal: string | null = prixRaw.siret || siretExtrait
 
-  // ── Croiser avec fiche entreprise si SIRET trouvé ─────────────────────────
-  let company = null
-  if (siretFinal) {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
-      const searchRes = await fetch(`${baseUrl}/api/search?q=${encodeURIComponent(siretFinal)}`)
-      if (searchRes.ok) company = await searchRes.json()
-    } catch { /* ignore */ }
-  }
+  // ── Score global ─────────────────────────────────────────────────────────
+  const scoreConformite: number = juridiqueRaw.score_conformite ?? 5
+  const scorePrix = prixRaw.verdict_prix === 'normal' ? 10
+    : prixRaw.verdict_prix === 'sous-evalue' ? 4
+    : 6 // surevalue
+  const scoreGlobal = Math.round((scoreConformite + scorePrix) / 2)
 
   // ── 7. Logger l'analyse ──────────────────────────────────────────────────
   await supabaseAdmin.from('analyses_devis').insert({
@@ -245,8 +261,9 @@ export async function POST(req: NextRequest) {
   })
 
   return NextResponse.json({
-    analysis,
-    company,
+    prix: prixRaw,
+    juridique: juridiqueRaw,
+    score_global: scoreGlobal,
     siret_artisan: siretFinal,
     est_gratuite: analyseGratuite,
     pack_serenite_actif: packSereniteActif,
