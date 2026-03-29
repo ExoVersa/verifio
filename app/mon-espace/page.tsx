@@ -6,8 +6,11 @@ import Link from 'next/link'
 import {
   User, HardHat, Bell, Clock, Search, Plus, LogOut, Trash2,
   KeyRound, ChevronRight, CheckCircle2, XCircle, AlertCircle, ExternalLink,
-  LayoutDashboard, History, Shield, FileText,
+  LayoutDashboard, History, Shield, FileText, ChevronLeft,
+  BarChart2, Scale, AlertTriangle, CheckCircle, FileSearch,
 } from 'lucide-react'
+import JaugePrix from '@/components/JaugePrix'
+import ScoreCercle from '@/components/ScoreCercle'
 import SiteHeader from '@/components/SiteHeader'
 import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
@@ -37,7 +40,15 @@ interface ChantierWithStats extends Chantier {
   derniere_activite?: string
 }
 
-type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'rapports' | 'profil'
+type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'rapports' | 'analyses' | 'profil'
+
+interface AnalyseDevis {
+  id: string
+  created_at: string
+  nom_fichier: string | null
+  siret_artisan: string | null
+  resultat_json: Record<string, unknown> | null
+}
 
 interface Rapport {
   id: string
@@ -60,6 +71,7 @@ const TABS: { id: TabId; label: string; Icon: React.ComponentType<{ size: number
   { id: 'surveillances', label: 'Mes surveillances', Icon: Bell },
   { id: 'historique', label: 'Mon historique', Icon: History },
   { id: 'rapports', label: 'Mes rapports', Icon: FileText },
+  { id: 'analyses', label: 'Mes analyses', Icon: FileSearch },
   { id: 'profil', label: 'Mon profil', Icon: User },
 ]
 
@@ -926,12 +938,292 @@ function ProfilTab({
   )
 }
 
+// ── Tab: Mes analyses ──────────────────────────────────────────────────────
+
+function AnalysesTab({ analyses }: { analyses: AnalyseDevis[] }) {
+  const [analyseSelectionnee, setAnalyseSelectionnee] = useState<AnalyseDevis | null>(null)
+
+  function formatEurLocal(n: number | null | undefined) {
+    if (!n) return '—'
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+  }
+
+  if (analyseSelectionnee) {
+    const r = analyseSelectionnee.resultat_json as {
+      prix: {
+        siret: string | null; nom_artisan: string | null; type_travaux: string; region: string | null
+        montant_devis: number | null; fourchette_basse: number; fourchette_haute: number; prix_moyen: number
+        verdict_prix: 'normal' | 'sous-evalue' | 'surevalue'; ecart_pourcentage: number
+        facteurs: string[]; alerte: string | null
+      }
+      juridique: {
+        score_conformite: number; mentions_presentes: string[]; mentions_manquantes: string[]
+        clauses_abusives: string[]; verdict_juridique: 'conforme' | 'a_corriger' | 'non_conforme'
+        recommandations: string[]
+      }
+      score_global: number
+      siret_artisan: string | null
+    } | null
+
+    const CARD: React.CSSProperties = {
+      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+      borderRadius: 16, padding: 24,
+    }
+
+    return (
+      <div>
+        <button
+          onClick={() => setAnalyseSelectionnee(null)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--color-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', marginBottom: '1rem', padding: 0 }}
+        >
+          <ChevronLeft size={14} strokeWidth={1.5} />
+          Retour à mes analyses
+        </button>
+
+        <p style={{ margin: '0 0 6px', fontSize: 13, color: 'var(--color-muted)' }}>
+          {analyseSelectionnee.nom_fichier || 'Devis sans nom'} · {new Date(analyseSelectionnee.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+
+        {r ? (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
+              {/* Analyse des prix */}
+              <div style={CARD}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <BarChart2 size={20} color="var(--color-accent)" strokeWidth={1.5} />
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Analyse des prix</h2>
+                </div>
+
+                {(r.prix.nom_artisan || r.siret_artisan) && (
+                  <div style={{ background: 'var(--color-bg)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 13 }}>
+                    <span style={{ color: 'var(--color-muted)' }}>Artisan : </span>
+                    <strong>{r.prix.nom_artisan || `SIRET ${r.siret_artisan}`}</strong>
+                    {r.siret_artisan && (
+                      <>
+                        <span style={{ color: 'var(--color-muted)', margin: '0 6px' }}>·</span>
+                        <a href={`/artisan/${r.siret_artisan}`} style={{ color: 'var(--color-accent)', fontSize: 12, fontWeight: 600 }}>Voir la fiche →</a>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                  <span style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent)', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600 }}>{r.prix.type_travaux}</span>
+                  {r.prix.region && <span style={{ background: 'var(--color-bg)', color: 'var(--color-muted)', borderRadius: 20, padding: '3px 10px', fontSize: 12 }}>{r.prix.region}</span>}
+                </div>
+
+                {r.prix.montant_devis && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: 'var(--color-muted)' }}>Montant du devis</span>
+                    <strong>{formatEurLocal(r.prix.montant_devis)}</strong>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ color: 'var(--color-muted)' }}>Fourchette normale</span>
+                  <span>{formatEurLocal(r.prix.fourchette_basse)} — {formatEurLocal(r.prix.fourchette_haute)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
+                  <span style={{ color: 'var(--color-muted)' }}>Prix moyen marché</span>
+                  <strong>{formatEurLocal(r.prix.prix_moyen)}</strong>
+                </div>
+
+                <JaugePrix prix={r.prix} />
+
+                <div style={{
+                  marginTop: 16, padding: '12px 14px', borderRadius: 10,
+                  background: r.prix.verdict_prix === 'normal' ? 'var(--color-safe-bg)' : r.prix.verdict_prix === 'sous-evalue' ? 'var(--color-danger-bg)' : '#fffbeb',
+                  border: `1px solid ${r.prix.verdict_prix === 'normal' ? 'rgba(45,185,110,0.3)' : r.prix.verdict_prix === 'sous-evalue' ? 'rgba(220,38,38,0.2)' : '#fde68a'}`,
+                }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 14, color: r.prix.verdict_prix === 'normal' ? 'var(--color-safe)' : r.prix.verdict_prix === 'sous-evalue' ? 'var(--color-danger)' : '#d97706' }}>
+                    {r.prix.verdict_prix === 'normal' && 'Prix dans la norme'}
+                    {r.prix.verdict_prix === 'sous-evalue' && 'Devis sous-évalué — méfiance'}
+                    {r.prix.verdict_prix === 'surevalue' && 'Devis surévalué'}
+                  </p>
+                  {r.prix.ecart_pourcentage > 0 && (
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Écart : {r.prix.ecart_pourcentage}% par rapport au prix moyen</p>
+                  )}
+                  {r.prix.alerte && (
+                    <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-danger)', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                      <AlertTriangle size={12} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+                      {r.prix.alerte}
+                    </p>
+                  )}
+                </div>
+
+                {r.prix.facteurs?.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Facteurs de variation</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {r.prix.facteurs.map((f: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12 }}>
+                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--color-accent)', flexShrink: 0, marginTop: 5 }} />
+                          <span style={{ color: 'var(--color-text)', lineHeight: 1.5 }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Conformité juridique */}
+              <div style={CARD}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <Scale size={20} color="var(--color-accent)" strokeWidth={1.5} />
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Conformité juridique</h2>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '12px 14px', background: 'var(--color-bg)', borderRadius: 10 }}>
+                  <ScoreCercle score={r.juridique.score_conformite} size={52} />
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontSize: 16, fontWeight: 800, color: r.juridique.verdict_juridique === 'conforme' ? 'var(--color-safe)' : r.juridique.verdict_juridique === 'a_corriger' ? '#d97706' : 'var(--color-danger)' }}>
+                      {r.juridique.verdict_juridique === 'conforme' && 'Devis conforme'}
+                      {r.juridique.verdict_juridique === 'a_corriger' && 'Devis à corriger'}
+                      {r.juridique.verdict_juridique === 'non_conforme' && 'Devis non conforme'}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Score /10</p>
+                  </div>
+                </div>
+
+                {r.juridique.mentions_presentes?.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mentions présentes</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {r.juridique.mentions_presentes.map((m: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 13 }}>
+                          <CheckCircle size={13} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+                          <span>{m}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {r.juridique.mentions_manquantes?.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--color-danger)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mentions manquantes</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {r.juridique.mentions_manquantes.map((m: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 13 }}>
+                          <XCircle size={13} color="var(--color-danger)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+                          <span style={{ color: 'var(--color-danger)', fontWeight: 600 }}>{m}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {r.juridique.clauses_abusives?.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Clauses abusives détectées</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {r.juridique.clauses_abusives.map((c: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 13 }}>
+                          <AlertTriangle size={13} color="#d97706" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+                          <span style={{ color: '#92400e' }}>{c}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {r.juridique.recommandations?.length > 0 && (
+                  <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--color-bg)', borderRadius: 10 }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recommandations</p>
+                    <ol style={{ margin: 0, padding: '0 0 0 16px' }}>
+                      {r.juridique.recommandations.map((rec: string, i: number) => (
+                        <li key={i} style={{ fontSize: 12, color: 'var(--color-text)', marginBottom: 4, lineHeight: 1.5 }}>{rec}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Score global */}
+            <div style={{
+              ...CARD, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+              background: r.score_global >= 8 ? 'var(--color-safe-bg)' : r.score_global >= 5 ? '#fffbeb' : 'var(--color-danger-bg)',
+              border: `1.5px solid ${r.score_global >= 8 ? 'rgba(45,185,110,0.3)' : r.score_global >= 5 ? '#fde68a' : 'rgba(220,38,38,0.2)'}`,
+            }}>
+              <ScoreCercle score={r.score_global} size={64} />
+              <div>
+                <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-muted)' }}>Score global du devis</p>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: r.score_global >= 8 ? 'var(--color-safe)' : r.score_global >= 5 ? '#d97706' : 'var(--color-danger)' }}>
+                  {r.score_global >= 8 && 'Devis excellent — vous pouvez signer en confiance'}
+                  {r.score_global >= 5 && r.score_global < 8 && 'Devis à revoir — demandez des corrections'}
+                  {r.score_global < 5 && 'Devis problématique — ne signez pas'}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p style={{ fontSize: 14, color: 'var(--color-muted)' }}>Résultats non disponibles pour cette analyse.</p>
+        )}
+      </div>
+    )
+  }
+
+  if (analyses.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 24px', background: 'var(--color-surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}>
+        <FileSearch size={32} color="var(--color-muted)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+        <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600 }}>Aucune analyse pour l&apos;instant.</p>
+        <a href="/analyser-devis" style={{ display: 'inline-block', marginTop: '16px', fontSize: 14, color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>
+          Analyser un devis →
+        </a>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--color-muted)' }}>
+        {analyses.length} analyse{analyses.length > 1 ? 's' : ''}
+      </p>
+      {analyses.map(analyse => {
+        const score = analyse.resultat_json?.score_global as number | undefined
+        const scoreColor = score !== undefined ? (score >= 7 ? '#3B6D11' : score >= 4 ? '#BA7517' : '#A32D2D') : undefined
+        return (
+          <div key={analyse.id} style={{
+            background: 'var(--color-surface)', border: '0.5px solid var(--color-border)',
+            borderRadius: 'var(--border-radius-lg, 12px)', padding: '1rem 1.25rem',
+            marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div>
+              <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 500, color: 'var(--color-text)' }}>
+                {analyse.nom_fichier || 'Devis sans nom'}
+              </p>
+              <p style={{ margin: '0 0 2px', fontSize: 12, color: 'var(--color-muted)' }}>
+                {analyse.siret_artisan ? `Artisan · ${analyse.siret_artisan}` : 'SIRET non détecté'}
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
+                {new Date(analyse.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+              {score !== undefined && (
+                <span style={{ fontSize: 22, fontWeight: 500, color: scoreColor }}>{Math.round(score)}</span>
+              )}
+              <button
+                onClick={() => setAnalyseSelectionnee(analyse)}
+                style={{ fontSize: 13, color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, padding: 0 }}
+              >
+                Revoir →
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 function MonEspaceInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'rapports', 'profil']
+  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'rapports', 'analyses', 'profil']
   const tabParam = searchParams.get('tab') as TabId | null
   const [tab, setTabState] = useState<TabId>(
     tabParam && validTabs.includes(tabParam) ? tabParam : 'dashboard'
@@ -943,6 +1235,7 @@ function MonEspaceInner() {
   const [surveillances, setSurveillances] = useState<Surveillance[]>([])
   const [searches, setSearches] = useState<SearchRecord[]>([])
   const [rapports, setRapports] = useState<Rapport[]>([])
+  const [analyses, setAnalyses] = useState<AnalyseDevis[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
   const setTab = (t: TabId) => {
@@ -953,7 +1246,7 @@ function MonEspaceInner() {
   async function loadAll(u: SupabaseUser) {
     setPageLoading(true)
 
-    const [chantiersRes, survRes, searchRes, rapportsRes] = await Promise.all([
+    const [chantiersRes, survRes, searchRes, rapportsRes, analysesRes] = await Promise.all([
       supabase
         .from('chantiers')
         .select('*, chantier_paiements(montant), chantier_evenements(date_evenement)')
@@ -971,6 +1264,11 @@ function MonEspaceInner() {
       supabase
         .from('rapports')
         .select('*')
+        .eq('user_id', u.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('analyses_devis')
+        .select('id, created_at, nom_fichier, siret_artisan, resultat_json')
         .eq('user_id', u.id)
         .order('created_at', { ascending: false }),
     ])
@@ -992,6 +1290,7 @@ function MonEspaceInner() {
     setSurveillances(survRes.data ?? [])
     setSearches(searchRes.data ?? [])
     setRapports(rapportsRes.data ?? [])
+    setAnalyses(analysesRes.data ?? [])
     setPageLoading(false)
   }
 
@@ -1137,6 +1436,9 @@ function MonEspaceInner() {
         )}
         {tab === 'rapports' && (
           <RapportsTab rapports={rapports} router={router} />
+        )}
+        {tab === 'analyses' && (
+          <AnalysesTab analyses={analyses} />
         )}
         {tab === 'profil' && (
           <ProfilTab

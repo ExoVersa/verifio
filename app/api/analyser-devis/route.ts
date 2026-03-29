@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   // ── 3. Valider le fichier ─────────────────────────────────────────────────
   const body = await req.json()
-  const { fileBase64, mimeType } = body
+  const { fileBase64, mimeType, nomFichier } = body
 
   if (!fileBase64 || !mimeType) {
     return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
@@ -249,6 +249,15 @@ Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
     : 6 // surevalue
   const scoreGlobal = Math.round((scoreConformite + scorePrix) / 2)
 
+  const resultatComplet = {
+    prix: prixRaw,
+    juridique: juridiqueRaw,
+    score_global: scoreGlobal,
+    siret_artisan: siretFinal,
+    est_gratuite: analyseGratuite,
+    pack_serenite_actif: packSereniteActif,
+  }
+
   // ── 7. Logger l'analyse ──────────────────────────────────────────────────
   await supabaseAdmin.from('analyses_devis').insert({
     user_id: user?.id ?? null,
@@ -256,16 +265,11 @@ Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
     ip_address: ipAddress,
     pages_pdf: pagesCount,
     taille_pdf_bytes: fileBytes.length,
+    nom_fichier: nomFichier || null,
+    resultat_json: resultatComplet,
   }).then(({ error }) => {
     if (error) console.warn('[analyser-devis] Log insert failed:', error.message)
   })
 
-  return NextResponse.json({
-    prix: prixRaw,
-    juridique: juridiqueRaw,
-    score_global: scoreGlobal,
-    siret_artisan: siretFinal,
-    est_gratuite: analyseGratuite,
-    pack_serenite_actif: packSereniteActif,
-  })
+  return NextResponse.json(resultatComplet)
 }

@@ -9,6 +9,8 @@ import {
   FileText, FileSearch, Scale, BarChart2, Sparkles, Shield,
   BellRing, ClipboardCheck, Search, MessageSquare,
 } from 'lucide-react'
+import JaugePrix from '@/components/JaugePrix'
+import ScoreCercle from '@/components/ScoreCercle'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface PrixResult {
@@ -64,50 +66,6 @@ const UPSELL_FEATURES = [
   { Icon: Scale, text: 'Guide droits et recours' },
   { Icon: MessageSquare, text: 'Questions à poser' },
 ]
-
-// ── Composant jauge prix ──────────────────────────────────────────────────────
-function JaugePrix({ prix }: { prix: PrixResult }) {
-  const max = prix.fourchette_haute * 1.6
-  const lowPct = (prix.fourchette_basse / max) * 100
-  const highPct = (prix.fourchette_haute / max) * 100
-  const meanPct = (prix.prix_moyen / max) * 100
-  const devisPct = prix.montant_devis ? Math.min((prix.montant_devis / max) * 100, 97) : null
-
-  return (
-    <div style={{ marginTop: 12 }}>
-      <div style={{ position: 'relative', height: 24, borderRadius: 12, overflow: 'hidden', marginBottom: 6 }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${lowPct}%`, background: '#fee2e2' }} />
-        <div style={{ position: 'absolute', left: `${lowPct}%`, top: 0, height: '100%', width: `${highPct - lowPct}%`, background: '#dcfce7' }} />
-        <div style={{ position: 'absolute', left: `${highPct}%`, top: 0, height: '100%', width: `${100 - highPct}%`, background: '#fef3c7' }} />
-        <div style={{ position: 'absolute', left: `${meanPct}%`, top: '3px', height: 'calc(100% - 6px)', width: 2, background: 'var(--color-accent)', transform: 'translateX(-50%)', borderRadius: 1 }} />
-        {devisPct !== null && (
-          <div style={{ position: 'absolute', left: `${devisPct}%`, top: 0, height: '100%', width: 3, background: '#1d4ed8', transform: 'translateX(-50%)', borderRadius: 2 }} />
-        )}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-muted)' }}>
-        <span style={{ color: '#ef4444', fontWeight: 600 }}>Trop bas</span>
-        <span style={{ color: '#16a34a', fontWeight: 600 }}>Zone normale</span>
-        <span style={{ color: '#d97706', fontWeight: 600 }}>Élevé</span>
-      </div>
-    </div>
-  )
-}
-
-// ── Composant score cercle ────────────────────────────────────────────────────
-function ScoreCercle({ score, size = 56 }: { score: number; size?: number }) {
-  const color = score >= 8 ? 'var(--color-safe)' : score >= 5 ? '#d97706' : 'var(--color-danger)'
-  const bg = score >= 8 ? 'var(--color-safe-bg)' : score >= 5 ? '#fffbeb' : 'var(--color-danger-bg)'
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: bg, border: `2px solid ${color}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-    }}>
-      <span style={{ fontSize: size * 0.35, fontWeight: 800, color }}>{score}</span>
-    </div>
-  )
-}
 
 // ── Bloc upsell dark green ────────────────────────────────────────────────────
 function UpsellBloc({ siretArtisan, isQuota }: { siretArtisan: string | null; isQuota?: boolean }) {
@@ -245,7 +203,7 @@ function AnalyserDevisInner() {
       const res = await fetch('/api/analyser-devis', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ fileBase64, mimeType }),
+        body: JSON.stringify({ fileBase64, mimeType, nomFichier: file.name }),
       })
       const data = await res.json()
 
