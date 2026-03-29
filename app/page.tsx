@@ -276,68 +276,44 @@ function HeroSearch() {
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
       <form onSubmit={handleSubmit}>
-        <div className="hero-search-shell" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: '8px',
-          padding: '8px',
-          borderRadius: '24px',
-          background: 'rgba(255,255,255,0.88)',
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '10px 10px 10px 20px',
+          borderRadius: '20px',
+          background: 'rgba(255,255,255,0.92)',
           border: '1px solid rgba(227,219,208,0.9)',
           boxShadow: '0 18px 42px rgba(20,32,27,0.08)',
           backdropFilter: 'blur(14px)',
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            minWidth: 0,
-            padding: '10px 14px',
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '14px',
-              background: '#f1f6f3',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#153b2e',
-              flexShrink: 0,
-            }}>
-              <Search size={20} strokeWidth={1.8} />
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#7a8983', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Recherche artisan
-              </div>
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => handleChange(e.target.value)}
-                onFocus={() => results.length > 0 && setShowDropdown(true)}
-                placeholder="Nom, SIRET ou entreprise"
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  fontFamily: 'var(--font-body)',
-                  color: '#14201b',
-                  background: 'transparent',
-                  padding: 0,
-                }}
-              />
-            </div>
-          </div>
-
+          <Search size={18} strokeWidth={1.8} color="#7a8983" style={{ flexShrink: 0 }} />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => handleChange(e.target.value)}
+            onFocus={() => results.length > 0 && setShowDropdown(true)}
+            placeholder="Nom de l'artisan, SIRET ou entreprise"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              border: 'none',
+              outline: 'none',
+              fontSize: '16px',
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+              color: '#14201b',
+              background: 'transparent',
+              padding: '8px 0',
+            }}
+          />
           <button
             type="submit"
             style={{
-              minHeight: '58px',
-              borderRadius: '18px',
+              flexShrink: 0,
+              height: '48px',
+              borderRadius: '13px',
               border: 'none',
               padding: '0 20px',
               background: 'linear-gradient(135deg, #153b2e 0%, #2c6a53 100%)',
@@ -348,15 +324,14 @@ function HeroSearch() {
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 12px 24px rgba(21,59,46,0.18)',
+              boxShadow: '0 8px 20px rgba(21,59,46,0.18)',
               whiteSpace: 'nowrap',
             }}
           >
             {loading
               ? <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
-              : <>Lancer la vérification <ArrowRight size={16} strokeWidth={1.8} /></>
+              : <>Vérifier <ArrowRight size={15} strokeWidth={1.8} /></>
             }
           </button>
         </div>
@@ -800,32 +775,14 @@ export default function HomePage() {
 
               <HeroSearch />
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: '10px',
-                marginTop: '20px',
-              }} className="hero-mini-proof">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
                 {[
-                  'Lecture claire du risque',
-                  'Parcours pensé pour la décision',
-                  'Ton rassurant, données officielles',
-                ].map((item) => (
-                  <div key={item} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 12px',
-                    borderRadius: '16px',
-                    background: 'rgba(255,255,255,0.56)',
-                    border: '1px solid rgba(228,220,208,0.82)',
-                    color: '#153b2e',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    backdropFilter: 'blur(8px)',
-                  }}>
-                    <CheckCircle size={14} strokeWidth={1.9} />
-                    {item}
+                  { icon: ShieldCheck, text: 'Sources officielles INSEE & BODACC' },
+                  { icon: CheckCircle, text: 'Gratuit pour la vérification de base' },
+                ].map(({ icon: Icon, text }) => (
+                  <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#43524c', fontSize: '13px' }}>
+                    <Icon size={14} strokeWidth={1.8} color="#153b2e" />
+                    {text}
                   </div>
                 ))}
               </div>
