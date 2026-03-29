@@ -7,6 +7,7 @@ import {
   Mail, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { PageHero, PrimaryLink, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -142,10 +143,12 @@ function NotifyModal({ onClose }: { onClose: () => void }) {
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: 'var(--color-surface)', borderRadius: '24px',
-        padding: '40px 36px', maxWidth: '420px', width: '100%',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.18)',
+        background: 'rgba(255,255,255,0.94)', borderRadius: '28px',
+        padding: '38px 34px', maxWidth: '420px', width: '100%',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.14)',
+        border: '1px solid rgba(226,217,204,0.92)',
         position: 'relative',
+        backdropFilter: 'blur(14px)',
       }}>
         <button
           onClick={onClose}
@@ -296,16 +299,15 @@ function PlanCard({ plan, onNotify }: { plan: Plan; onNotify: () => void }) {
     <div
       style={{
         background: bg,
-        border: `2px solid ${border}`,
-        borderRadius: '24px',
-        padding: '32px 28px',
+        border: `1px solid ${border}`,
+        borderRadius: '28px',
+        padding: '30px 28px',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         boxShadow: isDark
-          ? '0 20px 60px rgba(27,67,50,0.28)'
-          : '0 2px 8px rgba(0,0,0,0.06)',
-        transform: isDark ? 'scale(1.04)' : 'none',
+          ? '0 22px 54px rgba(27,67,50,0.18)'
+          : '0 14px 30px rgba(20,32,27,0.05)',
       }}
     >
       {/* Badge */}
@@ -339,7 +341,7 @@ function PlanCard({ plan, onNotify }: { plan: Plan; onNotify: () => void }) {
       <div style={{ marginBottom: '6px' }}>
         <span style={{
           fontFamily: 'var(--font-display)', fontWeight: 800,
-          fontSize: plan.price === 'Bientôt' ? '32px' : '40px',
+          fontSize: plan.price === 'Bientôt' ? '30px' : '38px',
           color: textPrimary, lineHeight: 1, letterSpacing: '-0.03em',
         }}>
           {plan.price}
@@ -385,7 +387,7 @@ function PlanCard({ plan, onNotify }: { plan: Plan; onNotify: () => void }) {
         <button
           onClick={onNotify}
           style={{
-            padding: '13px 20px', borderRadius: '12px',
+            padding: '13px 18px', borderRadius: '14px',
             background: 'transparent',
             color: 'var(--color-accent)',
             border: '1.5px solid var(--color-accent)',
@@ -403,7 +405,7 @@ function PlanCard({ plan, onNotify }: { plan: Plan; onNotify: () => void }) {
         <Link
           href={plan.cta.href!}
           style={{
-            padding: '13px 20px', borderRadius: '12px',
+            padding: '13px 18px', borderRadius: '14px',
             textDecoration: 'none', fontFamily: 'var(--font-body)',
             fontSize: '14px', fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -438,32 +440,11 @@ export default function PricingPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
 
-      {/* ── Hero ── */}
-      <section style={{ background: '#1B4332', padding: '72px 24px 64px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(216,243,220,0.25)',
-            borderRadius: '100px', padding: '7px 16px', marginBottom: '24px',
-          }}>
-            <Shield size={13} color="#D8F3DC" strokeWidth={1.5} />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#D8F3DC', letterSpacing: '0.04em' }}>
-              Tarifs simples et transparents
-            </span>
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)', fontWeight: 800,
-            fontSize: 'clamp(28px, 5vw, 48px)', color: 'white',
-            letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 16px',
-          }}>
-            La protection que vous méritez,<br />
-            <span style={{ color: '#74C69D' }}>au prix juste</span>
-          </h1>
-          <p style={{ fontSize: '16px', color: 'rgba(216,243,220,0.8)', lineHeight: 1.65, margin: 0 }}>
-            La vérification est 100&nbsp;% gratuite. Payez uniquement si vous avez besoin de plus.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        badge={<SectionBadge text="Tarifs simples et transparents" tone="green" />}
+        title={<>La protection que vous meritez, au prix juste</>}
+        subtitle={<>La verification de base reste gratuite. Vous activez le niveau d&apos;accompagnement utile seulement quand vous en avez vraiment besoin.</>}
+      />
 
       {/* ── Cards ── */}
       <section style={{ padding: '64px 24px 80px' }}>
@@ -482,18 +463,21 @@ export default function PricingPage() {
       </section>
 
       {/* ── Comparaison rapide ── */}
-      <section style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', padding: '64px 24px' }}>
+      <section style={{ padding: '0 24px 72px' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '26px' }}>
+            <SectionBadge text="Pourquoi monter en gamme" tone="sand" />
+          </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A', textAlign: 'center', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
             Pourquoi passer au Pack Sérénité ?
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', textAlign: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px', textAlign: 'center' }} className="pricing-why-grid">
             {[
               { icon: Shield, title: '1 achat = 1 rapport', desc: 'Pas d\'abonnement. Vous payez une seule fois et accédez à vie au rapport de cet artisan.' },
               { icon: Zap, title: '4,90€ seulement', desc: 'Moins cher qu\'un café, pour éviter des milliers d\'euros de problèmes sur votre chantier.' },
               { icon: Gem, title: 'Données officielles', desc: 'BODACC, INSEE, RGE ADEME — les mêmes sources que les notaires et professionnels.' },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} style={{ padding: '24px 16px' }}>
+              <SurfaceCard key={title} style={{ padding: '24px 18px' }}>
                 <div style={{
                   width: '48px', height: '48px', borderRadius: '14px',
                   background: 'var(--color-accent-light)',
@@ -504,7 +488,7 @@ export default function PricingPage() {
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: '#1A1A1A', margin: '0 0 8px' }}>{title}</h3>
                 <p style={{ fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6, margin: 0 }}>{desc}</p>
-              </div>
+              </SurfaceCard>
             ))}
           </div>
         </div>
@@ -519,34 +503,23 @@ export default function PricingPage() {
       </section>
 
       {/* ── CTA finale ── */}
-      <section style={{ background: '#F8F4EF', borderTop: '1px solid var(--color-border)', padding: '64px 24px', textAlign: 'center' }}>
+      <section style={{ padding: '0 24px 80px', textAlign: 'center' }}>
         <div style={{ maxWidth: '520px', margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A', margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-            Commencez gratuitement
-          </h2>
-          <p style={{ fontSize: '15px', color: 'var(--color-muted)', margin: '0 0 28px', lineHeight: 1.6 }}>
-            La vérification de base est gratuite et immédiate. Passez au Pack Sérénité si l&apos;artisan vous convainc.
-          </p>
-          <Link
-            href="/recherche"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: '#1B4332', color: 'white', borderRadius: '12px',
-              padding: '14px 28px', fontSize: '15px', fontWeight: 700,
-              textDecoration: 'none', fontFamily: 'var(--font-body)',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#2D6A4F')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#1B4332')}
-          >
-            Rechercher un artisan <ArrowRight size={16} strokeWidth={1.5} />
-          </Link>
-          <p style={{ fontSize: '12px', color: 'var(--color-muted)', marginTop: '16px' }}>
-            Voir aussi :{' '}
-            <Link href="/espace-artisan" style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}>
-              offres pour les artisans →
-            </Link>
-          </p>
+          <SurfaceCard style={{ padding: '30px 28px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A', margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+              Commencez gratuitement
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--color-muted)', margin: '0 0 24px', lineHeight: 1.7 }}>
+              La vérification de base est gratuite et immédiate. Passez au Pack Sérénité si l&apos;artisan vous convainc.
+            </p>
+            <PrimaryLink href="/recherche">Rechercher un artisan</PrimaryLink>
+            <p style={{ fontSize: '12px', color: 'var(--color-muted)', marginTop: '16px' }}>
+              Voir aussi :{' '}
+              <Link href="/espace-artisan" style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 600 }}>
+                offres pour les artisans →
+              </Link>
+            </p>
+          </SurfaceCard>
         </div>
       </section>
 
@@ -559,6 +532,14 @@ export default function PricingPage() {
 
       {/* ── Modal ── */}
       {showModal && <NotifyModal onClose={() => setShowModal(false)} />}
+
+      <style>{`
+        @media (max-width: 900px) {
+          .pricing-why-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   )
 }

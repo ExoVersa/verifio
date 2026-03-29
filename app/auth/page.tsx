@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, Zap, Gift } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 /* ── Icônes SVG inline ─────────────────────────────────────── */
 function IconShield() {
@@ -141,31 +142,43 @@ function LeftPanel() {
   return (
     <div style={{
       width: '100%',
-      background: '#1B4332',
+      background: 'linear-gradient(145deg, #10251d 0%, #153b2e 52%, #234a3b 100%)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      padding: '48px 40px',
+      padding: '44px 40px',
       minHeight: '100vh',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 20%, rgba(82,183,136,0.14), transparent 24%), radial-gradient(circle at 82% 24%, rgba(255,255,255,0.06), transparent 18%)' }} />
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white', position: 'relative', zIndex: 1 }}>
         <IconShield />
         <span style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>Verifio</span>
       </div>
 
       {/* Citation + arguments */}
-      <div>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <SectionBadge text="Espace personnel Verifio" tone="light" />
         <h2 style={{
-          margin: '0 0 40px',
-          fontSize: '32px', fontWeight: 700, color: 'white',
+          margin: '18px 0 28px',
+          fontSize: '36px', fontWeight: 700, color: 'white',
           fontFamily: 'var(--font-display)', lineHeight: 1.25,
           letterSpacing: '-0.02em',
         }}>
-          Vérifiez votre artisan<br />avant qu&apos;il soit<br />trop tard
+          Restez dans le bon tempo
+          <br />
+          pour choisir,
+          <br />
+          verifier et suivre
         </h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <p style={{ margin: '0 0 26px', fontSize: '16px', lineHeight: 1.75, color: 'rgba(255,255,255,0.74)', maxWidth: '420px' }}>
+          Connexion, recherches, rapports, chantiers et alertes restent reunis dans un espace plus clair et plus rassurant.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {[
             { Icon: Shield, text: 'Données officielles INSEE, ADEME, BODACC' },
             { Icon: Zap, text: 'Vérification en 30 secondes' },
@@ -182,9 +195,11 @@ function LeftPanel() {
       {/* Témoignage */}
       <div style={{
         background: 'rgba(255,255,255,0.08)',
-        borderRadius: '16px',
-        padding: '20px',
+        borderRadius: '22px',
+        padding: '22px',
         border: '1px solid rgba(255,255,255,0.12)',
+        position: 'relative',
+        zIndex: 1,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
           <div style={{
@@ -199,8 +214,8 @@ function LeftPanel() {
             <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Tours</p>
           </div>
         </div>
-        <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, fontStyle: 'italic' }}>
-          &quot;J&apos;ai évité une arnaque grâce à Verifio. L&apos;artisan était en liquidation judiciaire.&quot;
+        <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, fontStyle: 'italic' }}>
+          &quot;Ce que j&apos;ai aime, c&apos;est de comprendre tout de suite quoi verifier et quoi demander avant de signer.&quot;
         </p>
         <div style={{ display: 'flex', gap: '2px' }}>
           {'⭐⭐⭐⭐⭐'.split('').map((s, i) => <span key={i} style={{ fontSize: '14px' }}>{s}</span>)}
@@ -634,7 +649,7 @@ function AuthPageInner() {
           .auth-right { width: 100% !important; }
         }
       `}</style>
-      <main style={{ display: 'flex', minHeight: '100vh' }}>
+      <main style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(180deg, #fbf8f4 0%, #f3ede5 100%)' }}>
         {/* Colonne gauche */}
         <div className="auth-left" style={{ flex: '0 0 45%', maxWidth: '45%' }}>
           <LeftPanel />
@@ -645,7 +660,7 @@ function AuthPageInner() {
           className="auth-right"
           style={{
             width: '55%',
-            background: '#F8F4EF',
+            background: 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -654,13 +669,13 @@ function AuthPageInner() {
             boxSizing: 'border-box',
           }}
         >
-          <div style={{
+          <SurfaceCard style={{
             width: '100%',
-            maxWidth: '420px',
-            background: 'white',
-            borderRadius: '20px',
+            maxWidth: '430px',
             padding: '36px 32px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
+            background: 'rgba(255,255,255,0.90)',
+            boxShadow: '0 20px 42px rgba(20,32,27,0.08)',
+            backdropFilter: 'blur(16px)',
           }}>
             {mode === 'login' ? (
               <LoginForm
@@ -688,7 +703,7 @@ function AuthPageInner() {
                 onGoogleAuth={handleGoogleAuth}
               />
             )}
-          </div>
+          </SurfaceCard>
         </div>
       </main>
     </>

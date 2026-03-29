@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
+import { BadgeCheck, FileText, BarChart3, ArrowRight } from 'lucide-react'
+import { PageHero, PrimaryLink, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 export const metadata = {
   title: 'Espace Artisan — Verifio',
@@ -11,76 +13,22 @@ export default function EspaceArtisanPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
 
-      {/* ── HERO ── */}
-      <section style={{
-        background: 'linear-gradient(135deg, #0d2318 0%, #1B4332 60%, #1a3a2a 100%)',
-        padding: '80px 24px 72px',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Subtle background decoration */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(82,183,136,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(82,183,136,0.06) 0%, transparent 40%)',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{ position: 'relative', maxWidth: '680px', margin: '0 auto' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(82,183,136,0.15)', border: '1px solid rgba(82,183,136,0.3)',
-            borderRadius: '100px', padding: '6px 16px', marginBottom: '28px',
-            fontSize: '12px', fontWeight: 700, color: '#74C69D',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
-          }}>
-            <span>✓</span> Programme artisans de confiance
+      <PageHero
+        dark
+        badge={<SectionBadge text="Programme artisans de confiance" tone="light" />}
+        title={<>Vous etes un artisan serieux ? Faites-le ressentir des le premier regard.</>}
+        subtitle={<>Badge Verifio, espace pro, outils de devis et meilleure lisibilite pour les particuliers qui cherchent un artisan rassurant avant de signer.</>}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <PrimaryLink href="/espace-artisan/inscription" light>
+            Rejoindre Verifio
+            <ArrowRight size={15} strokeWidth={1.8} />
+          </PrimaryLink>
+          <div style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.82)', fontSize: '13px', fontWeight: 700, background: 'rgba(255,255,255,0.08)' }}>
+            14 jours d&apos;essai
           </div>
-
-          <h1 className="font-display" style={{
-            margin: '0 0 20px',
-            fontSize: 'clamp(32px, 6vw, 54px)',
-            fontWeight: 900,
-            color: '#fff',
-            lineHeight: 1.1,
-            letterSpacing: '-0.02em',
-          }}>
-            Vous êtes artisan honnête ?<br />
-            <span style={{ color: '#52B788' }}>Prouvez-le.</span>
-          </h1>
-
-          <p style={{
-            margin: '0 0 36px',
-            fontSize: 'clamp(15px, 2.5vw, 18px)',
-            color: 'rgba(255,255,255,0.65)',
-            lineHeight: 1.65,
-            maxWidth: '520px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}>
-            Rejoignez les artisans certifiés Verifio. Obtenez un badge de confiance visible sur Google, un outil de devis pro et plus de clients qui vous font confiance.
-          </p>
-
-          <Link
-            href="/espace-artisan/inscription"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: '#52B788', color: '#fff',
-              padding: '16px 32px', borderRadius: '14px',
-              fontSize: '16px', fontWeight: 700,
-              textDecoration: 'none',
-              boxShadow: '0 4px 20px rgba(82,183,136,0.35)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
-            }}
-          >
-            Rejoindre Verifio — 14 jours gratuits →
-          </Link>
-
-          <p style={{ margin: '16px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>
-            Sans engagement · Résiliation à tout moment
-          </p>
         </div>
-      </section>
+      </PageHero>
 
       {/* ── BÉNÉFICES ── */}
       <section style={{ padding: '72px 24px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -103,30 +51,27 @@ export default function EspaceArtisanPage() {
         }}>
           {[
             {
-              emoji: '🛡️',
+              icon: BadgeCheck,
               title: 'Badge de confiance',
               desc: 'Un badge certifié "Artisan Vérifié Verifio" à afficher sur votre site, vos emails et vos devis. Vos clients vérifient avant de signer — soyez celui qu\'ils trouvent.',
               highlight: 'Visible sur Verifio.fr',
             },
             {
-              emoji: '📄',
+              icon: FileText,
               title: 'Constructeur de devis pro',
               desc: 'Créez des devis professionnels en 2 minutes avec toutes les mentions légales obligatoires. Calcul TVA automatique, gestion des acomptes, suivi client.',
               highlight: 'Inclus dans l\'abonnement',
             },
             {
-              emoji: '📊',
+              icon: BarChart3,
               title: 'Tableau de bord visibilité',
               desc: 'Suivez combien de particuliers ont consulté votre fiche. Gérez votre profil, votre description et vos certifications depuis un espace centralisé.',
               highlight: 'Statistiques en temps réel',
             },
-          ].map(({ emoji, title, desc, highlight }) => (
-            <div
+          ].map(({ icon: Icon, title, desc, highlight }) => (
+            <SurfaceCard
               key={title}
               style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '20px',
                 padding: '28px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -137,9 +82,9 @@ export default function EspaceArtisanPage() {
                 width: '52px', height: '52px', borderRadius: '14px',
                 background: 'rgba(27,67,50,0.08)', border: '1px solid rgba(27,67,50,0.12)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '24px',
+                color: '#153b2e',
               }}>
-                {emoji}
+                <Icon size={24} strokeWidth={1.8} />
               </div>
               <div>
                 <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 700, color: 'var(--color-text)' }}>
@@ -156,7 +101,7 @@ export default function EspaceArtisanPage() {
                   ✓ {highlight}
                 </span>
               </div>
-            </div>
+            </SurfaceCard>
           ))}
         </div>
       </section>

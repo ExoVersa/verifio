@@ -9,6 +9,7 @@ import {
   LayoutDashboard, History, Shield, FileText,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Search as SearchRecord } from '@/lib/supabase'
@@ -46,6 +47,11 @@ interface Rapport {
   statut: string
   created_at: string
   nom_entreprise?: string
+}
+
+interface ChantierWithRelations extends Chantier {
+  chantier_paiements?: { montant: number | null }[]
+  chantier_evenements?: { date_evenement: string }[]
 }
 
 const TABS: { id: TabId; label: string; Icon: React.ComponentType<{ size: number }> }[] = [
@@ -489,9 +495,9 @@ function SurveillancesTab({
           </h3>
           <p style={{ margin: '0 0 24px', fontSize: '14px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
             Surveillez un artisan depuis sa fiche pour être alerté<br />
-            dès qu'un changement de statut est détecté.
+            dès qu&apos;un changement de statut est détecté.
           </p>
-          <a
+          <Link
             href="/"
             style={{
               display: 'inline-block', padding: '11px 22px',
@@ -501,7 +507,7 @@ function SurveillancesTab({
             }}
           >
             Rechercher un artisan
-          </a>
+          </Link>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -616,9 +622,9 @@ function HistoriqueTab({ searches }: { searches: SearchRecord[] }) {
         }}>
           <Clock size={32} color="var(--color-muted)" style={{ marginBottom: '16px' }} />
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
-            Aucune recherche pour l'instant.
+            Aucune recherche pour l&apos;instant.
           </p>
-          <a
+          <Link
             href="/"
             style={{
               display: 'inline-block', marginTop: '20px',
@@ -628,7 +634,7 @@ function HistoriqueTab({ searches }: { searches: SearchRecord[] }) {
             }}
           >
             Faire une recherche
-          </a>
+          </Link>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -939,14 +945,6 @@ function MonEspaceInner() {
   const [rapports, setRapports] = useState<Rapport[]>([])
   const [toast, setToast] = useState<string | null>(null)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/auth'); return }
-      setUser(data.user)
-      loadAll(data.user)
-    })
-  }, [])
-
   const setTab = (t: TabId) => {
     setTabState(t)
     router.replace(`/mon-espace?tab=${t}`, { scroll: false })
@@ -978,11 +976,11 @@ function MonEspaceInner() {
     ])
 
     if (chantiersRes.data) {
-      const withStats: ChantierWithStats[] = chantiersRes.data.map((c: any) => {
+      const withStats: ChantierWithStats[] = (chantiersRes.data as ChantierWithRelations[]).map((c) => {
         const paiements = c.chantier_paiements || []
         const events = c.chantier_evenements || []
-        const paye = paiements.reduce((s: number, p: any) => s + (p.montant || 0), 0)
-        const sorted = [...events].sort((a: any, b: any) =>
+        const paye = paiements.reduce((sum, paiement) => sum + (paiement.montant || 0), 0)
+        const sorted = [...events].sort((a, b) =>
           new Date(b.date_evenement).getTime() - new Date(a.date_evenement).getTime()
         )
         return { ...c, montant_paye: paye, derniere_activite: sorted[0]?.date_evenement }
@@ -996,6 +994,14 @@ function MonEspaceInner() {
     setRapports(rapportsRes.data ?? [])
     setPageLoading(false)
   }
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) { router.push('/auth'); return }
+      setUser(data.user)
+      loadAll(data.user)
+    })
+  }, [router])
 
   async function stopSurveillance(id: string) {
     const { error } = await supabase
@@ -1067,24 +1073,28 @@ function MonEspaceInner() {
         </div>
       )}
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '32px 24px 88px' }}>
 
         {/* Page header */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 className="font-display" style={{ margin: '0 0 6px', fontSize: '30px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+        <SurfaceCard style={{ padding: '26px 28px', marginBottom: '22px' }}>
+        <div>
+          <SectionBadge text="Espace personnel" tone="green" />
+          <h1 className="font-display" style={{ margin: '14px 0 6px', fontSize: '34px', fontWeight: 800, letterSpacing: '-0.03em' }}>
             Mon espace
           </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
+          <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
             {user?.email}
           </p>
         </div>
+        </SurfaceCard>
 
         {/* Tabs */}
-        <div style={{
+        <SurfaceCard style={{
           display: 'flex', gap: '0',
-          borderBottom: '1px solid var(--color-border)',
+          borderBottom: '1px solid rgba(226,217,204,0.92)',
           marginBottom: '32px',
-          overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any,
+          overflowX: 'auto', WebkitOverflowScrolling: 'touch' as const,
+          padding: '0 10px',
         }}>
           {TABS.map(({ id, label, Icon }) => (
             <button
@@ -1092,7 +1102,7 @@ function MonEspaceInner() {
               onClick={() => setTab(id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '7px',
-                padding: '10px 16px', background: 'none', border: 'none',
+                padding: '14px 16px', background: 'none', border: 'none',
                 cursor: 'pointer', fontSize: '13px',
                 fontWeight: tab === id ? 700 : 500,
                 color: tab === id ? 'var(--color-accent)' : 'var(--color-muted)',
@@ -1105,7 +1115,7 @@ function MonEspaceInner() {
               {label}
             </button>
           ))}
-        </div>
+        </SurfaceCard>
 
         {/* Tab content */}
         {tab === 'dashboard' && (

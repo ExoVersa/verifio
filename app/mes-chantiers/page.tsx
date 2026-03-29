@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Plus, HardHat, ChevronRight, AlertCircle, Clock } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
+import { PrimaryLink, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import {
-  type Chantier, type ChantierPaiement,
-  STATUT_LABELS, STATUT_COLORS, totalPaye, dateProgress, daysUntil, formatEur,
+  type Chantier,
+  STATUT_LABELS, STATUT_COLORS, dateProgress, daysUntil, formatEur,
 } from '@/types/chantier'
 
 interface ChantierWithStats extends Chantier {
@@ -15,18 +16,16 @@ interface ChantierWithStats extends Chantier {
   derniere_activite?: string
 }
 
+interface ChantierWithRelations extends Chantier {
+  chantier_paiements?: { montant: number | null }[]
+  chantier_evenements?: { date_evenement: string }[]
+}
+
 export default function MesChantiersPage() {
   const router = useRouter()
   const [chantiers, setChantiers] = useState<ChantierWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'tous' | 'en_cours' | 'termine' | 'litige' | 'en_attente'>('tous')
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/auth'); return }
-      loadChantiers()
-    })
-  }, [])
 
   async function loadChantiers() {
     setLoading(true)
@@ -36,10 +35,10 @@ export default function MesChantiersPage() {
       .order('created_at', { ascending: false })
 
     if (!error && data) {
-      const withStats: ChantierWithStats[] = data.map((c: any) => {
-        const paiements: { montant: number }[] = c.chantier_paiements || []
+      const withStats: ChantierWithStats[] = (data as ChantierWithRelations[]).map((c) => {
+        const paiements: { montant: number | null }[] = c.chantier_paiements || []
         const events: { date_evenement: string }[] = c.chantier_evenements || []
-        const paye = paiements.reduce((s: number, p: any) => s + (p.montant || 0), 0)
+        const paye = paiements.reduce((sum, paiement) => sum + (paiement.montant || 0), 0)
         const sorted = [...events].sort((a, b) =>
           new Date(b.date_evenement).getTime() - new Date(a.date_evenement).getTime()
         )
@@ -54,6 +53,13 @@ export default function MesChantiersPage() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) { router.push('/auth'); return }
+      loadChantiers()
+    })
+  }, [router])
+
   const filtered = filter === 'tous' ? chantiers : chantiers.filter(c => c.statut === filter)
   const enCours = chantiers.filter(c => c.statut === 'en_cours').length
 
@@ -61,26 +67,26 @@ export default function MesChantiersPage() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: '980px', margin: '0 auto', padding: '32px 24px 88px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+        <SurfaceCard style={{ padding: '28px 28px 26px', marginBottom: '26px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div>
-            <h1 className="font-display" style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <SectionBadge text="Carnets de chantier" tone="green" />
+            <h1 className="font-display" style={{ margin: '16px 0 6px', fontSize: '34px', fontWeight: 800, letterSpacing: '-0.03em' }}>
               Mes chantiers
             </h1>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
+            <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7, maxWidth: '520px' }}>
               {chantiers.length === 0 ? 'Aucun chantier' : `${chantiers.length} chantier${chantiers.length > 1 ? 's' : ''}${enCours > 0 ? ` · ${enCours} en cours` : ''}`}
             </p>
           </div>
-          <button
-            onClick={() => router.push('/nouveau-chantier')}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0 }}
-          >
+          <PrimaryLink href="/nouveau-chantier">
             <Plus size={16} />
             Nouveau chantier
-          </button>
+          </PrimaryLink>
         </div>
+        </SurfaceCard>
 
         {/* Filters */}
         {chantiers.length > 0 && (
@@ -89,7 +95,7 @@ export default function MesChantiersPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                style={{ padding: '6px 14px', borderRadius: '20px', border: '1px solid', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s', ...(filter === f ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }) }}
+                style={{ padding: '8px 14px', borderRadius: '999px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s', ...(filter === f ? { background: 'var(--color-accent)', color: '#fff', borderColor: 'var(--color-accent)' } : { background: 'rgba(255,255,255,0.78)', color: 'var(--color-text)', borderColor: 'rgba(226,217,204,0.88)' }) }}
               >
                 {f === 'tous' ? 'Tous' : STATUT_LABELS[f]}
                 {f !== 'tous' && ` (${chantiers.filter(c => c.statut === f).length})`}
@@ -142,7 +148,7 @@ export default function MesChantiersPage() {
                   key={c.id}
                   className="card-hover"
                   onClick={() => router.push(`/chantier/${c.id}`)}
-                  style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', padding: '20px 24px', cursor: 'pointer' }}
+                  style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(226,217,204,0.86)', borderRadius: '26px', padding: '22px 24px', cursor: 'pointer', boxShadow: '0 12px 28px rgba(20,32,27,0.05)' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>

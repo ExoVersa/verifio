@@ -6,6 +6,7 @@ import { ArrowLeft, HardHat, CheckCircle2 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
 import { TYPE_TRAVAUX, type PhaseNom, type PhaseStatut } from '@/types/chantier'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 function NouveauChantierForm() {
   const router = useRouter()
@@ -32,7 +33,7 @@ function NouveauChantierForm() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) router.push('/auth')
     })
-  }, [])
+  }, [router])
 
   const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
 
@@ -48,7 +49,7 @@ function NouveauChantierForm() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/auth'); return }
 
-    const payload: any = {
+    const payload: Record<string, string | number> = {
       user_id: user.id,
       nom_artisan: form.nom_artisan.trim(),
       type_travaux: form.type_travaux,
@@ -113,7 +114,7 @@ function NouveauChantierForm() {
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
 
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '32px 24px 88px' }}>
 
         {/* Back */}
         <button
@@ -125,23 +126,26 @@ function NouveauChantierForm() {
         </button>
 
         {/* Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+        <SurfaceCard style={{ padding: '28px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <HardHat size={22} color="#fff" />
           </div>
           <div>
-            <h1 className="font-display" style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <SectionBadge text="Creation de chantier" tone="green" />
+            <h1 className="font-display" style={{ margin: '12px 0 0', fontSize: '30px', fontWeight: 800, letterSpacing: '-0.03em' }}>
               Nouveau chantier
             </h1>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>Suivez vos travaux, paiements et documents</p>
+            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--color-muted)' }}>Suivez vos travaux, paiements et documents</p>
           </div>
         </div>
+        </SurfaceCard>
 
         {fromRapport && nomParam && (
-          <div style={{
+          <SurfaceCard style={{
             background: 'rgba(45,185,110,0.08)',
             border: '1px solid var(--color-safe)',
-            borderRadius: 10,
+            borderRadius: 18,
             padding: '12px 16px',
             display: 'flex',
             alignItems: 'center',
@@ -164,16 +168,16 @@ function NouveauChantierForm() {
                 </>
               )}
             </span>
-          </div>
+          </SurfaceCard>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <SurfaceCard style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
             {/* Nom artisan */}
             <div>
               <label style={labelStyle}>
-                Nom de l'artisan <span style={{ color: 'var(--color-danger)' }}>*</span>
+                Nom de l&apos;artisan <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
               <input
                 style={nomParam ? prefilledStyle : inputStyle}
@@ -189,7 +193,7 @@ function NouveauChantierForm() {
             <div>
               <label style={labelStyle}>
                 SIRET
-                {!siretParam && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> (optionnel — permet d'accéder à la fiche Verifio)</span>}
+                {!siretParam && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> (optionnel — permet d&apos;accéder à la fiche Verifio)</span>}
                 {siretParam && <span style={{ color: 'var(--color-safe)', fontWeight: 400 }}> · Artisan vérifié</span>}
               </label>
               <input
@@ -233,7 +237,7 @@ function NouveauChantierForm() {
             <div>
               <label style={labelStyle}>
                 Adresse du chantier
-                {params.get('adresse') && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> · Pré-remplie avec le siège de l'artisan, modifiable</span>}
+                {params.get('adresse') && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> · Pré-remplie avec le siège de l&apos;artisan, modifiable</span>}
               </label>
               <input
                 style={params.get('adresse') ? prefilledStyle : inputStyle}
@@ -245,7 +249,7 @@ function NouveauChantierForm() {
             </div>
 
             {/* Dates */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="chantier-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>Date de début</label>
                 <input style={inputStyle} type="date" value={form.date_debut} onChange={e => set('date_debut', e.target.value)} />
@@ -298,9 +302,16 @@ function NouveauChantierForm() {
                 <>Créer le chantier →</>
               )}
             </button>
-          </div>
+          </SurfaceCard>
         </form>
       </div>
+      <style>{`
+        @media (max-width: 720px) {
+          .chantier-form-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   )
 }

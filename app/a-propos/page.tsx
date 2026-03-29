@@ -1,363 +1,193 @@
 'use client'
 
 import Link from 'next/link'
+import { Database, ShieldCheck, Eye, HeartHandshake, Building2, BadgeCheck, ArrowRight } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { PageHero, PrimaryLink, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 export default function AProposPage() {
   return (
-    <main style={{ minHeight: '100vh', background: '#F8F4EF' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
 
-      {/* 1. HERO SECTION */}
-      <section style={{ background: '#1B4332', padding: '80px 24px 72px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: 'rgba(255,255,255,0.12)',
-            color: '#D8F3DC',
-            fontSize: '12px',
-            fontWeight: 700,
-            padding: '5px 16px',
-            borderRadius: '20px',
-            border: '1px solid rgba(216,243,220,0.2)',
-            marginBottom: '24px',
-          }}>
-            Notre mission
-          </div>
-          <h1 style={{
-            fontFamily: 'Bricolage Grotesque, sans-serif',
-            fontWeight: 800,
-            color: '#fff',
-            fontSize: 'clamp(32px, 5vw, 52px)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            maxWidth: '680px',
-            margin: '0 auto 20px',
-          }}>
-            Nous croyons que vérifier un artisan devrait être accessible à tous
-          </h1>
-          <p style={{
-            color: 'rgba(216,243,220,0.85)',
-            fontSize: '17px',
-            lineHeight: 1.7,
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}>
-            Verifio est né d&apos;un constat simple : 34% des Français ont été victimes d&apos;arnaques sur les chantiers. Nous avons décidé que ça devait changer.
-          </p>
-        </div>
-      </section>
-
-      {/* 2. HISTOIRE SECTION */}
-      <section style={{ background: '#fff', padding: '80px 24px' }}>
-        <div style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '60px',
-        }}>
-          {/* Left column */}
-          <div>
-            <p style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              color: '#52B788',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              marginBottom: '12px',
-              margin: '0 0 12px',
-            }}>
-              Le problème
-            </p>
-            <h2 style={{
-              fontSize: '24px',
-              fontWeight: 800,
-              color: '#1B4332',
-              marginBottom: '16px',
-              margin: '0 0 16px',
-            }}>
-              Le problème que nous résolvons
-            </h2>
-            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: '0 0 14px' }}>
-              Chaque année, des milliers de particuliers font confiance à des artisans sans pouvoir les vérifier facilement. Les données existent — INSEE, ADEME, BODACC — mais elles sont éparpillées, techniques et illisibles pour un particulier.
-            </p>
-            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: 0 }}>
-              Un particulier ne devrait pas avoir besoin d&apos;être juriste ou comptable pour savoir si l&apos;artisan qu&apos;il s&apos;apprête à payer plusieurs milliers d&apos;euros est fiable.
-            </p>
-          </div>
-
-          {/* Right column */}
-          <div>
-            <p style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              color: '#52B788',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              margin: '0 0 12px',
-            }}>
-              Notre réponse
-            </p>
-            <h2 style={{
-              fontSize: '24px',
-              fontWeight: 800,
-              color: '#1B4332',
-              margin: '0 0 16px',
-            }}>
-              Comment nous aidons
-            </h2>
-            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: '0 0 14px' }}>
-              Verifio agrège ces données officielles et les transforme en un score de confiance simple, gratuit et accessible à tous en 30 secondes.
-            </p>
-            <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.75, margin: 0 }}>
-              Nous ne créons pas de données — nous les rendons lisibles. Tout ce que vous voyez sur Verifio vient de sources gouvernementales officielles et est mis à jour quotidiennement.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. STATS STRIP */}
-      <section style={{ background: '#1B4332', padding: '48px 24px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '60px',
-          flexWrap: 'wrap',
-        }}>
-          {[
-            { number: '26 000+', label: "Signalements d'arnaques en 2024" },
-            { number: '100%', label: 'Données officielles' },
-            { number: '30s', label: 'Pour vérifier un artisan' },
-          ].map(({ number, label }) => (
-            <div key={number} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '40px',
-                fontWeight: 900,
-                color: '#fff',
-                letterSpacing: '-0.04em',
-                lineHeight: 1.1,
-              }}>
-                {number}
-              </div>
-              <div style={{
-                fontSize: '14px',
-                color: 'rgba(216,243,220,0.75)',
-                marginTop: '4px',
-              }}>
-                {label}
-              </div>
+      <PageHero
+        badge={<SectionBadge text="Notre mission" tone="green" />}
+        title={<>Verifier un artisan devrait etre simple, lisible et rassurant</>}
+        subtitle={<>Verifio est ne d&apos;une conviction tres simple: un particulier ne devrait pas avoir besoin d&apos;etre juriste, comptable ou expert du BTP pour savoir si un artisan inspire confiance.</>}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {['Donnees officielles', 'Lecture pedagogique', 'Protection accessible'].map((item) => (
+            <div key={item} style={{ padding: '9px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(226,217,204,0.86)', fontSize: '12px', fontWeight: 700, color: '#153b2e' }}>
+              {item}
             </div>
           ))}
         </div>
-      </section>
+      </PageHero>
 
-      {/* 4. VALEURS SECTION */}
-      <section style={{ background: '#F8F4EF', padding: '80px 24px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: 800,
-            color: '#1B4332',
-            textAlign: 'center',
-            margin: '0 0 8px',
-          }}>
-            Nos valeurs
-          </h2>
-          <p style={{
-            textAlign: 'center',
-            color: '#6B7280',
-            fontSize: '15px',
-            margin: '0 0 48px',
-          }}>
-            Les principes qui guident chaque décision
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '20px',
-          }}>
-            {[
-              {
-                icon: '🛡️',
-                title: 'Données officielles uniquement',
-                body: "Jamais de données inventées ou estimées. Tout vient de sources gouvernementales vérifiées : INSEE, ADEME, BODACC.",
-              },
-              {
-                icon: '🎁',
-                title: 'Gratuit pour les particuliers',
-                body: "La vérification de base sera toujours gratuite. Nous croyons que se protéger ne devrait pas avoir un prix.",
-              },
-              {
-                icon: '🇫🇷',
-                title: 'Fait en France',
-                body: "Données françaises, équipe française, hébergement européen. Vos données ne quittent jamais l'Europe.",
-              },
-            ].map(({ icon, title, body }) => (
-              <div key={title} style={{
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '28px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              }}>
-                <div style={{ fontSize: '36px', marginBottom: '16px' }}>{icon}</div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 800,
-                  color: '#1B4332',
-                  margin: '0 0 10px',
-                }}>
-                  {title}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#6B7280',
-                  lineHeight: 1.65,
-                  margin: 0,
-                }}>
-                  {body}
-                </p>
-              </div>
-            ))}
+      <section style={{ padding: '0 24px 88px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div className="about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <SurfaceCard style={{ padding: '30px' }}>
+              <SectionBadge text="Le probleme" tone="sand" />
+              <h2 style={{ margin: '18px 0 12px', fontSize: '32px' }}>
+                Les donnees existent,
+                <br />
+                mais elles sont rarement exploitables
+              </h2>
+              <p style={{ margin: '0 0 14px', fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
+                INSEE, ADEME, BODACC et d&apos;autres sources publiques contiennent deja beaucoup de verite sur une entreprise.
+                Le probleme, c&apos;est leur dispersion, leur technicite et le manque de traduction pour un particulier.
+              </p>
+              <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
+                Quand il faut signer un devis ou verser un acompte, ce n&apos;est pas juste une question de data. C&apos;est une question de confiance, de rythme et de clarte.
+              </p>
+            </SurfaceCard>
+
+            <SurfaceCard style={{ padding: '30px' }}>
+              <SectionBadge text="Notre reponse" tone="blue" />
+              <h2 style={{ margin: '18px 0 12px', fontSize: '32px' }}>
+                Nous transformons des signaux officiels
+                <br />
+                en aide a la decision
+              </h2>
+              <p style={{ margin: '0 0 14px', fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
+                Verifio ne cree pas de donnees. Nous les croisons, les traduisons et les mettons dans un parcours que l&apos;on peut comprendre vite.
+              </p>
+              <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
+                L&apos;objectif n&apos;est pas de faire peur ni de vendre de l&apos;anxiete. L&apos;objectif est d&apos;aider chacun a avancer avec plus de maitrise, de recul et de serenite.
+              </p>
+            </SurfaceCard>
           </div>
         </div>
       </section>
 
-      {/* 5. SOURCES DE DONNÉES SECTION */}
-      <section style={{ background: '#fff', padding: '80px 24px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: 800,
-            color: '#1B4332',
-            textAlign: 'center',
-            margin: '0 0 8px',
-          }}>
-            Nos sources de données
-          </h2>
-          <p style={{
-            textAlign: 'center',
-            color: '#6B7280',
-            fontSize: '15px',
-            margin: '0 0 48px',
-          }}>
-            Des données officielles, actualisées quotidiennement
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px',
-          }}>
+      <section style={{ padding: '0 24px 88px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <SurfaceCard style={{ padding: '28px 30px' }}>
+            <div className="stats-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px' }}>
+              {[
+                { value: '26 000+', label: "signalements d'arnaques remontes en 2024" },
+                { value: '100 %', label: 'sources officielles et gouvernementales' },
+                { value: '30 s', label: 'pour obtenir une premiere lecture' },
+                { value: '1', label: 'meme obsession: aider a mieux choisir' },
+              ].map((item) => (
+                <div key={item.value} style={{ padding: '10px 6px' }}>
+                  <div style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, fontFamily: 'var(--font-display)', color: '#153b2e', lineHeight: 1, marginBottom: '8px' }}>
+                    {item.value}
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: '#52615c' }}>{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </SurfaceCard>
+        </div>
+      </section>
+
+      <section style={{ padding: '0 24px 88px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <SectionBadge text="Nos principes de conception" tone="green" />
+            <h2 style={{ margin: '18px 0 10px', fontSize: '40px' }}>Ce que nous voulons proteger</h2>
+            <p style={{ margin: '0 auto', maxWidth: '700px', fontSize: '16px', lineHeight: 1.75, color: '#52615c' }}>
+              Le temps, l&apos;argent et la tranquillite d&apos;esprit des particuliers, sans sacrifier la nuance ni la verite des donnees.
+            </p>
+          </div>
+
+          <div className="about-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '18px' }}>
             {[
-              {
-                badge: '🏛️',
-                title: 'INSEE / Sirene',
-                desc: 'Statut légal, dirigeants, capital social, forme juridique',
-                link: 'data.gouv.fr →',
-                href: 'https://data.gouv.fr',
-              },
-              {
-                badge: '🌱',
-                title: 'ADEME',
-                desc: 'Certifications RGE — Reconnu Garant de l\'Environnement',
-                link: 'data.ademe.fr →',
-                href: 'https://data.ademe.fr',
-              },
-              {
-                badge: '⚖️',
-                title: 'BODACC',
-                desc: 'Procédures judiciaires, liquidations, redressements',
-                link: 'bodacc.fr →',
-                href: 'https://bodacc.fr',
-              },
-              {
-                badge: '🗺️',
-                title: 'API Géo',
-                desc: 'Données géographiques, communes, départements',
-                link: 'geo.api.gouv.fr →',
-                href: 'https://geo.api.gouv.fr',
-              },
-            ].map(({ badge, title, desc, link, href }) => (
-              <div key={title} style={{
-                background: '#f9fafb',
-                border: '1.5px solid #e5e7eb',
-                borderRadius: '14px',
-                padding: '20px',
-              }}>
-                <div style={{ fontSize: '28px', marginBottom: '12px' }}>{badge}</div>
-                <h3 style={{
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  color: '#1B4332',
-                  margin: '0 0 8px',
-                }}>
-                  {title}
-                </h3>
-                <p style={{
-                  fontSize: '13px',
-                  color: '#6B7280',
-                  lineHeight: 1.55,
-                  margin: '0 0 12px',
-                }}>
-                  {desc}
-                </p>
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: '12px',
-                    color: '#52B788',
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                  }}
-                >
-                  {link}
-                </a>
-              </div>
-            ))}
+              { icon: Database, title: 'Verifier avec rigueur', text: 'Uniquement des sources officielles, recoupees et remises a jour regulierement.' },
+              { icon: Eye, title: 'Rendre visible ce qui compte', text: 'Pas une avalanche de details. Une lecture claire de ce qui peut faire avancer ou freiner une decision.' },
+              { icon: HeartHandshake, title: 'Rester humain dans le ton', text: 'Parce que choisir un artisan touche au foyer, au budget et souvent a une vraie charge mentale.' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <SurfaceCard key={item.title} style={{ padding: '28px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#eef8f3', color: '#153b2e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                    <Icon size={22} strokeWidth={1.8} />
+                  </div>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '20px' }}>{item.title}</h3>
+                  <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.75, color: '#52615c' }}>{item.text}</p>
+                </SurfaceCard>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* 6. CTA SECTION */}
-      <section style={{ background: '#1B4332', padding: '72px 24px', textAlign: 'center' }}>
-        <h2 style={{
-          color: '#fff',
-          fontSize: '32px',
-          fontWeight: 800,
-          letterSpacing: '-0.03em',
-          margin: '0 0 12px',
-        }}>
-          Commencez à vous protéger
-        </h2>
-        <p style={{
-          color: 'rgba(216,243,220,0.75)',
-          fontSize: '15px',
-          margin: '0',
-        }}>
-          Vérification 100% gratuite · Résultats en 30 secondes · Données officielles
-        </p>
-        <Link
-          href="/"
-          style={{
-            display: 'inline-block',
-            background: '#fff',
-            color: '#1B4332',
-            fontSize: '16px',
-            fontWeight: 800,
-            padding: '16px 36px',
-            borderRadius: '14px',
-            border: 'none',
-            cursor: 'pointer',
-            marginTop: '28px',
-            textDecoration: 'none',
-          }}
-        >
-          Vérifier un artisan gratuitement →
-        </Link>
+      <section style={{ padding: '0 24px 88px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <SectionBadge text="Sources de donnees" tone="blue" />
+            <h2 style={{ margin: '18px 0 10px', fontSize: '40px' }}>Nos fondations sont publiques</h2>
+            <p style={{ margin: '0 auto', maxWidth: '720px', fontSize: '16px', lineHeight: 1.75, color: '#52615c' }}>
+              Verifio s&apos;appuie sur des bases ouvertes et officielles. Nous les rendons simplement lisibles et utiles dans un parcours de decision.
+            </p>
+          </div>
+
+          <div className="about-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px' }}>
+            {[
+              { icon: Building2, title: 'INSEE / Sirene', desc: 'Statut legal, forme juridique, identite entreprise', href: 'https://data.gouv.fr' },
+              { icon: BadgeCheck, title: 'ADEME', desc: 'Certifications RGE et signaux environnementaux', href: 'https://data.ademe.fr' },
+              { icon: ShieldCheck, title: 'BODACC', desc: 'Procedures, annonces et alertes juridiques', href: 'https://bodacc.fr' },
+              { icon: Database, title: 'Geo API', desc: 'Communes, territoires et informations geo utiles', href: 'https://geo.api.gouv.fr' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <SurfaceCard key={item.title} style={{ padding: '24px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#f6f2eb', color: '#153b2e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                    <Icon size={20} strokeWidth={1.8} />
+                  </div>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>{item.title}</h3>
+                  <p style={{ margin: '0 0 12px', fontSize: '13px', lineHeight: 1.7, color: '#52615c' }}>{item.desc}</p>
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: '#153b2e', textDecoration: 'none' }}>
+                    Voir la source
+                  </a>
+                </SurfaceCard>
+              )
+            })}
+          </div>
+        </div>
       </section>
+
+      <section style={{ padding: '0 24px 96px' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
+          <SurfaceCard style={{ padding: '34px 32px', background: 'linear-gradient(135deg, #153b2e 0%, #234a3b 100%)', border: '1px solid rgba(21,59,46,0.92)', boxShadow: '0 22px 48px rgba(21,59,46,0.14)' }}>
+            <div className="about-cta" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '20px', alignItems: 'center' }}>
+              <div>
+                <SectionBadge text="Commencer maintenant" tone="light" />
+                <h2 style={{ margin: '18px 0 10px', color: '#fff', fontSize: '40px' }}>
+                  La meilleure facon de comprendre Verifio,
+                  <br />
+                  c&apos;est de tester une verification
+                </h2>
+                <p style={{ margin: 0, fontSize: '16px', lineHeight: 1.75, color: 'rgba(255,255,255,0.76)' }}>
+                  Recherche gratuite, lecture immediate, puis accompagnement plus pousse si tu veux vraiment securiser ton choix.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <PrimaryLink href="/recherche" light>
+                  Verifier un artisan
+                  <ArrowRight size={15} strokeWidth={1.8} />
+                </PrimaryLink>
+                <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.16)', color: '#fff', textDecoration: 'none', fontSize: '14px', fontWeight: 700, background: 'rgba(255,255,255,0.08)' }}>
+                  Nous contacter
+                </Link>
+              </div>
+            </div>
+          </SurfaceCard>
+        </div>
+      </section>
+
+      <style>{`
+        @media (max-width: 980px) {
+          .about-grid,
+          .about-cards,
+          .about-cta,
+          .stats-strip {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   )
 }
