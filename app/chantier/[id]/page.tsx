@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, use, Suspense } from 'react'
+import { useState, useEffect, useRef, use, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, AlertCircle, CheckCircle2, Clock, Plus, Calendar,
@@ -10,11 +10,13 @@ import {
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import GuideChantier from '@/components/GuideChantier'
+import TimelinePhases from '@/components/TimelinePhases'
 import { supabase } from '@/lib/supabase'
 import {
   type Chantier, type ChantierPaiement, type ChantierEvenement,
   type ChantierPhoto, type ChantierDocument,
   type EvenementType, type PaiementType, type PhotoPhase, type DocumentType,
+  type ChantierPhase, type PhaseNom,
   STATUT_LABELS, STATUT_COLORS, EVENEMENT_ICONS, PAIEMENT_LABELS, DOCUMENT_LABELS,
   totalPaye, dateProgress, daysUntil, formatEur,
 } from '@/types/chantier'
@@ -730,6 +732,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [paiements, setPaiements] = useState<ChantierPaiement[]>([])
   const [photos, setPhotos] = useState<ChantierPhoto[]>([])
   const [documents, setDocuments] = useState<ChantierDocument[]>([])
+  const [phases, setPhases] = useState<ChantierPhase[]>([])
 
   const validTabs = ['journal', 'paiements', 'photos', 'documents', 'checklist'] as const
   type TabKey = typeof validTabs[number]
@@ -771,8 +774,40 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     ])
     setPhotos(photosResolved)
     setDocuments(docsResolved)
+
+    // Charger les phases
+    const { data: phasesData } = await supabase
+      .from('chantier_phases')
+      .select('*')
+      .eq('chantier_id', id)
+      .order('created_at')
+
+    if (!phasesData || phasesData.length === 0) {
+      // Chantier créé avant la feature — auto-créer les 4 phases
+      const { data: created } = await supabase
+        .from('chantier_phases')
+        .insert((['preparation', 'travaux', 'finitions', 'reception'] as PhaseNom[]).map(nom => ({
+          chantier_id: id,
+          nom,
+          statut: 'en_attente',
+        })))
+        .select()
+      setPhases(created || [])
+    } else {
+      setPhases(phasesData)
+    }
+
     setLoading(false)
   }
+
+  const reloadPhases = useCallback(async () => {
+    const { data } = await supabase
+      .from('chantier_phases')
+      .select('*')
+      .eq('chantier_id', id)
+      .order('created_at')
+    setPhases(data || [])
+  }, [id])
 
   async function updateStatut(statut: string) {
     if (!chantier) return
@@ -926,7 +961,20 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
       {/* ── TAB CONTENT ── */}
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 24px 80px' }}>
-        {tab === 'journal' && <JournalTab chantier={chantier} evenements={evenements} paiements={paiements} onRefresh={loadAll} />}
+        {tab === 'journal' && (
+          <>
+            {phases.length > 0 && (
+              <TimelinePhases
+                chantier={chantier}
+                phases={phases}
+                paiements={paiements}
+                photos={photos}
+                onPhasesChange={reloadPhases}
+              />
+            )}
+            <JournalTab chantier={chantier} evenements={evenements} paiements={paiements} onRefresh={loadAll} />
+          </>
+        )}
         {tab === 'paiements' && <PaiementsTab chantier={chantier} paiements={paiements} onRefresh={loadAll} />}
         {tab === 'photos' && <PhotosTab chantier={chantier} photos={photos} onRefresh={loadAll} />}
         {tab === 'documents' && <DocumentsTab chantier={chantier} documents={documents} onRefresh={loadAll} />}

@@ -134,3 +134,28 @@ export function formatEur(n?: number): string {
   if (n === undefined || n === null) return '—'
   return n.toLocaleString('fr-FR') + ' €'
 }
+
+export type PhaseNom = 'preparation' | 'travaux' | 'finitions' | 'reception'
+export type PhaseStatut = 'en_attente' | 'en_cours' | 'terminee'
+
+export interface ChantierPhase {
+  id: string
+  chantier_id: string
+  nom: PhaseNom
+  statut: PhaseStatut
+  date_debut_prevue: string | null
+  date_fin_prevue: string | null
+  date_debut_reelle: string | null
+  date_fin_reelle: string | null
+  budget: number | null
+  created_at: string
+}
+
+export const PHASE_LABELS: Record<PhaseNom, string> = {
+  preparation: 'Préparation',
+  travaux: 'Travaux',
+  finitions: 'Finitions',
+  reception: 'Réception',
+}
+
+export const PHASES_ORDER: PhaseNom[] = ['preparation', 'travaux', 'finitions', 'reception']

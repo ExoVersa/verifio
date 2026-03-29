@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, HardHat, CheckCircle2 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
-import { TYPE_TRAVAUX } from '@/types/chantier'
+import { TYPE_TRAVAUX, type PhaseNom, type PhaseStatut } from '@/types/chantier'
 
 function NouveauChantierForm() {
   const router = useRouter()
@@ -67,6 +67,16 @@ function NouveauChantierForm() {
       setSaving(false)
       return
     }
+
+    // Auto-créer les 4 phases du chantier
+    const phaseNoms: PhaseNom[] = ['preparation', 'travaux', 'finitions', 'reception']
+    await supabase.from('chantier_phases').insert(
+      phaseNoms.map(nom => ({
+        chantier_id: data.id,
+        nom,
+        statut: 'en_attente' as PhaseStatut,
+      }))
+    )
 
     // Auto-alert J+1 : décennale reminder (stored as event)
     await supabase.from('chantier_evenements').insert({
