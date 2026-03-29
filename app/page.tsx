@@ -54,14 +54,14 @@ const DECISION_MOMENTS = [
   {
     icon: ScanSearch,
     title: 'Avant de rappeler',
-    text: 'Tu vois immédiatement si l’entreprise existe vraiment, depuis quand, et si elle présente déjà des signaux faibles.',
+    text: "Tu vois immédiatement si l'entreprise existe vraiment, depuis quand, et si elle présente déjà des signaux faibles.",
     accent: '#eef8f3',
     color: '#153b2e',
   },
   {
     icon: BadgeEuro,
     title: 'Avant de verser un acompte',
-    text: 'Tu récupères une lecture concrète du devis, des prix et des points à challenger avant d’envoyer le moindre euro.',
+    text: "Tu récupères une lecture concrète du devis, des prix et des points à challenger avant d'envoyer le moindre euro.",
     accent: '#fff1e6',
     color: '#b85d1e',
   },
@@ -80,7 +80,7 @@ const EXPERIENCE_STEPS = [
     icon: Search,
     title: 'Tu recherches un artisan',
     text: 'Nom, SIRET ou entreprise: la première réponse est immédiate, sans jargon juridique.',
-    points: ['Statut INSEE', 'ancienneté', 'zone d’activité'],
+    points: ['Statut INSEE', 'ancienneté', "zone d'activité"],
   },
   {
     number: '02',
@@ -93,7 +93,7 @@ const EXPERIENCE_STEPS = [
     number: '03',
     icon: FileSearch,
     title: 'Tu sécurises le devis',
-    text: 'Le rapport complet t’aide à poser les bonnes questions avant de t’engager.',
+    text: "Le rapport complet t'aide à poser les bonnes questions avant de t'engager.",
     points: ['clauses', 'prix du marché', 'points de vigilance'],
   },
   {
@@ -110,7 +110,7 @@ const TESTIMONIALS = [
     name: 'Camille',
     city: 'Nantes',
     initials: 'CA',
-    text: 'Je cherchais juste à me rassurer. En réalité, Verifio m’a évité de signer avec une entreprise déjà fragilisée.',
+    text: "Je cherchais juste à me rassurer. En réalité, Verifio m'a évité de signer avec une entreprise déjà fragilisée.",
     highlight: 'Acompte évité à temps',
     color: '#153b2e',
     bg: '#eef8f3',
@@ -119,7 +119,7 @@ const TESTIMONIALS = [
     name: 'Julien',
     city: 'Lyon',
     initials: 'JU',
-    text: 'La différence, c’est le ton. On comprend vite quoi regarder et quoi demander, même sans être expert du bâtiment.',
+    text: "La différence, c'est le ton. On comprend vite quoi regarder et quoi demander, même sans être expert du bâtiment.",
     highlight: 'Décision prise en 1 soirée',
     color: '#b85d1e',
     bg: '#fff1e6',
@@ -128,7 +128,7 @@ const TESTIMONIALS = [
     name: 'Sarah',
     city: 'Bordeaux',
     initials: 'SA',
-    text: 'Le rapport m’a surtout aidée à avoir une conversation plus ferme avec l’artisan. J’étais beaucoup plus sereine.',
+    text: "Le rapport m'a surtout aidée à avoir une conversation plus ferme avec l'artisan. J'étais beaucoup plus sereine.",
     highlight: 'Devis renégocié',
     color: '#205ecf',
     bg: '#edf4ff',
@@ -596,8 +596,8 @@ function PricingSection() {
             complet quand tu veux vraiment sécuriser
           </h2>
           <p style={{ maxWidth: '720px', margin: '0 auto', fontSize: '17px', color: '#43524c', lineHeight: 1.7 }}>
-            Pas d’abonnement forcé, pas de complexité inutile. Tu commences gratuitement,
-            puis tu actives le niveau d’accompagnement adapté à ton chantier.
+            Pas d'abonnement forcé, pas de complexité inutile. Tu commences gratuitement,
+            puis tu actives le niveau d'accompagnement adapté à ton chantier.
           </p>
         </div>
 
@@ -721,266 +721,57 @@ export default function HomePage() {
       <section style={{
         position: 'relative',
         overflow: 'hidden',
-        padding: '52px 0 34px',
+        padding: '72px 24px 64px',
+        background: 'linear-gradient(180deg, #f7f4ef 0%, #f0ebe2 100%)',
       }}>
+        {/* Fond décoratif */}
         <div style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'radial-gradient(circle at 12% 18%, rgba(84,164,124,0.18), transparent 26%), radial-gradient(circle at 86% 14%, rgba(255,196,153,0.24), transparent 22%), linear-gradient(180deg, #fbf8f4 0%, #f5efe7 100%)',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '-80px',
-          right: '-40px',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'rgba(21,59,46,0.05)',
-          filter: 'blur(8px)',
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(84,164,124,0.13), transparent)',
         }} />
 
-        <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
-          <div className="home-hero-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.08fr) minmax(360px, 0.92fr)',
-            gap: '42px',
-            alignItems: 'center',
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '680px', margin: '0 auto', textAlign: 'center' }}>
+
+          {/* Badge */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 14px', borderRadius: '999px', background: 'rgba(21,59,46,0.07)', border: '1px solid rgba(21,59,46,0.12)', color: '#153b2e', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '24px' }}>
+            <Shield size={12} strokeWidth={1.8} />
+            Données officielles INSEE · BODACC · ADEME
+          </div>
+
+          {/* Titre */}
+          <h1 style={{
+            margin: '0 0 16px',
+            fontSize: 'clamp(34px, 5vw, 52px)',
+            lineHeight: 1.1,
+            letterSpacing: '-0.035em',
+            color: '#14201b',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
           }}>
-            <div>
-              <SectionEyebrow icon={Shield} text="Plateforme de confiance pour particuliers" />
-              <h1 style={{
-                margin: '18px 0 18px',
-                maxWidth: '780px',
-                fontSize: 'clamp(38px, 5.8vw, 72px)',
-                lineHeight: 1.04,
-                letterSpacing: '-0.045em',
-              }}>
-                Choisir un artisan devrait
-                <br />
-                inspirer la confiance,
-                <br />
-                pas le doute.
-              </h1>
-              <p style={{
-                maxWidth: '640px',
-                margin: '0 0 28px',
-                fontSize: '18px',
-                lineHeight: 1.78,
-                color: '#43524c',
-              }}>
-                Verifio transforme des données officielles complexes en lecture simple, humaine et rassurante.
-                Tu comprends vite si tu peux avancer, creuser, ou t’arrêter.
-              </p>
+            Vérifiez votre artisan<br />
+            <span style={{ color: '#2c6a53' }}>avant de vous engager.</span>
+          </h1>
 
-              <HeroSearch />
+          {/* Sous-titre */}
+          <p style={{ margin: '0 auto 32px', maxWidth: '520px', fontSize: '17px', lineHeight: 1.7, color: '#52615c' }}>
+            Statut légal, certifications, signaux BODACC — une lecture claire et honnête en moins de 30 secondes.
+          </p>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
-                {[
-                  { icon: ShieldCheck, text: 'Sources officielles INSEE & BODACC' },
-                  { icon: CheckCircle, text: 'Gratuit pour la vérification de base' },
-                ].map(({ icon: Icon, text }) => (
-                  <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#43524c', fontSize: '13px' }}>
-                    <Icon size={14} strokeWidth={1.8} color="#153b2e" />
-                    {text}
-                  </div>
-                ))}
+          {/* Champ de recherche */}
+          <HeroSearch />
+
+          {/* Preuves discrètes */}
+          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '20px', marginTop: '20px' }}>
+            {[
+              { icon: ShieldCheck, text: 'Sources officielles' },
+              { icon: CheckCircle, text: 'Vérification gratuite' },
+              { icon: MapPin, text: '26 000+ entreprises analysées' },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#52615c' }}>
+                <Icon size={14} strokeWidth={1.7} color='#2c6a53' />
+                {text}
               </div>
-            </div>
-
-            <div style={{
-              position: 'relative',
-              padding: '16px',
-              borderRadius: '30px',
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.42) 100%)',
-              border: '1px solid rgba(231,223,212,0.82)',
-              boxShadow: '0 22px 56px rgba(20,32,27,0.10)',
-              backdropFilter: 'blur(14px)',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '-12px',
-                left: '18px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                borderRadius: '999px',
-                background: '#153b2e',
-                color: '#fff',
-                boxShadow: '0 12px 24px rgba(21,59,46,0.14)',
-                fontSize: '11px',
-                fontWeight: 800,
-              }}>
-                <ShieldCheck size={14} strokeWidth={1.8} />
-                Lecture confiance en moins de 30 secondes
-              </div>
-
-              <div style={{
-                borderRadius: '24px',
-                background: 'linear-gradient(180deg, #153b2e 0%, #214d3d 100%)',
-                padding: '24px',
-                color: '#fff',
-                overflow: 'hidden',
-                position: 'relative',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '-50px',
-                  right: '-20px',
-                  width: '160px',
-                  height: '160px',
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.07)',
-                }} />
-
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '22px' }}>
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'rgba(255,255,255,0.14)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#d8f3dc',
-                      fontSize: '15px',
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}>
-                      MB
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>Martin Bâtiment SARL</p>
-                      <p style={{ margin: '3px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.72)' }}>
-                        Plomberie · Tours (37) · 18 ans d’activité
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '118px 1fr',
-                    gap: '18px',
-                    alignItems: 'center',
-                    marginBottom: '20px',
-                  }} className="hero-score-grid">
-                    <div style={{
-                      borderRadius: '22px',
-                      background: 'rgba(255,255,255,0.08)',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      padding: '16px 12px',
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ fontSize: '40px', lineHeight: 1, fontWeight: 800, fontFamily: 'var(--font-display)' }}>87</div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#9ce2c0', marginTop: '6px', letterSpacing: '0.03em' }}>
-                        Score de confiance
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      {[
-                        { icon: Check, text: 'Entreprise active et cohérente', color: '#9ce2c0' },
-                        { icon: ShieldCheck, text: 'Certification RGE retrouvée', color: '#9ce2c0' },
-                        { icon: AlertTriangle, text: '1 publication BODACC à comprendre', color: '#ffd39d' },
-                      ].map((item) => {
-                        const Icon = item.icon
-                        return (
-                          <div key={item.text} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '9px 11px',
-                            borderRadius: '14px',
-                            background: 'rgba(255,255,255,0.06)',
-                          }}>
-                            <div style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '999px',
-                              background: 'rgba(255,255,255,0.1)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              <Icon size={13} strokeWidth={2} color={item.color} />
-                            </div>
-                            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)' }}>{item.text}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '12px',
-                  }} className="hero-side-panels">
-                    <div style={{
-                      padding: '15px',
-                      borderRadius: '16px',
-                      background: 'rgba(255,255,255,0.07)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', color: '#9ce2c0', marginBottom: '8px' }}>
-                        CE QUE TU COMPRENDS
-                      </div>
-                      <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.88)' }}>
-                        Rien d’alarmant, mais un point mérite une question avant signature.
-                      </p>
-                    </div>
-                    <div style={{
-                      padding: '15px',
-                      borderRadius: '16px',
-                      background: '#fff8ef',
-                      color: '#14201b',
-                    }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', color: '#b85d1e', marginBottom: '8px' }}>
-                        QUESTION À POSER
-                      </div>
-                      <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6 }}>
-                        “Pouvez-vous m’expliquer cette publication BODACC et me partager votre assurance actuelle ?”
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap',
-                marginTop: '14px',
-              }}>
-                {[
-                  { icon: Bell, label: 'Alerte activable' },
-                  { icon: ClipboardList, label: 'Checklist avant signature' },
-                  { icon: FileSearch, label: 'Analyse de devis' },
-                ].map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      borderRadius: '999px',
-                      background: 'rgba(255,255,255,0.62)',
-                      border: '1px solid rgba(231,223,212,0.82)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#153b2e',
-                    }}>
-                      <Icon size={13} strokeWidth={1.8} />
-                      {item.label}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1032,7 +823,7 @@ export default function HomePage() {
               au moment où tu dois choisir
             </h2>
             <p style={{ margin: 0, fontSize: '17px', color: '#43524c', lineHeight: 1.7 }}>
-              L’enjeu n’est pas d’afficher le plus de données possible. L’enjeu, c’est de te permettre
+              L'enjeu n'est pas d'afficher le plus de données possible. L'enjeu, c'est de te permettre
               de prendre une bonne décision au bon moment, avec un niveau de confiance plus élevé.
             </p>
           </div>
@@ -1097,14 +888,14 @@ export default function HomePage() {
               </h2>
               <p style={{ margin: '0 0 26px', color: 'rgba(255,255,255,0.76)', fontSize: '16px', lineHeight: 1.75 }}>
                 On ne dramatise pas pour vendre. On ne simplifie pas au point de masquer le réel.
-                On t’aide à voir ce qui compte, avec un langage que tu peux utiliser tout de suite.
+                On t'aide à voir ce qui compte, avec un langage que tu peux utiliser tout de suite.
               </p>
 
               <div style={{ display: 'grid', gap: '12px' }}>
                 {[
                   'Données officielles recoupées automatiquement',
                   'Aide à la compréhension avant la décision',
-                  'Questions concrètes à poser à l’artisan',
+                  "Questions concrètes à poser à l'artisan",
                   'Surveillance utile si la situation évolue après signature',
                 ].map((point) => (
                   <div key={point} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1199,10 +990,10 @@ export default function HomePage() {
             <h2 style={{ margin: '18px 0 12px', fontSize: 'clamp(30px, 4vw, 46px)' }}>
               Ce que les particuliers retiennent,
               <br />
-              ce n’est pas juste la donnée
+              ce n'est pas juste la donnée
             </h2>
             <p style={{ maxWidth: '720px', margin: '0 auto', fontSize: '17px', lineHeight: 1.7, color: '#43524c' }}>
-              C’est la sensation d’être enfin accompagné, avec des éléments concrets pour parler, comparer et décider.
+              C'est la sensation d'être enfin accompagné, avec des éléments concrets pour parler, comparer et décider.
             </p>
           </div>
 
@@ -1359,7 +1150,7 @@ export default function HomePage() {
                 Verifio
               </div>
               <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.66)', fontSize: '15px', lineHeight: 1.75, maxWidth: '420px' }}>
-                Une plateforme pensée pour aider les particuliers à choisir un artisan avec plus de clarté, plus de confiance et moins d’angles morts.
+                Une plateforme pensée pour aider les particuliers à choisir un artisan avec plus de clarté, plus de confiance et moins d'angles morts.
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {['INSEE', 'ADEME', 'BODACC', 'INPI', 'Qualibat'].map((source) => (
