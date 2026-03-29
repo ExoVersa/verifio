@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, ShieldCheck, CheckCircle, ArrowRight, MapPin, Leaf, Bell, ClipboardList, Shield, AlertTriangle, Check, Wrench, Zap, Home, Square, Layers, Thermometer, FileSearch, HardHat, ClipboardCheck, Gem, ChevronDown, ChevronRight, Star } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
@@ -706,6 +707,138 @@ function PricingSection() {
   )
 }
 
+/* ─── Trust Section ─────────────────────────────────────── */
+function TrustSection() {
+  const items = [
+    {
+      icon: ShieldCheck,
+      title: 'Décision rapide',
+      text: 'En un coup d’œil, vous voyez si l’entreprise est active, certifiée et sans signal faible visible.',
+      accent: '#E8F5EE',
+      color: '#1B4332',
+    },
+    {
+      icon: Bell,
+      title: 'Surveillance continue',
+      text: 'Après achat, Verifio vous alerte si un changement juridique ou financier apparaît.',
+      accent: '#FFF4E8',
+      color: '#B45309',
+    },
+    {
+      icon: Star,
+      title: 'Avant de signer',
+      text: 'Checklist, questions à poser et rapport complet pour valider un devis avec plus de sérénité.',
+      accent: '#EFF6FF',
+      color: '#1D4ED8',
+    },
+  ]
+
+  return (
+    <section style={{ background: 'white', padding: '80px 0 32px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #F8F4EF 0%, #EDF7F1 100%)',
+          border: '1px solid #E8E3DC',
+          borderRadius: '28px',
+          padding: '32px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '-60px',
+            right: '-40px',
+            width: '180px',
+            height: '180px',
+            borderRadius: '50%',
+            background: 'rgba(82,183,136,0.10)',
+          }} />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ maxWidth: '640px', marginBottom: '28px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(27,67,50,0.08)',
+                border: '1px solid rgba(27,67,50,0.14)',
+                borderRadius: '100px',
+                padding: '8px 18px',
+                fontSize: '13px',
+                color: '#1B4332',
+                marginBottom: '14px',
+                fontWeight: 600,
+              }}>
+                <ShieldCheck size={14} strokeWidth={1.5} /> Un bloc de réassurance ajouté pour le test
+              </div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(26px, 4vw, 38px)', color: '#1A1A1A', margin: '0 0 12px' }}>
+                Tout ce qu’il faut pour vérifier avant de signer
+              </h2>
+              <p style={{ fontSize: '16px', color: '#4A4A4A', lineHeight: 1.7, margin: 0 }}>
+                Ce bloc a été ajouté sur la home pour valider que je peux intervenir dans le projet sans impacter les parcours critiques.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              {items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <div
+                    key={item.title}
+                    style={{
+                      background: 'rgba(255,255,255,0.88)',
+                      border: '1px solid rgba(27,67,50,0.08)',
+                      borderRadius: '20px',
+                      padding: '22px',
+                      boxShadow: '0 10px 30px rgba(27,67,50,0.06)',
+                    }}
+                  >
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '14px',
+                      background: item.accent,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '14px',
+                    }}>
+                      <Icon size={20} color={item.color} strokeWidth={1.8} />
+                    </div>
+                    <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 700, color: '#1A1A1A' }}>{item.title}</h3>
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: '#4A4A4A' }}>{item.text}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            <Link
+              href="/recherche"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#1B4332',
+                color: 'white',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                fontFamily: 'var(--font-body)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#2D6A4F')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#1B4332')}
+            >
+              Tester la recherche maintenant <ArrowRight size={15} strokeWidth={1.5} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── Main Page ─────────────────────────────────────────── */
 export default function HomePage() {
   return (
@@ -804,6 +937,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── SECTION 3 : BLOC TEST ── */}
+      <TrustSection />
+
       {/* ── SECTION 3 : TIMELINE ── */}
       <TimelineSection />
 
@@ -885,18 +1021,18 @@ export default function HomePage() {
             Rejoignez 10 000+ particuliers qui vérifient avant de signer.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/" style={{ background: 'white', color: '#1B4332', border: 'none', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
+            <Link href="/" style={{ background: 'white', color: '#1B4332', border: 'none', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.88)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
             >
               Vérifier un artisan <ArrowRight size={16} />
-            </a>
-            <a href="/pricing" style={{ background: 'transparent', color: 'white', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
+            </Link>
+            <Link href="/pricing" style={{ background: 'transparent', color: 'white', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '12px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
               Voir les tarifs
-            </a>
+            </Link>
           </div>
         </div>
       </section>
