@@ -53,6 +53,8 @@ async function checkBodacc(siren: string): Promise<{
   }
 }
 
+export const maxDuration = 30
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const q = sp.get('q')?.trim() || ''

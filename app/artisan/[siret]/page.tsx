@@ -309,6 +309,8 @@ export default function ArtisanFichePage() {
   const [result, setResult] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isServiceDown, setIsServiceDown] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [artisanPublic, setArtisanPublic] = useState<ArtisanPublicInfo | null>(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -392,12 +394,16 @@ export default function ArtisanFichePage() {
     if (!siret) return
     setLoading(true)
     setError(null)
+    setIsServiceDown(false)
     Promise.all([
       fetch(`/api/search?q=${encodeURIComponent(siret)}`).then(r => r.json()),
       fetch(`/api/artisan/public?siret=${encodeURIComponent(siret)}`).then(r => r.json()),
     ])
       .then(([searchData, publicData]) => {
-        if (searchData.error) setError(searchData.error)
+        if (searchData.error === 'service_indisponible') {
+          setIsServiceDown(true)
+          setError(searchData.message || 'Les données INSEE sont temporairement indisponibles.')
+        } else if (searchData.error) setError(searchData.error)
         else {
           setResult(searchData)
           // Fetch établissements
@@ -434,7 +440,7 @@ export default function ArtisanFichePage() {
       })
       .catch(() => setError('Erreur réseau. Vérifiez votre connexion.'))
       .finally(() => setLoading(false))
-  }, [siret])
+  }, [siret, retryCount])
 
   const rge = result?.rge ?? { certifie: false, domaines: [], organismes: [] }
   const dirigeants = result?.dirigeants ?? []
@@ -631,25 +637,46 @@ export default function ArtisanFichePage() {
         {!loading && error && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-            <MapPin size={48} strokeWidth={1} color="#1B4332" />
-          </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1B4332', margin: '0 0 8px' }}>
-              Entreprise introuvable
+              {isServiceDown
+                ? <AlertCircle size={48} strokeWidth={1} color="#d97706" />
+                : <MapPin size={48} strokeWidth={1} color="#1B4332" />}
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: isServiceDown ? '#d97706' : '#1B4332', margin: '0 0 8px' }}>
+              {isServiceDown ? 'Service temporairement indisponible' : 'Entreprise introuvable'}
             </h2>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>{error}</p>
-            <button
-              onClick={() => router.back()}
-              style={{
-                background: '#1B4332', color: 'white', border: 'none',
-                borderRadius: '12px', padding: '12px 24px',
-                fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'var(--font-body)', transition: 'opacity 0.15s ease',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-            >
-              <ArrowLeft size={16} strokeWidth={1.5} /> Retour à la recherche
-            </button>
+            <p style={{ color: '#6b7280', marginBottom: '24px', maxWidth: 400, margin: '0 auto 24px' }}>{error}</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {isServiceDown && (
+                <button
+                  onClick={() => setRetryCount(c => c + 1)}
+                  style={{
+                    background: '#1B4332', color: 'white', border: 'none',
+                    borderRadius: '12px', padding: '12px 24px',
+                    fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', transition: 'opacity 0.15s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                >
+                  Réessayer
+                </button>
+              )}
+              <button
+                onClick={() => router.back()}
+                style={{
+                  background: isServiceDown ? 'transparent' : '#1B4332',
+                  color: isServiceDown ? '#6b7280' : 'white',
+                  border: isServiceDown ? '1.5px solid var(--color-border)' : 'none',
+                  borderRadius: '12px', padding: '12px 24px',
+                  fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+              >
+                <ArrowLeft size={16} strokeWidth={1.5} /> Retour à la recherche
+              </button>
+            </div>
           </div>
         )}
 

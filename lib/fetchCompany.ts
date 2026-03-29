@@ -261,6 +261,25 @@ const TRANCHES: Record<string, string> = {
 
 const TRANCHES_GT5 = ['03', '11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '53']
 
+async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (res.ok) return res
+      if (i === retries) throw new Error('API indisponible')
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+    } catch (e: any) {
+      if (i === retries) throw new Error('API indisponible')
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+    }
+  }
+  throw new Error('API indisponible')
+}
+
 async function fetchEntreprise(query: string) {
   const isSiret = /^\d{9,14}$/.test(query.replace(/\s/g, ''))
   let url: string
@@ -272,12 +291,7 @@ async function fetchEntreprise(query: string) {
     url = `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=5`
   }
 
-  const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-    next: { revalidate: 3600 },
-  })
-
-  if (!res.ok) throw new Error('API entreprises indisponible')
+  const res = await fetchWithRetry(url)
   return res.json()
 }
 
@@ -287,6 +301,7 @@ async function fetchRGE(siret: string) {
     const res = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000),
     })
     if (!res.ok) return null
     return res.json()
@@ -301,6 +316,7 @@ async function fetchBODACC(siren: string): Promise<BodaccInfo> {
     const res = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(7000),
     })
     if (!res.ok) return emptyBodacc()
     const data = await res.json()
