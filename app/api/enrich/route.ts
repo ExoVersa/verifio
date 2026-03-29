@@ -57,7 +57,7 @@ Génère exactement ce JSON :
 La checklist doit être adaptée au code NAF "${codeNaf}" (${activite}). Commence toujours par l'attestation d'assurance décennale (obligatoire BTP), puis le KBIS récent, puis les documents spécifiques au métier (habilitations, certifications, etc.). Sois concis et actionnable.`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     })

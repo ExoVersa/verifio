@@ -435,7 +435,7 @@ async function getSynthese(result: Awaited<ReturnType<typeof fetchCompany>>): Pr
       ).length,
     }
     const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
       system: `Tu es un expert en analyse juridique et financière d'entreprises du bâtiment. Réponds toujours en JSON strict, sans markdown, sans backticks.`,
       messages: [{ role: 'user', content: `Génère une synthèse JSON : {"resume":"...","points_forts":[],"points_attention":[],"recommandation":"FIABLE"|"VIGILANCE"|"RISQUE","recommandation_texte":"..."}. Données : ${JSON.stringify(input)}` }],
