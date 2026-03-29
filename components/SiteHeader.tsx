@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, Fragment } from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   ChevronDown, Search, ArrowLeftRight, Calculator, FileSearch,
-  ClipboardCheck, User, LogOut, Menu, X, Scale, MapPin, HardHat,
-  AlertTriangle, Euro, History, Bell, Shield, ShieldCheck, LayoutDashboard, FileText,
+  User, LogOut, Menu, X, Scale, HardHat,
+  Euro, Bell, Shield, ShieldCheck, LayoutDashboard, FileText,
   BarChart2, ClipboardList, Wrench, Gem,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -113,16 +114,17 @@ function MegaMenuPanel({
         left: '50%',
         transform: 'translateX(-50%)',
         marginTop: '8px',
-        background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '18px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
-        padding: '8px',
+        background: 'rgba(255,255,255,0.92)',
+        border: '1px solid rgba(230,223,213,0.9)',
+        borderRadius: '24px',
+        boxShadow: '0 30px 70px rgba(20,32,27,0.14), 0 10px 24px rgba(20,32,27,0.05)',
+        padding: '10px',
         minWidth: '560px',
         zIndex: 200,
         display: 'grid',
         gridTemplateColumns: '1fr 200px',
         gap: '8px',
+        backdropFilter: 'blur(16px)',
       }}
     >
       {/* Left: items */}
@@ -191,7 +193,7 @@ function MegaMenuPanel({
           }
 
           return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               onClick={onClose}
@@ -205,7 +207,7 @@ function MegaMenuPanel({
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               {content}
-            </a>
+            </Link>
           )
         })}
       </div>
@@ -280,6 +282,24 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const headerRef = useRef<HTMLDivElement>(null)
 
+  async function checkArtisan(userId: string) {
+    const { data } = await supabase
+      .from('artisans')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('statut', 'verifie')
+      .maybeSingle()
+    setIsArtisan(!!data)
+  }
+
+  async function loadSurvCount(email: string) {
+    const { count } = await supabase
+      .from('surveillances')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+    setSurvCount(count ?? 0)
+  }
+
   // Auth
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -301,24 +321,6 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
     })
     return () => subscription.unsubscribe()
   }, [])
-
-  async function checkArtisan(userId: string) {
-    const { data } = await supabase
-      .from('artisans')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('statut', 'verifie')
-      .maybeSingle()
-    setIsArtisan(!!data)
-  }
-
-  async function loadSurvCount(email: string) {
-    const { count } = await supabase
-      .from('surveillances')
-      .select('*', { count: 'exact', head: true })
-      .eq('email', email)
-    setSurvCount(count ?? 0)
-  }
 
   // Scroll shadow
   useEffect(() => {
@@ -342,9 +344,12 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
 
   // Close on route change
   useEffect(() => {
-    setOpenMenu(null)
-    setUserMenuOpen(false)
-    setMobileOpen(false)
+    const timer = window.setTimeout(() => {
+      setOpenMenu(null)
+      setUserMenuOpen(false)
+      setMobileOpen(false)
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [pathname])
 
   // Cleanup timer on unmount
@@ -407,18 +412,20 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       >
         {/* ── TOP BAR ── */}
         <div style={{
-          background: '#1B4332',
+          background: 'linear-gradient(90deg, #153b2e 0%, #245845 100%)',
           padding: '0 24px',
-          height: '34px',
+          minHeight: '38px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '12px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-          <p style={{ margin: 0, fontSize: '11px', color: '#D8F3DC', fontWeight: 500 }}>
-            <Shield size={12} strokeWidth={1.5} style={{ marginRight: '5px', display: 'inline-block', verticalAlign: 'middle' }} />Données officielles INSEE · ADEME · BODACC · Mise à jour quotidienne
+          <p style={{ margin: 0, fontSize: '11px', color: '#dff7ec', fontWeight: 600, lineHeight: 1.4 }}>
+            <Shield size={12} strokeWidth={1.5} style={{ marginRight: '5px', display: 'inline-block', verticalAlign: 'middle' }} />Données officielles vérifiées · INSEE, ADEME, BODACC · Mise à jour quotidienne
           </p>
-          <p style={{ margin: 0, fontSize: '11px', color: '#74C69D', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span>⭐</span> 4.8/5 — Fait confiance par 10 000+ particuliers
+          <p style={{ margin: 0, fontSize: '11px', color: '#b7e8d2', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+            Plus de 10 000 particuliers déjà accompagnés
           </p>
         </div>
 
@@ -426,14 +433,15 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
         <header
           style={{
             padding: '0 24px',
-            height: '72px',
-            borderBottom: '1px solid var(--color-border)',
-            background: 'var(--color-surface)',
+            height: '78px',
+            borderBottom: '1px solid rgba(214, 206, 193, 0.75)',
+            background: 'rgba(255,255,255,0.86)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            transition: 'box-shadow 0.2s',
-            boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
+            transition: 'box-shadow 0.2s, backdrop-filter 0.2s',
+            boxShadow: scrolled ? '0 18px 40px rgba(20,32,27,0.08)' : 'none',
+            backdropFilter: 'blur(18px)',
           }}
         >
           {/* ── LOGO ── */}
@@ -446,9 +454,9 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 <LogoContent />
               </button>
             ) : (
-              <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+              <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
                 <LogoContent />
-              </a>
+              </Link>
             )}
           </div>
 
@@ -464,8 +472,8 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 <button
                   style={{
                     display: 'flex', alignItems: 'center', gap: '5px',
-                    background: openMenu === menu.id ? 'var(--color-bg)' : 'transparent',
-                    border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                    background: openMenu === menu.id ? 'rgba(21,59,46,0.07)' : 'transparent',
+                    border: 'none', cursor: 'pointer', padding: '9px 14px', borderRadius: '12px',
                     fontSize: '13.5px', fontWeight: 600,
                     color: openMenu === menu.id ? 'var(--color-accent)' : 'var(--color-text)',
                     fontFamily: 'var(--font-body)', transition: 'background 0.15s, color 0.15s',
@@ -497,14 +505,14 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               href="/pricing"
               style={{
                 display: 'flex', alignItems: 'center',
-                background: pathname === '/pricing' ? 'var(--color-bg)' : 'transparent',
-                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                background: pathname === '/pricing' ? 'rgba(21,59,46,0.07)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '9px 14px', borderRadius: '12px',
                 fontSize: '13.5px', fontWeight: 600,
                 color: pathname === '/pricing' ? 'var(--color-accent)' : 'var(--color-text)',
                 textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/pricing' ? 'var(--color-bg)' : 'transparent' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/pricing' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               <Gem size={14} strokeWidth={1.5} style={{ marginRight: '5px' }} />Tarifs
             </a>
@@ -512,14 +520,14 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               href="/a-propos"
               style={{
                 display: 'flex', alignItems: 'center',
-                background: pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent',
-                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                background: pathname === '/a-propos' ? 'rgba(21,59,46,0.07)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '9px 14px', borderRadius: '12px',
                 fontSize: '13.5px', fontWeight: 600,
                 color: pathname === '/a-propos' ? 'var(--color-accent)' : 'var(--color-text)',
                 textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/a-propos' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               À propos
             </a>
@@ -527,14 +535,14 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               href="/espace-artisan"
               style={{
                 display: 'flex', alignItems: 'center',
-                background: pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent',
-                border: 'none', cursor: 'pointer', padding: '7px 13px', borderRadius: '9px',
+                background: pathname === '/espace-artisan' ? 'rgba(21,59,46,0.07)' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '9px 14px', borderRadius: '12px',
                 fontSize: '13.5px', fontWeight: 600,
                 color: pathname === '/espace-artisan' ? 'var(--color-accent)' : 'var(--color-text)',
                 textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
             </a>
@@ -558,7 +566,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     </div>
 
                     {/* CTA espace artisan */}
-                    <a
+                    <Link
                       href="/artisan/dashboard"
                       style={{
                         fontSize: '13px', fontWeight: 700, color: '#fff',
@@ -570,7 +578,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                       onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                     >
                       Mon espace artisan →
-                    </a>
+                    </Link>
 
                     {/* Avatar artisan */}
                     <div style={{ position: 'relative' }}>
@@ -614,11 +622,11 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                             { href: '/artisan/dashboard?tab=devis', label: 'Mes devis', Icon: FileText },
                             { href: `/artisan/dashboard?tab=profil`, label: 'Mon profil public', Icon: User },
                           ].map(({ href, label, Icon }) => (
-                            <a key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
+                            <Link key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
                               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
                               <Icon size={14} color="var(--color-muted)" />{label}
-                            </a>
+                            </Link>
                           ))}
                           <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
                           <button onClick={() => { supabase.auth.signOut(); closeAll() }}
@@ -635,7 +643,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   /* ── PARTICULIER CONNECTÉ ── */
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {/* Bell */}
-                    <a
+                    <Link
                       href="/mon-espace?tab=surveillances"
                       style={{
                         position: 'relative',
@@ -662,7 +670,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                           {survCount > 9 ? '9+' : survCount}
                         </span>
                       )}
-                    </a>
+                    </Link>
 
                     {/* Avatar + user menu */}
                     <div style={{ position: 'relative' }}>
@@ -706,11 +714,11 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                             { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
                             { href: '/mon-espace?tab=surveillances', label: `Mes surveillances${survCount > 0 ? ` (${survCount})` : ''}`, Icon: Bell },
                           ].map(({ href, label, Icon }) => (
-                            <a key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
+                            <Link key={href} href={href} onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--color-text)', fontSize: '13px', fontWeight: 500, transition: 'background 0.12s' }}
                               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
                               <Icon size={14} color="var(--color-muted)" />{label}
-                            </a>
+                            </Link>
                           ))}
                           <div style={{ height: '1px', background: 'var(--color-border)', margin: '4px 0' }} />
                           <button onClick={() => { supabase.auth.signOut(); closeAll() }}
@@ -1030,7 +1038,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
                 >
-                  S'inscrire
+                  S&apos;inscrire
                 </a>
               </div>
             )}
@@ -1097,23 +1105,35 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
 
 function LogoContent() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <svg width="26" height="28" viewBox="0 0 26 28" fill="none" aria-hidden="true">
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{
+        width: '42px',
+        height: '42px',
+        borderRadius: '14px',
+        background: 'linear-gradient(135deg, #153b2e 0%, #2f7a5f 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 14px 30px rgba(21,59,46,0.18)',
+        flexShrink: 0,
+      }}>
+        <svg width="24" height="26" viewBox="0 0 26 28" fill="none" aria-hidden="true">
         <path
           d="M13 1L2 6V13c0 5.8 4.8 11.2 11 12.5C19.2 24.2 24 18.8 24 13V6L13 1Z"
-          fill="#1B4332"
+          fill="#ffffff"
         />
         <path
           d="M9 14l3 3L18 11"
-          stroke="#D8F3DC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          stroke="#36a376" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"
         />
-      </svg>
+        </svg>
+      </div>
       <div>
-        <p className="font-display" style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1B4332', letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: 'var(--font-display)' }}>
+        <p className="font-display" style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#153b2e', letterSpacing: '-0.04em', lineHeight: 1.05, fontFamily: 'var(--font-display)' }}>
           Verifio
         </p>
-        <p style={{ margin: 0, fontSize: '10px', color: 'var(--color-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>
-          Vérifiez avant de signer
+        <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          Confiance chantier
         </p>
       </div>
     </div>

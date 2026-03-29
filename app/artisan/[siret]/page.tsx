@@ -506,10 +506,12 @@ export default function ArtisanFichePage() {
 
   /* ── Card style helper ── */
   const cardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+    background: 'rgba(255,255,255,0.9)',
+    borderRadius: '22px',
+    border: '1px solid rgba(230,223,213,0.9)',
+    boxShadow: '0 16px 34px rgba(20,32,27,0.05)',
     padding: '28px',
+    backdropFilter: 'blur(10px)',
   }
 
   const cardTitleStyle: React.CSSProperties = {
@@ -536,11 +538,6 @@ export default function ArtisanFichePage() {
     fontWeight: 600,
     color: '#111827',
     margin: 0,
-  }
-
-  const mutedStyle: React.CSSProperties = {
-    color: '#6b7280',
-    fontSize: '14px',
   }
 
   // ── BODACC helpers ──────────────────────────────────────
@@ -598,7 +595,7 @@ export default function ArtisanFichePage() {
   const rgeVisibleDomaines = showAllRGE ? rgeDomainesUniques : rgeDomainesUniques.slice(0, RGE_MAX)
 
   return (
-    <main style={{ minHeight: '100vh', background: '#F8F4EF', fontFamily: 'var(--font-body)' }}>
+    <main style={{ minHeight: '100vh', background: 'transparent', fontFamily: 'var(--font-body)' }}>
       <SiteHeader />
 
       <style>{`

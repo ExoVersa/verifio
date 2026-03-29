@@ -39,6 +39,8 @@ const RAYON_OPTIONS = [
   { v: '100', label: '100 km' },
 ]
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 /* ─── CSS shorthand ─────────────────────────────────────────── */
 const cv = (name: string) => `var(--color-${name})`
 
@@ -69,7 +71,7 @@ function VilleAutocomplete({
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (value.length < 2) { setCommunes([]); setDepts([]); setOpen(false); return }
+    if (value.length < 2) return
     timerRef.current = setTimeout(async () => {
       try {
         const q = encodeURIComponent(value)
@@ -140,7 +142,7 @@ function VilleAutocomplete({
         onFocus={e => { e.target.style.borderColor = cv('accent'); if (communes.length > 0 || depts.length > 0) setOpen(true) }}
         onBlur={e => (e.target.style.borderColor = cv('border'))}
       />
-      {open && (communes.length > 0 || depts.length > 0) && (
+      {open && value.length >= 2 && (communes.length > 0 || depts.length > 0) && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
           background: 'white', border: `1px solid ${cv('border')}`,
@@ -192,7 +194,7 @@ function CandidateCard({ c }: { c: CandidateResult }) {
   const router = useRouter()
   const isActif = c.statut === 'actif'
   const age = c.dateCreation
-    ? Math.floor((Date.now() - new Date(c.dateCreation).getTime()) / (365.25 * 24 * 3600 * 1000))
+    ? Math.max(0, CURRENT_YEAR - new Date(c.dateCreation).getFullYear())
     : null
 
   // Score pre-computed server-side by /api/recherche using lib/score.ts (same function as artisan page)
@@ -204,15 +206,17 @@ function CandidateCard({ c }: { c: CandidateResult }) {
     <div
       onClick={() => router.push(`/artisan/${c.siret}`)}
       style={{
-        background: cv('surface'), border: `1px solid ${cv('border')}`,
-        borderRadius: '14px', padding: '16px 20px', cursor: 'pointer',
+        background: 'rgba(255,255,255,0.9)', border: `1px solid ${cv('border')}`,
+        borderRadius: '20px', padding: '18px 22px', cursor: 'pointer',
         transition: 'box-shadow 0.15s, border-color 0.15s, transform 0.12s',
+        boxShadow: '0 12px 26px rgba(20,32,27,0.04)',
+        backdropFilter: 'blur(10px)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
         el.style.borderColor = cv('accent')
-        el.style.boxShadow = '0 4px 20px rgba(27,67,50,0.12)'
-        el.style.transform = 'translateY(-1px)'
+        el.style.boxShadow = '0 18px 34px rgba(21,59,46,0.1)'
+        el.style.transform = 'translateY(-2px)'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
@@ -498,20 +502,6 @@ function RechercheInner() {
     router.push(`/recherche?${buildURL({ q, ville, cp, dept })}`)
   }
 
-  // Chip click → toggle keyword in query and auto-search
-  const handleChipClick = (kw: string) => {
-    const isActive = queryInput.toLowerCase().includes(kw.toLowerCase())
-    const newQ = isActive
-      ? queryInput.replace(new RegExp(`\\b${kw}\\b`, 'gi'), '').replace(/\s+/g, ' ').trim()
-      : queryInput ? `${queryInput} ${kw}` : kw
-    setQueryInput(newQ)
-    const ville = villeInput.trim()
-    const isSameVille = ville === villeSelection?.label
-    const cp = isSameVille && villeSelection?.type === 'commune' ? (villeSelection.codePostal || '') : ''
-    const dept = isSameVille && villeSelection?.type === 'departement' ? (villeSelection.deptCode || '') : ''
-    router.push(`/recherche?${buildURL({ q: newQ, ville, cp, dept })}`)
-  }
-
   const handleVilleChange = (v: string) => {
     setVilleInput(v)
     if (!v) setVilleSelection(null)
@@ -564,12 +554,21 @@ function RechercheInner() {
       {/* ── Sticky search section ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
-        background: cv('surface'),
+        background: 'rgba(255,255,255,0.84)',
         borderBottom: `1px solid ${cv('border')}`,
-        padding: '16px 24px',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        padding: '18px 24px 16px',
+        boxShadow: '0 12px 30px rgba(20,32,27,0.06)',
+        backdropFilter: 'blur(18px)',
       }}>
         <div style={{ maxWidth: '880px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '12px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: cv('accent'), letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Recherche de confiance
+            </p>
+            <p style={{ margin: 0, fontSize: '14px', color: cv('muted') }}>
+              Trouvez vite un artisan et comprenez immédiatement les signaux qui comptent.
+            </p>
+          </div>
 
           {/* Search form */}
           <form onSubmit={handleSubmit} style={{ marginBottom: '10px' }}>
@@ -586,13 +585,14 @@ function RechercheInner() {
                 type="submit"
                 style={{
                   height: '52px', padding: '0 22px',
-                  background: cv('accent'), color: 'white', border: 'none', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #153b2e 0%, #245845 100%)', color: 'white', border: 'none', borderRadius: '14px',
                   fontSize: '15px', fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0,
-                  transition: 'opacity 0.15s',
+                  transition: 'opacity 0.15s, transform 0.15s',
+                  boxShadow: '0 14px 30px rgba(21,59,46,0.18)',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.94'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
               >
                 Rechercher →
               </button>
@@ -713,6 +713,21 @@ function RechercheInner() {
         {/* Initial state */}
         {!hasQuery && !loading && (
           <div style={{ padding: '40px 0 80px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(238,248,243,0.9) 100%)',
+              border: `1px solid ${cv('border')}`,
+              borderRadius: '28px',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(20,32,27,0.05)',
+              marginBottom: '28px',
+            }}>
+              <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', color: cv('text') }}>
+                Trouver le bon artisan, sans stress inutile
+              </h1>
+              <p style={{ margin: 0, fontSize: '15px', color: cv('text-secondary'), lineHeight: 1.7 }}>
+                Commencez par un métier ou une ville. Verifio met ensuite en avant les profils qui inspirent le plus confiance.
+              </p>
+            </div>
             {/* Quick action grid */}
             <div style={{
               display: 'grid',
@@ -733,8 +748,9 @@ function RechercheInner() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: '8px', padding: '20px 12px',
                     background: cv('surface'), border: `1px solid ${cv('border')}`,
-                    borderRadius: '16px', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
+                    borderRadius: '20px', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
                     fontFamily: 'var(--font-body)',
+                    boxShadow: '0 10px 24px rgba(20,32,27,0.04)',
                   }}
                   onMouseEnter={e => {
                     const el = e.currentTarget
