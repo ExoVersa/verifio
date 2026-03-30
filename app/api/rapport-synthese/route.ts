@@ -19,8 +19,13 @@ export interface SyntheseResult {
   resume: string
   points_forts: string[]
   points_attention: string[]
-  recommandation: 'FIABLE' | 'VIGILANCE' | 'RISQUE'
-  recommandation_texte: string
+  recommandation?: 'FIABLE' | 'VIGILANCE' | 'RISQUE'
+  recommandation_texte?: string
+  verdict?: 'FIABLE' | 'VIGILANCE' | 'RISQUE'
+  verdict_titre?: string
+  verdict_explication?: string
+  actions_recommandees?: string[]
+  score_explication?: string
 }
 
 const FALLBACK: SyntheseResult = {
@@ -49,23 +54,24 @@ export async function POST(req: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      system: `Tu es un expert en analyse juridique et financière d'entreprises du bâtiment.
-Tu analyses les données officielles d'un artisan pour aider un particulier à décider s'il peut lui faire confiance avant de signer un contrat.
-Réponds toujours en JSON strict, sans markdown, sans backticks.`,
+      max_tokens: 2000,
+      system: `Tu es un expert en analyse juridique et financière d'entreprises du bâtiment en France. Tu analyses les données officielles d'un artisan pour aider un particulier à décider s'il peut lui faire confiance avant de signer un contrat de travaux. Tu dois être précis, direct et actionnable. Tu parles à un particulier non-expert. Réponds uniquement en JSON strict, sans markdown, sans backticks, sans texte avant ou après le JSON.`,
       messages: [
         {
           role: 'user',
-          content: `Analyse cet artisan et génère une synthèse structurée en JSON :
+          content: `Analyse cet artisan et génère une synthèse structurée en JSON avec exactement ces champs :
 {
-  "resume": "2-3 phrases de synthèse générale rédigées",
-  "points_forts": ["point 1", "point 2"],
-  "points_attention": ["point 1"],
-  "recommandation": "FIABLE" | "VIGILANCE" | "RISQUE",
-  "recommandation_texte": "1 phrase expliquant la recommandation"
+  "resume": "3-4 phrases. Présente l'entreprise (forme juridique, ancienneté, dirigeant), son score de fiabilité avec une explication chiffrée, et une conclusion directe sur la confiance qu'on peut lui accorder.",
+  "verdict": "FIABLE" | "VIGILANCE" | "RISQUE",
+  "verdict_titre": "Titre court et direct du verdict (ex: 'Artisan sérieux, quelques points à vérifier')",
+  "verdict_explication": "2-3 phrases expliquant précisément POURQUOI ce verdict. Cite les éléments concrets du dossier.",
+  "points_forts": ["Point fort concret et spécifique", "..."],
+  "points_attention": ["Point d'attention concret avec explication du risque", "..."],
+  "actions_recommandees": ["Action concrète à faire AVANT de signer", "...", "..."],
+  "score_explication": "1 phrase expliquant le score chiffré : quels critères ont contribué positivement et lesquels ont pénalisé."
 }
-Si aucun point d'attention, retourner un tableau vide pour points_attention.
-Données : ${JSON.stringify(input)}`,
+Règles : si aucun point d'attention retourner []. Les points doivent être spécifiques aux données fournies, jamais génériques. Les actions doivent être pratiques et réalisables par un particulier. Ne jamais inventer des données absentes du JSON fourni.
+Données de l'artisan : ${JSON.stringify(input)}`,
         },
       ],
     })

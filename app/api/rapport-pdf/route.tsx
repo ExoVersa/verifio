@@ -113,6 +113,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   footerText: { fontSize: 8, color: '#999' },
+  actionsBlock: { backgroundColor: '#E6F1FB', borderRadius: 6, padding: 8, marginBottom: 4 },
+  actionsText: { fontSize: 11, color: '#042C53' },
+  checklistBullet: { fontSize: 11, color: '#3B6D11' },
+  checklistText: { fontSize: 11, color: '#444441', flex: 1 },
+  questionBullet: { fontSize: 11, color: '#185FA5' },
+  questionText: { fontSize: 11, color: '#444441', flex: 1 },
 })
 
 function scoreColor(score: number) {
@@ -184,7 +190,16 @@ function RapportPDF({
         {synthese && (
           <View style={styles.synthBlock}>
             <Text style={styles.synthTitle}>Synthèse Verifio</Text>
+            {synthese.verdict_titre && (
+              <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#1a1a1a', marginBottom: 4 }}>{synthese.verdict_titre}</Text>
+            )}
+            {synthese.verdict_explication && (
+              <Text style={{ fontSize: 10, fontStyle: 'italic', color: '#555', lineHeight: 1.5, marginBottom: 8 }}>{synthese.verdict_explication}</Text>
+            )}
             <Text style={styles.synthResume}>{synthese.resume}</Text>
+            {synthese.score_explication && (
+              <Text style={{ fontSize: 9, color: '#888780', marginBottom: 8, fontStyle: 'italic' }}>{synthese.score_explication}</Text>
+            )}
 
             {synthese.points_forts.length > 0 && (
               <View style={{ marginBottom: 8 }}>
@@ -273,6 +288,55 @@ function RapportPDF({
             ))}
           </View>
         )}
+
+        {/* Actions recommandées */}
+        {synthese?.actions_recommandees && synthese.actions_recommandees.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Ce que vous devez faire avant de signer</Text>
+            {synthese.actions_recommandees.map((action, i) => (
+              <View key={i} style={[styles.actionsBlock, { marginBottom: 4 }]}>
+                <Text style={styles.actionsText}>{i + 1}. {action}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Checklist avant de signer */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Checklist avant de signer</Text>
+          {[
+            'Vérifier l\'assurance décennale en cours de validité',
+            'Demander 3 références de chantiers similaires',
+            'S\'assurer que le devis détaille bien les matériaux et quantités',
+            'Vérifier l\'existence d\'une garantie de parfait achèvement',
+            'Ne jamais verser plus de 30% d\'acompte avant démarrage',
+            'Exiger un écrit pour toute modification en cours de chantier',
+            'Vérifier la certification RGE si travaux éligibles aux aides',
+            'Confirmer les délais et pénalités de retard par écrit',
+          ].map((item, i) => (
+            <View key={i} style={[styles.bullet, { marginBottom: 5 }]}>
+              <Text style={styles.checklistBullet}>{'[ ]'}</Text>
+              <Text style={styles.checklistText}> {item}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Questions à poser à l'artisan */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Questions à poser à l&apos;artisan</Text>
+          {[
+            'Pouvez-vous me fournir votre attestation d\'assurance décennale à jour ?',
+            'Avez-vous des références de chantiers similaires que je peux contacter ?',
+            'Qui sera présent sur le chantier — vous ou des sous-traitants ?',
+            'Quels sont les délais réalistes et que se passe-t-il en cas de retard ?',
+            'Comment gérez-vous les imprévus et les modifications en cours de chantier ?',
+          ].map((question, i) => (
+            <View key={i} style={[styles.bullet, { marginBottom: 5 }]}>
+              <Text style={styles.questionBullet}>{'->'}</Text>
+              <Text style={styles.questionText}> {question}</Text>
+            </View>
+          ))}
+        </View>
 
         {/* BODACC */}
         {result.bodacc.annonces.length > 0 && (
@@ -436,9 +500,9 @@ async function getSynthese(result: Awaited<ReturnType<typeof fetchCompany>>): Pr
     }
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      system: `Tu es un expert en analyse juridique et financière d'entreprises du bâtiment. Réponds toujours en JSON strict, sans markdown, sans backticks.`,
-      messages: [{ role: 'user', content: `Génère une synthèse JSON : {"resume":"...","points_forts":[],"points_attention":[],"recommandation":"FIABLE"|"VIGILANCE"|"RISQUE","recommandation_texte":"..."}. Données : ${JSON.stringify(input)}` }],
+      max_tokens: 2000,
+      system: `Tu es un expert en analyse juridique et financière d'entreprises du bâtiment en France. Tu analyses les données officielles d'un artisan pour aider un particulier à décider s'il peut lui faire confiance avant de signer un contrat de travaux. Tu dois être précis, direct et actionnable. Tu parles à un particulier non-expert. Réponds uniquement en JSON strict, sans markdown, sans backticks, sans texte avant ou après le JSON.`,
+      messages: [{ role: 'user', content: `Analyse cet artisan et génère une synthèse structurée en JSON avec exactement ces champs : {"resume":"3-4 phrases. Présente l'entreprise (forme juridique, ancienneté, dirigeant), son score de fiabilité avec une explication chiffrée, et une conclusion directe sur la confiance qu'on peut lui accorder.","verdict":"FIABLE"|"VIGILANCE"|"RISQUE","verdict_titre":"Titre court et direct du verdict","verdict_explication":"2-3 phrases expliquant précisément POURQUOI ce verdict. Cite les éléments concrets du dossier.","points_forts":["Point fort concret et spécifique"],"points_attention":["Point d'attention concret avec explication du risque"],"actions_recommandees":["Action concrète à faire AVANT de signer"],"score_explication":"1 phrase expliquant le score chiffré : quels critères ont contribué positivement et lesquels ont pénalisé."}. Règles : si aucun point d'attention retourner []. Les points doivent être spécifiques aux données fournies, jamais génériques. Les actions doivent être pratiques et réalisables par un particulier. Ne jamais inventer des données absentes du JSON fourni. Données : ${JSON.stringify(input)}` }],
     })
     const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
     const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
