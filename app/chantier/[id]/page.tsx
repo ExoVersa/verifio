@@ -892,6 +892,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [isMobile, setIsMobile] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [currentPhasePhoto, setCurrentPhasePhoto] = useState<PhotoPhase>('pendant')
+  const [lightboxPhoto, setLightboxPhoto] = useState<ChantierPhoto | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
@@ -1000,7 +1001,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
       }
     }
     setUploadingPhoto(false)
-    loadAll()
+    await loadAll()
   }
 
   async function handlePhaseDocUpload(file: File | null) {
@@ -1016,7 +1017,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
         type: 'autre' as DocumentType, url: path, taille: file.size,
       })
     }
-    loadAll()
+    await loadAll()
   }
 
   if (loading) {
@@ -1327,34 +1328,45 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
                       {/* Photos */}
                       <div style={{ padding: '0 16px 14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <span style={sectionLbl}>Photos</span>
-                          <button
-                            onClick={() => { setCurrentPhasePhoto(photoPhase); photoInputRef.current?.click() }}
-                            style={{ fontSize: 11, color: 'var(--color-accent)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-body)', fontWeight: 600, padding: 0 }}
-                          >
-                            {uploadingPhoto ? 'Upload…' : '+ Ajouter'}
-                          </button>
+                          {uploadingPhoto && <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>Upload…</span>}
                         </div>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                          {phasePhotos.length === 0 && (
-                            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
-                              Aucune photo pour cette phase.
-                              {phaseName === 'preparation' && ' (photos "avant travaux")'}
-                              {(phaseName === 'travaux' || phaseName === 'finitions') && ' (photos "pendant travaux")'}
-                              {phaseName === 'reception' && ' (photos "après travaux")'}
-                            </p>
-                          )}
-                          {phasePhotos.slice(0, 4).map(ph => (
-                            ph.url
-                              // eslint-disable-next-line @next/next/no-img-element
-                              ? <img key={ph.id} src={ph.url} alt={ph.legende || ''} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
-                              : <div key={ph.id} style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={18} strokeWidth={1.5} color="var(--color-muted)" /></div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 0 }}>
+                          {phasePhotos.map(photo => (
+                            <div
+                              key={photo.id}
+                              onClick={() => setLightboxPhoto(photo)}
+                              style={{ width: 64, height: 64, borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: 'var(--color-bg)', border: '0.5px solid var(--color-border)', flexShrink: 0, position: 'relative' }}
+                            >
+                              {photo.url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={photo.url} alt={photo.legende || 'Photo chantier'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
                           ))}
-                          {phasePhotos.length > 4 && (
-                            <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>+{phasePhotos.length - 4} autres</span>
-                          )}
+                          {/* Bouton + ajouter */}
+                          <div
+                            onClick={() => { setCurrentPhasePhoto(PHASE_PHOTO_MAP[phaseName]); photoInputRef.current?.click() }}
+                            style={{ width: 64, height: 64, borderRadius: 8, border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-muted)', fontSize: 24, fontWeight: 300, flexShrink: 0 }}
+                          >
+                            +
+                          </div>
                         </div>
+                        {phasePhotos.length === 0 && (
+                          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>
+                            Aucune photo pour cette phase.
+                            {phaseName === 'preparation' && ' (photos "avant travaux")'}
+                            {(phaseName === 'travaux' || phaseName === 'finitions') && ' (photos "pendant travaux")'}
+                            {phaseName === 'reception' && ' (photos "après travaux")'}
+                          </p>
+                        )}
                       </div>
 
                       {/* Documents */}
@@ -1371,14 +1383,30 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                         {docsPhase.length === 0 ? (
                           <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucun document.</p>
                         ) : docsPhase.map(doc => (
-                          <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'var(--color-bg)', borderRadius: '8px', marginBottom: '5px' }}>
-                            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <FileText size={14} strokeWidth={1.5} color="#185FA5" />
+                          <div
+                            key={doc.id}
+                            onClick={() => doc.url && window.open(doc.url, '_blank')}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--color-bg)', borderRadius: 8, marginBottom: 5, cursor: doc.url ? 'pointer' : 'default', transition: 'background 0.15s' }}
+                            onMouseEnter={e => { if (doc.url) (e.currentTarget as HTMLDivElement).style.background = 'var(--color-border)' }}
+                            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--color-bg)'}
+                          >
+                            <div style={{ width: 32, height: 32, borderRadius: 6, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                              </svg>
                             </div>
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <p style={{ margin: '0 0 1px', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.nom}</p>
-                              <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>{DOCUMENT_LABELS[doc.type]}</p>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.nom}</div>
+                              <div style={{ fontSize: 10, color: 'var(--color-muted)', marginTop: 1 }}>{DOCUMENT_LABELS[doc.type]} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}</div>
                             </div>
+                            {doc.url && (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                              </svg>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1430,6 +1458,38 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
           onClose={() => setEditPhase(null)}
           onSaved={reloadPhases}
         />
+      )}
+
+      {/* Lightbox photos */}
+      {lightboxPhoto && (
+        <div
+          onClick={() => setLightboxPhoto(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            {lightboxPhoto.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={lightboxPhoto.url}
+                alt={lightboxPhoto.legende || 'Photo chantier'}
+                style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12 }}
+              />
+            ) : (
+              <div style={{ color: '#fff', fontSize: 14 }}>Image non disponible</div>
+            )}
+            {lightboxPhoto.legende && (
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textAlign: 'center', marginTop: 10 }}>
+                {lightboxPhoto.legende}
+              </div>
+            )}
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              style={{ position: 'absolute', top: -12, right: -12, width: 32, height: 32, borderRadius: '50%', background: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#333' }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
       )}
     </main>
   )
