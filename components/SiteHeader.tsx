@@ -412,21 +412,41 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       >
         {/* ── TOP BAR ── */}
         <div style={{
-          background: 'linear-gradient(90deg, #153b2e 0%, #245845 100%)',
-          padding: '0 24px',
-          minHeight: '38px',
+          background: '#1B4332',
+          color: 'rgba(255,255,255,0.9)',
+          fontSize: 12,
+          padding: '8px 16px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          justifyContent: 'center',
+          gap: 24,
+          textAlign: 'center',
+          lineHeight: 1.4,
         }}>
-          <p style={{ margin: 0, fontSize: '11px', color: '#dff7ec', fontWeight: 600, lineHeight: 1.4 }}>
-            <Shield size={12} strokeWidth={1.5} style={{ marginRight: '5px', display: 'inline-block', verticalAlign: 'middle' }} />Données officielles vérifiées · INSEE, ADEME, BODACC · Mise à jour quotidienne
-          </p>
-          <p style={{ margin: 0, fontSize: '11px', color: '#b7e8d2', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+          <style>{`
+            @media (max-width: 768px) {
+              .topbanner-secondary { display: none !important; }
+              .topbanner-primary { font-size: 11px !important; }
+            }
+          `}</style>
+
+          <span className="topbanner-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Données officielles INSEE · ADEME · BODACC · Mise à jour quotidienne
+          </span>
+
+          <span className="topbanner-secondary" style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            borderLeft: '1px solid rgba(255,255,255,0.2)',
+            paddingLeft: 24,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
             Plus de 10 000 particuliers déjà accompagnés
-          </p>
+          </span>
         </div>
 
         {/* ── MAIN HEADER ── */}
