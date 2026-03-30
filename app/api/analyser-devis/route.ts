@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // ── 1. Clients Supabase ───────────────────────────────────────────────────
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
   // ── 2. Authentification optionnelle ──────────────────────────────────────
@@ -259,17 +259,22 @@ Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
   }
 
   // ── 7. Logger l'analyse ──────────────────────────────────────────────────
-  await supabaseAdmin.from('analyses_devis').insert({
-    user_id: user?.id ?? null,
-    siret_artisan: siretFinal,
-    ip_address: ipAddress,
-    pages_pdf: pagesCount,
-    taille_pdf_bytes: fileBytes.length,
-    nom_fichier: nomFichier || null,
-    resultat_json: resultatComplet,
-  }).then(({ error }) => {
-    if (error) console.warn('[analyser-devis] Log insert failed:', error.message)
-  })
+  try {
+    const { error: insertError } = await supabaseAdmin.from('analyses_devis').insert({
+      user_id: user?.id || null,
+      ip_address: ipAddress || null,
+      siret_artisan: siretFinal || null,
+      pages_pdf: pagesCount || null,
+      taille_pdf_bytes: fileBytes.length || null,
+      nom_fichier: nomFichier || null,
+      resultat_json: resultatComplet,
+    })
+    if (insertError) {
+      console.error('INSERT analyses_devis failed:', JSON.stringify(insertError))
+    }
+  } catch (e) {
+    console.error('INSERT analyses_devis exception:', e)
+  }
 
   return NextResponse.json(resultatComplet)
 }
