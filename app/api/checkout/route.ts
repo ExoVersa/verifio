@@ -49,6 +49,24 @@ export async function POST(req: NextRequest) {
         ? `${baseUrl}/artisan/${siret}`
         : `${baseUrl}/pricing`,
       metadata: { plan: 'serenite', siret: siret || '', nom: nom || '', chantierId: chantierId || '', user_id: user_id || '' },
+      custom_fields: [
+        {
+          key: 'retractation',
+          label: {
+            type: 'custom',
+            custom: 'Je comprends que ce rapport est un contenu numérique fourni immédiatement et je renonce à mon droit de rétractation de 14 jours (Art. L221-28 Code conso.)',
+          },
+          type: 'dropdown',
+          dropdown: {
+            options: [
+              {
+                label: 'Oui, je renonce à mon droit de rétractation',
+                value: 'oui',
+              },
+            ],
+          },
+        },
+      ],
     })
 
     return NextResponse.json({ url: session.url })
@@ -76,6 +94,24 @@ export async function POST(req: NextRequest) {
       success_url: `${baseUrl}/mon-espace?plan=tranquillite&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing`,
       metadata: { plan: 'tranquillite' },
+      custom_fields: [
+        {
+          key: 'retractation',
+          label: {
+            type: 'custom',
+            custom: 'Je comprends que ce service est un contenu numérique fourni immédiatement et je renonce à mon droit de rétractation de 14 jours (Art. L221-28 Code conso.)',
+          },
+          type: 'dropdown',
+          dropdown: {
+            options: [
+              {
+                label: 'Oui, je renonce à mon droit de rétractation',
+                value: 'oui',
+              },
+            ],
+          },
+        },
+      ],
     })
 
     return NextResponse.json({ url: session.url })
