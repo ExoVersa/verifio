@@ -128,9 +128,9 @@ function scoreColor(score: number) {
 }
 
 function recommColors(r: string) {
-  if (r === 'FIABLE') return { bg: '#f0fdf4', color: '#166534' }
-  if (r === 'RISQUE') return { bg: '#fef2f2', color: '#dc2626' }
-  return { bg: '#fffbeb', color: '#92400e' }
+  if (r === 'FIABLE') return { bg: '#EAF3DE', color: '#27500A' }
+  if (r === 'RISQUE') return { bg: '#FCEBEB', color: '#791F1F' }
+  return { bg: '#FAEEDA', color: '#854F0B' } // VIGILANCE par défaut
 }
 
 function RapportPDF({
@@ -229,9 +229,9 @@ function RapportPDF({
               </View>
             )}
 
-            <View style={[styles.recommBadge, { backgroundColor: recommColors(synthese.recommandation).bg }]}>
-              <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: recommColors(synthese.recommandation).color }}>
-                {synthese.recommandation}
+            <View style={[styles.recommBadge, { backgroundColor: recommColors(synthese.recommandation ?? synthese.verdict ?? 'VIGILANCE').bg }]}>
+              <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: recommColors(synthese.recommandation ?? synthese.verdict ?? 'VIGILANCE').color }}>
+                {synthese.recommandation ?? synthese.verdict}
               </Text>
             </View>
             <Text style={styles.recommText}>{synthese.recommandation_texte}</Text>
