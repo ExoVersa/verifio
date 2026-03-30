@@ -12,14 +12,6 @@ function estimatePdfPages(pdfBytes: Buffer): number {
   return matches ? matches.length : 0
 }
 
-function getIpAddress(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-  )
-}
-
 function parseJson(raw: string): any {
   const clean = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
   return JSON.parse(clean)
@@ -47,7 +39,13 @@ export async function POST(req: NextRequest) {
     } catch { /* auth optionnelle */ }
   }
 
-  const ipAddress = getIpAddress(req)
+  // Connexion obligatoire
+  if (!user) {
+    return NextResponse.json(
+      { error: 'non_connecte', message: 'Connexion requise pour analyser un devis.' },
+      { status: 401 }
+    )
+  }
 
   // ── 3. Valider le fichier ─────────────────────────────────────────────────
   const body = await req.json()
@@ -130,18 +128,11 @@ export async function POST(req: NextRequest) {
     debutMois.setDate(1)
     debutMois.setHours(0, 0, 0, 0)
 
-    let quotaQuery = supabaseAdmin
+    const { count } = await supabaseAdmin
       .from('analyses_devis')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
       .gte('created_at', debutMois.toISOString())
-
-    if (user) {
-      quotaQuery = quotaQuery.eq('user_id', user.id)
-    } else {
-      quotaQuery = quotaQuery.eq('ip_address', ipAddress)
-    }
-
-    const { count } = await quotaQuery
 
     if ((count ?? 0) === 0) {
       analyseGratuite = true
@@ -149,7 +140,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         error: 'quota_depasse',
         siret: siretExtrait,
-        message: 'Vous avez utilisé votre analyse gratuite ce mois-ci.',
+        message: 'Quota mensuel atteint. Revenez le 1er du mois.',
       }, { status: 429 })
     }
   }
@@ -261,8 +252,7 @@ Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
   // ── 7. Logger l'analyse ──────────────────────────────────────────────────
   try {
     const { error: insertError } = await supabaseAdmin.from('analyses_devis').insert({
-      user_id: user?.id || null,
-      ip_address: ipAddress || null,
+      user_id: user.id,
       siret_artisan: siretFinal || null,
       pages_pdf: pagesCount || null,
       taille_pdf_bytes: fileBytes.length || null,

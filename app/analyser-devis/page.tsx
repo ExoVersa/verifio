@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 import {
   Upload, CheckCircle, XCircle, AlertTriangle, ArrowLeft,
   FileText, FileSearch, Scale, BarChart2, Sparkles, Shield,
@@ -154,6 +155,10 @@ function AnalyserDevisInner() {
   const nomArtisan = searchParams.get('nom') ?? ''
   const sessionId = searchParams.get('session_id') ?? ''
 
+  const [user, setUser] = useState<User | null>(null)
+  const [loadingUser, setLoadingUser] = useState(true)
+  const [quotaRestant, setQuotaRestant] = useState<boolean | null>(null)
+
   const [file, setFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -164,6 +169,26 @@ function AnalyserDevisInner() {
   const [quotaDepasse, setQuotaDepasse] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      setLoadingUser(false)
+      if (user) checkQuota(user.id)
+    })
+  }, [])
+
+  async function checkQuota(userId: string) {
+    const debutMois = new Date()
+    debutMois.setDate(1)
+    debutMois.setHours(0, 0, 0, 0)
+    const { count } = await supabase
+      .from('analyses_devis')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', debutMois.toISOString())
+    setQuotaRestant((count ?? 0) === 0)
+  }
 
   // Animer les étapes de chargement
   useEffect(() => {
@@ -246,6 +271,79 @@ function AnalyserDevisInner() {
     padding: 24,
   }
 
+  if (loadingUser) {
+    return (
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+        <SiteHeader />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 58px)' }}>
+          <div className="spin" style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
+        </div>
+      </main>
+    )
+  }
+
+  if (!user) {
+    return (
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+        <SiteHeader />
+        <div style={{ maxWidth: 480, margin: '4rem auto', textAlign: 'center', padding: '0 1rem' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: '0.75rem', color: 'var(--color-text)' }}>
+            Connexion requise
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
+            L&apos;analyse de devis est réservée aux comptes connectés.<br/>
+            1 analyse gratuite par mois, illimitée avec le Pack Sérénité.
+          </p>
+          <a href="/auth?redirect=/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--color-accent)', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
+            Se connecter pour analyser mon devis →
+          </a>
+          <p style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: '1rem' }}>
+            Pas encore de compte ?{' '}
+            <a href="/auth?mode=signup&redirect=/analyser-devis" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+              Créer un compte gratuit
+            </a>
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  if (user && quotaRestant === false && !result) {
+    return (
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+        <SiteHeader />
+        <div style={{ maxWidth: 480, margin: '4rem auto', textAlign: 'center', padding: '0 1rem' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: '0.75rem', color: 'var(--color-text)' }}>
+            Quota mensuel atteint
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
+            Vous avez déjà utilisé votre analyse gratuite ce mois-ci.<br/>
+            Revenez le 1er du mois prochain, ou débloquez l&apos;analyse illimitée avec le Pack Sérénité.
+          </p>
+          <a href="/recherche" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1B4332', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
+            Obtenir le Pack Sérénité — 4,90 € →
+          </a>
+          <p style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: '1rem' }}>
+            Le Pack Sérénité inclut l&apos;analyse illimitée pour l&apos;artisan vérifié.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
       <SiteHeader />
@@ -292,6 +390,27 @@ function AnalyserDevisInner() {
         {/* Formulaire upload */}
         {!quotaDepasse && !result && (
           <form onSubmit={handleAnalyse}>
+            {/* Bandeau quota disponible */}
+            {user && quotaRestant === true && (
+              <div style={{
+                background: '#EAF3DE',
+                border: '0.5px solid #C0DD97',
+                borderRadius: '10px',
+                padding: '10px 16px',
+                fontSize: 13,
+                color: '#27500A',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: '1.5rem',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="#3B6D11" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                1 analyse gratuite disponible ce mois-ci
+              </div>
+            )}
             {/* Zone drag & drop */}
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
