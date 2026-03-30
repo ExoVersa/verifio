@@ -3,14 +3,13 @@
 import { useState, useEffect, useRef, use, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  ArrowLeft, AlertCircle, CheckCircle2, Clock, Plus, Calendar,
-  MapPin, ExternalLink, MessageSquare, Phone, Wrench, FileText,
-  Camera, Trash2, Download, Upload, Eye, X, CreditCard, ChevronDown,
-  HardHat, ClipboardCheck,
+  ArrowLeft, AlertCircle, Plus,
+  MapPin, ExternalLink, FileText,
+  Camera, Trash2, Download, Upload, X, CreditCard, ChevronDown,
+  ClipboardCheck, Pencil, Image as ImageIcon, Check,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import GuideChantier from '@/components/GuideChantier'
-import TimelinePhases from '@/components/TimelinePhases'
 import { supabase } from '@/lib/supabase'
 import {
   type Chantier, type ChantierPaiement, type ChantierEvenement,
@@ -18,6 +17,7 @@ import {
   type EvenementType, type PaiementType, type PhotoPhase, type DocumentType,
   type ChantierPhase, type PhaseNom,
   STATUT_LABELS, STATUT_COLORS, EVENEMENT_ICONS, PAIEMENT_LABELS, DOCUMENT_LABELS,
+  PHASE_LABELS, PHASES_ORDER,
   totalPaye, dateProgress, daysUntil, formatEur,
 } from '@/types/chantier'
 
@@ -721,6 +721,134 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
   )
 }
 
+// ─── ADD PAIEMENT MODAL ──────────────────────────────────────────────────────
+function AddPaiementModal({
+  chantierId, onClose, onSaved,
+}: { chantierId: string; onClose: () => void; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    montant: '', date_paiement: new Date().toISOString().slice(0, 10),
+    type: 'acompte' as PaiementType, description: '',
+  })
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function save() {
+    if (!form.montant || parseFloat(form.montant) <= 0) return
+    setSaving(true)
+    await supabase.from('chantier_paiements').insert({
+      chantier_id: chantierId, montant: parseFloat(form.montant),
+      date_paiement: form.date_paiement, type: form.type,
+      description: form.description.trim() || null,
+    })
+    await supabase.from('chantier_evenements').insert({
+      chantier_id: chantierId,
+      titre: `${PAIEMENT_LABELS[form.type]} de ${formatEur(parseFloat(form.montant))}`,
+      description: form.description.trim() || null,
+      type: 'note', date_evenement: new Date(form.date_paiement).toISOString(),
+    })
+    setSaving(false)
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <Modal title="Ajouter un paiement" onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <label style={lbl}>Type</label>
+          <select style={inp} value={form.type} onChange={e => set('type', e.target.value)}>
+            {(Object.keys(PAIEMENT_LABELS) as PaiementType[]).map(t => (
+              <option key={t} value={t}>{PAIEMENT_LABELS[t]}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={lbl}>Montant (€) *</label>
+            <input style={inp} type="number" placeholder="0" min="0" step="0.01" value={form.montant} onChange={e => set('montant', e.target.value)} />
+          </div>
+          <div>
+            <label style={lbl}>Date</label>
+            <input style={inp} type="date" value={form.date_paiement} onChange={e => set('date_paiement', e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label style={lbl}>Description</label>
+          <input style={inp} type="text" placeholder="Ex : Virement du 12 mars" value={form.description} onChange={e => set('description', e.target.value)} />
+        </div>
+        <button
+          onClick={save} disabled={saving || !form.montant}
+          style={{ padding: '12px', background: saving || !form.montant ? 'var(--color-muted)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+        >
+          {saving ? 'Enregistrement…' : 'Enregistrer le paiement'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── EDIT PHASE MODAL ─────────────────────────────────────────────────────────
+function EditPhaseModal({
+  phase, onClose, onSaved,
+}: { phase: ChantierPhase; onClose: () => void; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    statut: phase.statut,
+    date_debut_prevue: phase.date_debut_prevue || '',
+    date_fin_prevue: phase.date_fin_prevue || '',
+    budget: phase.budget !== null ? String(phase.budget) : '',
+  })
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function save() {
+    setSaving(true)
+    await supabase.from('chantier_phases').update({
+      statut: form.statut,
+      date_debut_prevue: form.date_debut_prevue || null,
+      date_fin_prevue: form.date_fin_prevue || null,
+      budget: form.budget ? parseFloat(form.budget) : null,
+    }).eq('id', phase.id)
+    setSaving(false)
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <Modal title={`Modifier — ${PHASE_LABELS[phase.nom]}`} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <label style={lbl}>Statut</label>
+          <select style={inp} value={form.statut} onChange={e => set('statut', e.target.value)}>
+            <option value="en_attente">En attente</option>
+            <option value="en_cours">En cours</option>
+            <option value="terminee">Terminée</option>
+          </select>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={lbl}>Début prévu</label>
+            <input style={inp} type="date" value={form.date_debut_prevue} onChange={e => set('date_debut_prevue', e.target.value)} />
+          </div>
+          <div>
+            <label style={lbl}>Fin prévue</label>
+            <input style={inp} type="date" value={form.date_fin_prevue} onChange={e => set('date_fin_prevue', e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label style={lbl}>Budget (€)</label>
+          <input style={inp} type="number" placeholder="0" min="0" step="0.01" value={form.budget} onChange={e => set('budget', e.target.value)} />
+        </div>
+        <button
+          onClick={save} disabled={saving}
+          style={{ padding: '12px', background: saving ? 'var(--color-muted)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+        >
+          {saving ? 'Enregistrement…' : 'Enregistrer'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -734,11 +862,10 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [documents, setDocuments] = useState<ChantierDocument[]>([])
   const [phases, setPhases] = useState<ChantierPhase[]>([])
 
-  const validTabs = ['journal', 'paiements', 'photos', 'documents', 'checklist'] as const
+  const validTabs = ['chantier', 'checklist'] as const
   type TabKey = typeof validTabs[number]
   const tabParam = searchParams.get('tab') as TabKey | null
-  const [tab, setTabState] = useState<TabKey>(validTabs.includes(tabParam as TabKey) ? (tabParam as TabKey) : 'journal')
-
+  const [tab, setTabState] = useState<TabKey>(validTabs.includes(tabParam as TabKey) ? (tabParam as TabKey) : 'chantier')
   const setTab = (t: TabKey) => {
     setTabState(t)
     router.replace(`/chantier/${id}?tab=${t}`, { scroll: false })
@@ -746,6 +873,30 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
   const [loading, setLoading] = useState(true)
   const [savingStatut, setSavingStatut] = useState(false)
+
+  // New states
+  const [phaseOuverte, setPhaseOuverte] = useState<string | null>(null)
+  const [showModalPaiement, setShowModalPaiement] = useState(false)
+  const [editPhase, setEditPhase] = useState<ChantierPhase | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [currentPhasePhoto, setCurrentPhasePhoto] = useState<PhotoPhase>('pendant')
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const docInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    if (phases.length > 0 && phaseOuverte === null) {
+      const enCours = phases.find(p => p.statut === 'en_cours')
+      setPhaseOuverte(enCours?.nom || null)
+    }
+  }, [phases])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -767,7 +918,6 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     setChantier(c)
     setEvenements(ev || [])
     setPaiements(pa || [])
-    // Résoudre les URLs signées pour les buckets privés
     const [photosResolved, docsResolved] = await Promise.all([
       resolveSignedUrls('chantier-photos', ph || []),
       resolveSignedUrls('chantier-documents', do_ || []),
@@ -775,37 +925,26 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     setPhotos(photosResolved)
     setDocuments(docsResolved)
 
-    // Charger les phases
     const { data: phasesData } = await supabase
-      .from('chantier_phases')
-      .select('*')
-      .eq('chantier_id', id)
-      .order('created_at')
+      .from('chantier_phases').select('*').eq('chantier_id', id).order('created_at')
 
     if (!phasesData || phasesData.length === 0) {
-      // Chantier créé avant la feature — auto-créer les 4 phases
       const { data: created } = await supabase
         .from('chantier_phases')
         .insert((['preparation', 'travaux', 'finitions', 'reception'] as PhaseNom[]).map(nom => ({
-          chantier_id: id,
-          nom,
-          statut: 'en_attente',
+          chantier_id: id, nom, statut: 'en_attente',
         })))
         .select()
       setPhases(created || [])
     } else {
       setPhases(phasesData)
     }
-
     setLoading(false)
   }
 
   const reloadPhases = useCallback(async () => {
     const { data } = await supabase
-      .from('chantier_phases')
-      .select('*')
-      .eq('chantier_id', id)
-      .order('created_at')
+      .from('chantier_phases').select('*').eq('chantier_id', id).order('created_at')
     setPhases(data || [])
   }, [id])
 
@@ -821,8 +960,37 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     setSavingStatut(false)
   }
 
-  function handleExport() {
-    window.print()
+  async function handlePhasePhotoUpload(files: FileList | null, phasePhoto: PhotoPhase) {
+    if (!files || files.length === 0 || !chantier) return
+    setUploadingPhoto(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploadingPhoto(false); return }
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('chantier-photos').upload(path, file)
+      if (!upErr) {
+        await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: path, phase: phasePhoto })
+      }
+    }
+    setUploadingPhoto(false)
+    loadAll()
+  }
+
+  async function handlePhaseDocUpload(file: File | null) {
+    if (!file || !chantier) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const ext = file.name.split('.').pop()
+    const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
+    if (!upErr) {
+      await supabase.from('chantier_documents').insert({
+        chantier_id: chantier.id, nom: file.name,
+        type: 'autre' as DocumentType, url: path, taille: file.size,
+      })
+    }
+    loadAll()
   }
 
   if (loading) {
@@ -839,19 +1007,19 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   if (!chantier) return null
 
   const sc = STATUT_COLORS[chantier.statut]
-  const prog = dateProgress(chantier.date_debut, chantier.date_fin_prevue)
   const jours = daysUntil(chantier.date_fin_prevue)
   const retard = jours !== null && jours < 0 && chantier.statut === 'en_cours'
   const paye = totalPaye(paiements)
   const payePct = chantier.montant_total && chantier.montant_total > 0 ? Math.min(100, Math.round(paye / chantier.montant_total * 100)) : 0
 
-  const TABS: { key: TabKey; Icon: React.ComponentType<{ size: number; strokeWidth?: number }>; label: string; count: number }[] = [
-    { key: 'journal', Icon: FileText, label: 'Journal', count: evenements.length },
-    { key: 'paiements', Icon: CreditCard, label: 'Paiements', count: paiements.length },
-    { key: 'photos', Icon: Camera, label: 'Photos', count: photos.length },
-    { key: 'documents', Icon: Download, label: 'Documents', count: documents.length },
-    { key: 'checklist', Icon: ClipboardCheck, label: 'Checklist', count: 0 },
-  ]
+  const PHASE_PHOTO_MAP: Record<PhaseNom, PhotoPhase> = {
+    preparation: 'avant', travaux: 'pendant', finitions: 'pendant', reception: 'apres',
+  }
+
+  const mLbl: React.CSSProperties = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-muted)', marginBottom: 6, display: 'block' }
+  const mVal: React.CSSProperties = { fontSize: 20, fontWeight: 500, color: 'var(--color-text)', lineHeight: 1, display: 'block', marginBottom: 4 }
+  const mSub: React.CSSProperties = { fontSize: 11, color: 'var(--color-muted)', display: 'block' }
+  const sectionLbl: React.CSSProperties = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-muted)', fontWeight: 600 }
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -869,7 +1037,6 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
             Mes chantiers
           </button>
 
-          {/* Title row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
@@ -882,7 +1049,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                   </a>
                 )}
               </div>
-              <p style={{ margin: '0 0 6px', fontSize: '13px', color: 'var(--color-muted)' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--color-muted)' }}>
                 {chantier.type_travaux}
                 {chantier.adresse_chantier && <> · <MapPin size={11} style={{ display: 'inline', verticalAlign: 'middle' }} /> {chantier.adresse_chantier}</>}
               </p>
@@ -890,96 +1057,301 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                 <p style={{ margin: 0, fontSize: '12px', color: retard ? '#dc2626' : 'var(--color-muted)', fontWeight: retard ? 600 : 400 }}>
                   {chantier.date_debut && <>Début : {new Date(chantier.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</>}
                   {chantier.date_fin_prevue && <> · Fin prévue : {new Date(chantier.date_fin_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</>}
-                  {retard && <> · <span style={{ color: '#dc2626' }}>⚠ {Math.abs(jours!)} jour{Math.abs(jours!) > 1 ? 's' : ''} de retard</span></>}
+                  {retard && <> · <span style={{ color: '#dc2626' }}>{Math.abs(jours!)} jour{Math.abs(jours!) > 1 ? 's' : ''} de retard</span></>}
                 </p>
               )}
             </div>
-
-            {/* Statut + actions */}
             <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap', alignItems: 'flex-start' }}>
               <select
-                value={chantier.statut}
-                onChange={e => updateStatut(e.target.value)}
-                disabled={savingStatut}
+                value={chantier.statut} onChange={e => updateStatut(e.target.value)} disabled={savingStatut}
                 style={{ padding: '7px 12px', borderRadius: '20px', border: `1.5px solid ${sc.border}`, background: sc.bg, color: sc.color, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)', appearance: 'none', paddingRight: '28px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(sc.color)}' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
               >
                 {(Object.entries(STATUT_LABELS) as [string, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               {chantier.statut === 'litige' && (
                 <a href="/assistant-juridique" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '20px', color: '#dc2626', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                  🚨 Assistant juridique
+                  Assistant juridique
                 </a>
               )}
-              <button onClick={handleExport} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
                 <Download size={12} />
                 Exporter PDF
               </button>
             </div>
           </div>
 
-          {/* Progress bars */}
-          {chantier.date_debut && chantier.date_fin_prevue && (
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--color-muted)', fontWeight: 500 }}>Avancement temporel</span>
-                <span style={{ fontSize: '11px', color: retard ? '#dc2626' : 'var(--color-muted)', fontWeight: 600 }}>{prog}%</span>
-              </div>
-              <div style={{ height: '6px', borderRadius: '3px', background: 'var(--color-border)' }}>
-                <div style={{ height: '100%', borderRadius: '3px', width: `${prog}%`, background: retard ? '#dc2626' : 'var(--color-accent)' }} />
-              </div>
-            </div>
-          )}
-          {chantier.montant_total && (
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--color-muted)', fontWeight: 500 }}>Paiements</span>
-                <span style={{ fontSize: '11px', color: 'var(--color-safe)', fontWeight: 600 }}>
-                  {formatEur(paye)} / {formatEur(chantier.montant_total)} ({payePct}%)
-                </span>
-              </div>
-              <div style={{ height: '6px', borderRadius: '3px', background: 'var(--color-border)' }}>
-                <div style={{ height: '100%', borderRadius: '3px', width: `${payePct}%`, background: 'var(--color-safe)' }} />
-              </div>
-            </div>
-          )}
-
-          {/* Tab nav */}
-          <div style={{ display: 'flex', gap: '2px', marginBottom: '-1px' }}>
-            {TABS.map(t => (
+          {/* Tab nav — 2 onglets */}
+          <div style={{ display: 'flex', borderBottom: '0.5px solid var(--color-border)', marginBottom: '-1px' }}>
+            {(['chantier', 'checklist'] as TabKey[]).map(t => (
               <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid var(--color-accent)' : '2px solid transparent', cursor: 'pointer', fontSize: '13px', fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
+                key={t}
+                onClick={() => setTab(t)}
+                style={{ padding: '10px 16px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1B4332' : '2px solid transparent', cursor: 'pointer', fontSize: 13, fontWeight: tab === t ? 500 : 400, color: tab === t ? 'var(--color-text)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}
               >
-                <t.Icon size={14} strokeWidth={1.5} />
-                {t.label}{t.count > 0 && <span style={{ marginLeft: '2px', fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: tab === t.key ? 'var(--color-accent-light)' : 'var(--color-neutral-bg)', color: tab === t.key ? 'var(--color-accent)' : 'var(--color-muted)' }}>{t.count}</span>}
+                {t === 'chantier' ? 'Chantier' : 'Checklist'}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── TAB CONTENT ── */}
+      {/* ── CONTENU ── */}
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 24px 80px' }}>
-        {tab === 'journal' && (
+
+        {/* MÉTRIQUES */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))', gap: '10px', marginBottom: '1.5rem' }}>
+          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+            <span style={mLbl}>Budget total</span>
+            <span style={mVal}>{chantier.montant_total ? formatEur(chantier.montant_total) : 'Non défini'}</span>
+            <span style={mSub}>montant contractuel</span>
+          </div>
+          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+            <span style={mLbl}>Payé</span>
+            <span style={{ ...mVal, color: '#27500A' }}>{formatEur(paye)}</span>
+            <span style={mSub}>{payePct}% du total</span>
+          </div>
+          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+            <span style={mLbl}>Restant</span>
+            <span style={mVal}>{chantier.montant_total ? formatEur(Math.max(0, chantier.montant_total - paye)) : '—'}</span>
+            <span style={mSub}>à verser</span>
+          </div>
+          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+            <span style={mLbl}>Fin prévue</span>
+            <span style={mVal}>
+              {chantier.date_fin_prevue
+                ? new Date(chantier.date_fin_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                : 'Non définie'}
+            </span>
+            <span style={mSub}>
+              {jours === null ? '' : jours > 0 ? `dans ${jours} jour${jours > 1 ? 's' : ''}` : jours === 0 ? "aujourd'hui" : 'dépassée'}
+            </span>
+          </div>
+        </div>
+
+        {/* TAB CHANTIER */}
+        {tab === 'chantier' && (
           <>
-            {phases.length > 0 && (
-              <TimelinePhases
-                chantier={chantier}
-                phases={phases}
-                paiements={paiements}
-                photos={photos}
-                onPhasesChange={reloadPhases}
-              />
-            )}
+            {/* PHASES ACCORDÉON */}
+            {PHASES_ORDER.map((phaseName, idx) => {
+              const phase = phases.find(p => p.nom === phaseName)
+              if (!phase) return null
+              const isOpen = phaseOuverte === phaseName
+              const photoPhase = PHASE_PHOTO_MAP[phaseName]
+              const phasePhotos = photos.filter(p => p.phase === photoPhase)
+              const phaseDocs = phaseName === 'preparation'
+                ? documents.filter(d => d.type === 'devis' || d.type === 'contrat')
+                : phaseName === 'reception'
+                ? documents.filter(d => d.type === 'pv_reception' || d.type === 'facture' || d.type === 'decennale')
+                : documents
+              const phaseProgress = dateProgress(phase.date_debut_prevue || undefined, phase.date_fin_prevue || undefined)
+
+              const borderColor = phase.statut === 'terminee'
+                ? '0.5px solid #3B6D11'
+                : phase.statut === 'en_cours'
+                ? '0.5px solid #185FA5'
+                : '0.5px solid var(--color-border)'
+
+              const circleStyle: React.CSSProperties = {
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: phase.statut === 'terminee' ? '#EAF3DE' : phase.statut === 'en_cours' ? '#E6F1FB' : 'var(--color-bg)',
+                fontSize: 13, fontWeight: 600,
+                color: phase.statut === 'terminee' ? '#27500A' : phase.statut === 'en_cours' ? '#0C447C' : 'var(--color-muted)',
+              }
+
+              const badgeStyle: React.CSSProperties = phase.statut === 'terminee'
+                ? { background: '#EAF3DE', color: '#27500A', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }
+                : phase.statut === 'en_cours'
+                ? { background: '#E6F1FB', color: '#0C447C', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }
+                : { background: 'var(--color-bg)', color: 'var(--color-muted)', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: '0.5px solid var(--color-border)' }
+
+              const badgeLabel = phase.statut === 'terminee' ? 'Terminée' : phase.statut === 'en_cours' ? 'En cours' : 'En attente'
+
+              return (
+                <div key={phaseName} style={{ borderRadius: '14px', border: borderColor, overflow: 'hidden', background: 'var(--color-surface)', marginBottom: '10px' }}>
+                  {/* Header */}
+                  <div
+                    onClick={() => setPhaseOuverte(isOpen ? null : phaseName)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}
+                  >
+                    <div style={circleStyle}>
+                      {phase.statut === 'terminee'
+                        ? <Check size={14} strokeWidth={1.5} />
+                        : idx + 1
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 500 }}>{PHASE_LABELS[phaseName]}</p>
+                      {(phase.date_debut_prevue || phase.date_fin_prevue) && (
+                        <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
+                          {phase.date_debut_prevue && new Date(phase.date_debut_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          {phase.date_debut_prevue && phase.date_fin_prevue && ' → '}
+                          {phase.date_fin_prevue && new Date(phase.date_fin_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={badgeStyle}>{badgeLabel}</span>
+                      <ChevronDown size={16} strokeWidth={1.5} style={{ color: 'var(--color-muted)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  {isOpen && (
+                    <div style={{ borderTop: '0.5px solid var(--color-border)' }}>
+                      {/* Métriques 3 colonnes */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,minmax(0,1fr))', gap: '1px', background: 'var(--color-border)' }}>
+                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                          <span style={{ ...mLbl, marginBottom: 4 }}>Dates prévues</span>
+                          <span style={{ fontSize: 13, color: 'var(--color-text)' }}>
+                            {phase.date_debut_prevue || phase.date_fin_prevue
+                              ? `${phase.date_debut_prevue ? new Date(phase.date_debut_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'} → ${phase.date_fin_prevue ? new Date(phase.date_fin_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}`
+                              : 'Non planifiée'}
+                          </span>
+                        </div>
+                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                          <span style={{ ...mLbl, marginBottom: 4 }}>Budget phase</span>
+                          <span style={{ fontSize: 13, color: 'var(--color-text)' }}>
+                            {phase.budget !== null ? formatEur(phase.budget) : 'Non défini'}
+                          </span>
+                          {chantier.montant_total && phase.budget !== null && (
+                            <span style={{ ...mSub, marginTop: 2 }}>sur {formatEur(chantier.montant_total)} total</span>
+                          )}
+                        </div>
+                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                          <span style={{ ...mLbl, marginBottom: 4 }}>Avancement</span>
+                          <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{phaseProgress}%</span>
+                          <div style={{ marginTop: 6, height: 5, borderRadius: 3, background: 'var(--color-border)' }}>
+                            <div style={{ height: '100%', borderRadius: 3, width: `${phaseProgress}%`, background: '#185FA5' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Paiements */}
+                      <div style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={sectionLbl}>Paiements</span>
+                          <button
+                            onClick={() => setShowModalPaiement(true)}
+                            style={{ fontSize: 11, color: 'var(--color-accent)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-body)', fontWeight: 600, padding: 0 }}
+                          >
+                            + Ajouter
+                          </button>
+                        </div>
+                        {paiements.length === 0 ? (
+                          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucun paiement pour cette phase.</p>
+                        ) : paiements.map(p => (
+                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--color-bg)', borderRadius: '8px', marginBottom: '6px' }}>
+                            <div>
+                              <p style={{ margin: '0 0 2px', fontSize: 13 }}>{p.description || PAIEMENT_LABELS[p.type]}</p>
+                              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>{new Date(p.date_paiement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            </div>
+                            <span style={{ fontSize: 14, fontWeight: 500, color: '#27500A' }}>+{formatEur(p.montant)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Photos */}
+                      <div style={{ padding: '0 16px 14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={sectionLbl}>Photos</span>
+                          <button
+                            onClick={() => { setCurrentPhasePhoto(photoPhase); photoInputRef.current?.click() }}
+                            style={{ fontSize: 11, color: 'var(--color-accent)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-body)', fontWeight: 600, padding: 0 }}
+                          >
+                            {uploadingPhoto ? 'Upload…' : '+ Ajouter'}
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                          {phasePhotos.length === 0 && (
+                            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucune photo.</p>
+                          )}
+                          {phasePhotos.slice(0, 4).map(ph => (
+                            ph.url
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img key={ph.id} src={ph.url} alt={ph.legende || ''} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
+                              : <div key={ph.id} style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={18} strokeWidth={1.5} color="var(--color-muted)" /></div>
+                          ))}
+                          {phasePhotos.length > 4 && (
+                            <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>+{phasePhotos.length - 4} autres</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Documents */}
+                      <div style={{ padding: '0 16px 14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={sectionLbl}>Documents</span>
+                          <button
+                            onClick={() => docInputRef.current?.click()}
+                            style={{ fontSize: 11, color: 'var(--color-accent)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-body)', fontWeight: 600, padding: 0 }}
+                          >
+                            + Ajouter
+                          </button>
+                        </div>
+                        {phaseDocs.length === 0 ? (
+                          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucun document.</p>
+                        ) : phaseDocs.map(doc => (
+                          <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'var(--color-bg)', borderRadius: '8px', marginBottom: '5px' }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <FileText size={14} strokeWidth={1.5} color="#185FA5" />
+                            </div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <p style={{ margin: '0 0 1px', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.nom}</p>
+                              <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>{DOCUMENT_LABELS[doc.type]}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Modifier la phase */}
+                      <button
+                        onClick={() => setEditPhase(phase)}
+                        style={{ margin: '0 16px 14px', padding: '8px', border: '0.5px solid var(--color-border)', borderRadius: '8px', fontSize: 12, color: 'var(--color-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', background: 'transparent', width: 'calc(100% - 32px)', fontFamily: 'var(--font-body)' }}
+                      >
+                        <Pencil size={12} strokeWidth={1.5} />
+                        Modifier les dates et le budget
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* JOURNAL */}
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', marginBottom: 10, marginTop: 24 }}>Journal</p>
             <JournalTab chantier={chantier} evenements={evenements} paiements={paiements} onRefresh={loadAll} />
           </>
         )}
-        {tab === 'paiements' && <PaiementsTab chantier={chantier} paiements={paiements} onRefresh={loadAll} />}
-        {tab === 'photos' && <PhotosTab chantier={chantier} photos={photos} onRefresh={loadAll} />}
-        {tab === 'documents' && <DocumentsTab chantier={chantier} documents={documents} onRefresh={loadAll} />}
+
         {tab === 'checklist' && <GuideChantier initialArtisan={chantier.nom_artisan} />}
       </div>
+
+      {/* Inputs fichiers masqués */}
+      <input
+        ref={photoInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+        onChange={e => { handlePhasePhotoUpload(e.target.files, currentPhasePhoto); e.target.value = '' }}
+      />
+      <input
+        ref={docInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }}
+        onChange={e => { handlePhaseDocUpload(e.target.files?.[0] || null); e.target.value = '' }}
+      />
+
+      {/* Modales */}
+      {showModalPaiement && (
+        <AddPaiementModal
+          chantierId={id}
+          onClose={() => setShowModalPaiement(false)}
+          onSaved={loadAll}
+        />
+      )}
+      {editPhase && (
+        <EditPhaseModal
+          phase={editPhase}
+          onClose={() => setEditPhase(null)}
+          onSaved={reloadPhases}
+        />
+      )}
     </main>
   )
 }
