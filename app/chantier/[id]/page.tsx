@@ -721,6 +721,15 @@ function DocumentsTab({ chantier, documents, onRefresh }: { chantier: Chantier; 
   )
 }
 
+// ─── TYPES ───────────────────────────────────────────────────────────────────
+interface AnalyseDevis {
+  id: string
+  created_at: string
+  nom_fichier: string | null
+  siret_artisan: string | null
+  resultat_json: Record<string, unknown> | null
+}
+
 // ─── ADD PAIEMENT MODAL ──────────────────────────────────────────────────────
 function AddPaiementModal({
   chantierId, onClose, onSaved,
@@ -874,6 +883,8 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [loading, setLoading] = useState(true)
   const [savingStatut, setSavingStatut] = useState(false)
 
+  const [analyses, setAnalyses] = useState<AnalyseDevis[]>([])
+
   // New states
   const [phaseOuverte, setPhaseOuverte] = useState<string | null>(null)
   const [showModalPaiement, setShowModalPaiement] = useState(false)
@@ -939,6 +950,21 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     } else {
       setPhases(phasesData)
     }
+
+    // Analyses de devis pour cet artisan
+    if (c.siret) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (currentUser) {
+        const { data: analysesData } = await supabase
+          .from('analyses_devis')
+          .select('id, created_at, nom_fichier, resultat_json, siret_artisan')
+          .eq('siret_artisan', c.siret)
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false })
+        setAnalyses(analysesData || [])
+      }
+    }
+
     setLoading(false)
   }
 
@@ -1131,6 +1157,50 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
         {/* TAB CHANTIER */}
         {tab === 'chantier' && (
           <>
+            {/* DEVIS ANALYSÉS */}
+            {analyses.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  Devis analysés pour cet artisan
+                </div>
+                {analyses.map(analyse => {
+                  const score = analyse.resultat_json?.score_global as number | undefined
+                  const scoreColor = score !== undefined
+                    ? score >= 7 ? '#27500A' : score >= 4 ? '#BA7517' : '#A32D2D'
+                    : 'var(--color-muted)'
+                  return (
+                    <div key={analyse.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--color-surface)', border: '0.5px solid var(--color-border)', borderRadius: '10px', marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>
+                          {analyse.nom_fichier || 'Devis sans nom'}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 2 }}>
+                          Analysé le {new Date(analyse.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {score !== undefined && (
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 20, fontWeight: 500, color: scoreColor, lineHeight: 1 }}>{Math.round(score)}/10</div>
+                            <div style={{ fontSize: 10, color: 'var(--color-muted)' }}>score</div>
+                          </div>
+                        )}
+                        <a href="/mon-espace" style={{ fontSize: 12, color: 'var(--color-accent)', textDecoration: 'none' }}>
+                          Revoir →
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             {/* PHASES ACCORDÉON */}
             {PHASES_ORDER.map((phaseName, idx) => {
               const phase = phases.find(p => p.nom === phaseName)
@@ -1138,12 +1208,10 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
               const isOpen = phaseOuverte === phaseName
               const photoPhase = PHASE_PHOTO_MAP[phaseName]
               const phasePhotos = photos.filter(p => p.phase === photoPhase)
-              const phaseDocs = phaseName === 'preparation'
-                ? documents.filter(d => d.type === 'devis' || d.type === 'contrat')
-                : phaseName === 'reception'
-                ? documents.filter(d => d.type === 'pv_reception' || d.type === 'facture' || d.type === 'decennale')
-                : documents
-              const phaseProgress = dateProgress(phase.date_debut_prevue || undefined, phase.date_fin_prevue || undefined)
+              const docsPhase = documents // tous les documents, pas de filtre par phase
+              const avancement = (phase.date_debut_prevue && phase.date_fin_prevue)
+                ? dateProgress(phase.date_debut_prevue, phase.date_fin_prevue)
+                : null
 
               const borderColor = phase.statut === 'terminee'
                 ? '0.5px solid #3B6D11'
@@ -1220,10 +1288,16 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                         </div>
                         <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
                           <span style={{ ...mLbl, marginBottom: 4 }}>Avancement</span>
-                          <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{phaseProgress}%</span>
-                          <div style={{ marginTop: 6, height: 5, borderRadius: 3, background: 'var(--color-border)' }}>
-                            <div style={{ height: '100%', borderRadius: 3, width: `${phaseProgress}%`, background: '#185FA5' }} />
-                          </div>
+                          {avancement === null ? (
+                            <span style={{ fontSize: 13, color: 'var(--color-muted)' }}>—</span>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{avancement}%</span>
+                              <div style={{ marginTop: 6, height: 5, borderRadius: 3, background: 'var(--color-border)' }}>
+                                <div style={{ height: '100%', borderRadius: 3, width: `${avancement}%`, background: '#185FA5' }} />
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -1264,7 +1338,12 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                           {phasePhotos.length === 0 && (
-                            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucune photo.</p>
+                            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
+                              Aucune photo pour cette phase.
+                              {phaseName === 'preparation' && ' (photos "avant travaux")'}
+                              {(phaseName === 'travaux' || phaseName === 'finitions') && ' (photos "pendant travaux")'}
+                              {phaseName === 'reception' && ' (photos "après travaux")'}
+                            </p>
                           )}
                           {phasePhotos.slice(0, 4).map(ph => (
                             ph.url
@@ -1289,9 +1368,9 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                             + Ajouter
                           </button>
                         </div>
-                        {phaseDocs.length === 0 ? (
+                        {docsPhase.length === 0 ? (
                           <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Aucun document.</p>
-                        ) : phaseDocs.map(doc => (
+                        ) : docsPhase.map(doc => (
                           <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'var(--color-bg)', borderRadius: '8px', marginBottom: '5px' }}>
                             <div style={{ width: 28, height: 28, borderRadius: 6, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                               <FileText size={14} strokeWidth={1.5} color="#185FA5" />
