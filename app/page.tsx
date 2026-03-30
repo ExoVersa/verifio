@@ -197,15 +197,24 @@ function SectionEyebrow({ icon: Icon, text, tone = 'green' }: {
 
 function HeroSearch() {
   const [query, setQuery] = useState('')
+  const [ville, setVille] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchCandidate[]>([])
   const [empty, setEmpty] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const router = useRouter()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -234,7 +243,9 @@ function HeroSearch() {
       setLoading(true)
 
       try {
-        const res = await fetch(`/api/recherche?q=${encodeURIComponent(val.trim())}&per_page=6`, {
+        const params = new URLSearchParams({ q: val.trim(), per_page: '6' })
+        if (ville.trim()) params.set('departement', ville.trim())
+        const res = await fetch(`/api/recherche?${params.toString()}`, {
           signal: abortRef.current.signal,
         })
         const data = await res.json()
@@ -261,78 +272,117 @@ function HeroSearch() {
     search(val)
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault()
     if (!query.trim()) return
     setShowDropdown(false)
-    router.push(`/recherche?q=${encodeURIComponent(query.trim())}`)
+    const params = new URLSearchParams({ q: query.trim() })
+    if (ville.trim()) params.set('dept', ville.trim())
+    router.push(`/recherche?${params.toString()}`)
   }
 
   function handleChip(label: string) {
     setQuery(label)
-    inputRef.current?.focus()
-    search(label)
+    const params = new URLSearchParams({ q: label })
+    if (ville.trim()) params.set('dept', ville.trim())
+    router.push(`/recherche?${params.toString()}`)
   }
 
   return (
-    <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={wrapperRef} style={{ position: 'relative', width: '100%', maxWidth: 720, margin: '0 auto' }}>
       <form onSubmit={handleSubmit}>
         <div style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '10px 10px 10px 20px',
-          borderRadius: '20px',
-          background: 'rgba(255,255,255,0.92)',
-          border: '1px solid rgba(227,219,208,0.9)',
-          boxShadow: '0 18px 42px rgba(20,32,27,0.08)',
-          backdropFilter: 'blur(14px)',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          background: '#fff',
+          borderRadius: '16px',
+          border: '1.5px solid var(--color-border)',
+          overflow: 'visible',
+          position: 'relative',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
         }}>
-          <Search size={18} strokeWidth={1.8} color="#7a8983" style={{ flexShrink: 0 }} />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => handleChange(e.target.value)}
-            onFocus={() => results.length > 0 && setShowDropdown(true)}
-            placeholder="Nom de l'artisan, SIRET ou entreprise"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: 'none',
-              outline: 'none',
-              fontSize: '16px',
-              fontWeight: 500,
-              fontFamily: 'var(--font-body)',
-              color: '#14201b',
-              background: 'transparent',
-              padding: '8px 0',
-            }}
-          />
+          {/* Champ 1 — Nom ou SIRET */}
+          <div style={{ flex: 2, display: 'flex', alignItems: 'center', padding: '0 20px', minWidth: 0 }}>
+            <Search size={18} strokeWidth={1.5} color="var(--color-muted)" style={{ flexShrink: 0, marginRight: 10 }} />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => handleChange(e.target.value)}
+              onFocus={() => results.length > 0 && setShowDropdown(true)}
+              placeholder="Nom de l'artisan, SIRET, entreprise..."
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 16,
+                padding: '18px 0',
+                color: 'var(--color-text)',
+                fontFamily: 'var(--font-body)',
+                minWidth: 0,
+              }}
+            />
+          </div>
+
+          {/* Séparateur */}
+          <div style={{
+            width: isMobile ? '100%' : '1px',
+            height: isMobile ? '1px' : 28,
+            background: 'var(--color-border)',
+            flexShrink: 0,
+            margin: isMobile ? '0 20px' : '0',
+            alignSelf: 'center',
+          }} />
+
+          {/* Champ 2 — Ville ou département */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 16px', minWidth: 0 }}>
+            <MapPin size={16} strokeWidth={1.5} color="var(--color-muted)" style={{ flexShrink: 0, marginRight: 8 }} />
+            <input
+              type="text"
+              value={ville}
+              onChange={(e) => setVille(e.target.value)}
+              placeholder="Ville ou département"
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 16,
+                padding: '18px 0',
+                color: 'var(--color-text)',
+                fontFamily: 'var(--font-body)',
+                minWidth: 0,
+              }}
+            />
+          </div>
+
+          {/* Bouton */}
           <button
             type="submit"
             style={{
-              flexShrink: 0,
-              height: '48px',
-              borderRadius: '13px',
-              border: 'none',
-              padding: '0 20px',
-              background: 'linear-gradient(135deg, #153b2e 0%, #2c6a53 100%)',
+              background: 'var(--color-accent)',
               color: '#fff',
-              fontSize: '14px',
-              fontWeight: 700,
-              fontFamily: 'var(--font-body)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              fontSize: 15,
+              fontWeight: 500,
               cursor: 'pointer',
-              display: 'inline-flex',
+              margin: '6px',
+              flexShrink: 0,
+              display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 8px 20px rgba(21,59,46,0.18)',
-              whiteSpace: 'nowrap',
+              justifyContent: 'center',
+              gap: 6,
+              fontFamily: 'var(--font-body)',
+              width: isMobile ? 'calc(100% - 12px)' : 'auto',
             }}
           >
             {loading
               ? <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>⟳</span>
-              : <>Vérifier <ArrowRight size={15} strokeWidth={1.8} /></>
+              : <>Vérifier <ArrowRight size={15} strokeWidth={1.5} /></>
             }
           </button>
         </div>
@@ -344,7 +394,7 @@ function HeroSearch() {
           top: 'calc(100% + 12px)',
           left: 0,
           right: 0,
-          zIndex: 40,
+          zIndex: 100,
           background: 'rgba(255,255,255,0.96)',
           borderRadius: '24px',
           border: '1px solid rgba(233,226,215,0.9)',
