@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
           key: 'retractation',
           label: {
             type: 'custom',
-            custom: 'Je comprends que ce rapport est un contenu numérique fourni immédiatement et je renonce à mon droit de rétractation de 14 jours (Art. L221-28 Code conso.)',
+            custom: 'Je renonce à mon droit de rétractation',
           },
           type: 'dropdown',
           dropdown: {
