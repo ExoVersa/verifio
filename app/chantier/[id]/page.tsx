@@ -987,9 +987,9 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     setSavingStatut(false)
   }
 
-  async function handlePhasePhotoUpload(files: FileList | null, phasePhoto: PhotoPhase) {
-    console.log('handlePhasePhotoUpload called', { files: files?.length, phasePhoto, chantier: chantier?.id })
-    if (!files || files.length === 0) { console.log('no files'); return }
+  async function handlePhasePhotoUploadArray(filesArray: File[], phasePhoto: PhotoPhase) {
+    console.log('handlePhasePhotoUploadArray called', { count: filesArray.length, phasePhoto, chantier: chantier?.id })
+    if (!filesArray || filesArray.length === 0) { console.log('no files'); return }
     if (!chantier) { console.log('chantier is null'); return }
     setUploadingPhoto(true)
 
@@ -997,7 +997,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     console.log('user:', user?.id)
     if (!user) { setUploadingPhoto(false); return }
 
-    for (const file of Array.from(files)) {
+    for (const file of filesArray) {
       const ext = file.name.split('.').pop()
       const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       console.log('uploading to path:', path)
@@ -1473,11 +1473,19 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
       {/* Inputs fichiers masqués */}
       <input
         ref={photoInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
-        onChange={e => { handlePhasePhotoUpload(e.target.files, currentPhasePhoto); e.target.value = '' }}
+        onChange={e => {
+          const filesArray = Array.from(e.target.files ?? [])
+          e.target.value = ''
+          if (filesArray.length > 0) handlePhasePhotoUploadArray(filesArray, currentPhasePhoto)
+        }}
       />
       <input
         ref={docInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }}
-        onChange={e => { handlePhaseDocUpload(e.target.files?.[0] || null); e.target.value = '' }}
+        onChange={e => {
+          const file = e.target.files?.[0] ?? null
+          e.target.value = ''
+          if (file) handlePhaseDocUpload(file)
+        }}
       />
 
       {/* Modales */}
