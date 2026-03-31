@@ -61,7 +61,7 @@ const NAV_MENUS: NavMenu[] = [
     stat: { value: '3 500€', label: 'économisés en moyenne', tip: 'Grâce au simulateur de prix' },
     items: [
       { href: '/simulateur-prix', Icon: Calculator, label: 'Simulateur de prix', desc: 'Votre devis est-il au bon tarif ?' },
-      { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser & vérifier mon devis', desc: 'Prix du marché + conformité juridique en 1 clic', badge: 'Gratuit · 1/mois' },
+      { href: '/analyser-devis', Icon: FileSearch, label: 'Analyser & vérifier mon devis', desc: '5 analyses par mois par artisan vérifié', badge: 'Pack Sérénité' },
       { href: '/calculateur-aides', Icon: Euro, label: "Calculateur d'aides État", desc: "MaPrimeRénov', CEE et plus" },
     ],
   },

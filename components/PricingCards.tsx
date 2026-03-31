@@ -105,10 +105,8 @@ export default function PricingCards({ style }: PricingCardsProps) {
                 [true,  'Score de fiabilit\u00e9 0\u2013100'],
                 [true,  'Statut l\u00e9gal INSEE'],
                 [true,  'Certifications RGE ADEME'],
-                [true,  '1 analyse de devis / mois'],
                 [false, 'Rapport PDF complet'],
-                [false, 'Analyse devis illimit\u00e9e'],
-                [false, 'Surveillance 6 mois'],
+                [false, '[false, 'Analyse de devis (Pack requis)']              [false, 'Surveillance 6 mois'],
                 [false, 'Carnet de chantier'],
               ] as [boolean, string][]).map(([ok, text], i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -178,7 +176,7 @@ export default function PricingCards({ style }: PricingCardsProps) {
                 Par rapport &#183; Un seul achat &#183; &#192; vie
               </div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
-                Pour signer en confiance et suivre votre chantier sereinement.
+                Pour signer en confiance. Rapport complet + analyse de devis incluse.
               </div>
             </div>
             <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.1)', margin: '0 1.5rem' }} />
@@ -186,7 +184,7 @@ export default function PricingCards({ style }: PricingCardsProps) {
               {[
                 'Tout ce qui est gratuit',
                 'Rapport PDF complet',
-                'Analyse compl\u00e8te du devis (prix + juridique)',
+                'Analyse de devis — 5/mois par artisan (prix + juridique)',
                 'Historique BODACC complet',
                 'Synth\u00e8se IA de l\u2019artisan',
                 'Surveillance 6 mois \u2014 alertes email',

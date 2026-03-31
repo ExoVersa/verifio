@@ -6,9 +6,8 @@ import SiteHeader from '@/components/SiteHeader'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import {
-  Upload, CheckCircle, XCircle, AlertTriangle, ArrowLeft,
-  FileText, FileSearch, Scale, BarChart2, Sparkles, Shield,
-  BellRing, ClipboardCheck, Search, MessageSquare,
+  CheckCircle, XCircle, AlertTriangle, ArrowLeft,
+  FileText, FileSearch, Scale, BarChart2, Sparkles,
 } from 'lucide-react'
 import JaugePrix from '@/components/JaugePrix'
 import ScoreCercle from '@/components/ScoreCercle'
@@ -47,6 +46,17 @@ interface AnalyseResponse {
   pack_serenite_actif: boolean
 }
 
+interface RapportWithQuota {
+  id: string
+  siret: string
+  nom_entreprise: string | null
+  stripe_session_id: string
+  analysesUtilisees: number
+  quotaMax: 5
+  quotaRestant: number
+  quotaAtteint: boolean
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatEur(n: number | null | undefined) {
   if (!n) return '—'
@@ -59,93 +69,6 @@ const LOADING_STEPS = [
   { icon: Scale, label: 'Analyse juridique...' },
 ]
 
-const UPSELL_FEATURES = [
-  { Icon: FileText, text: 'Rapport PDF complet' },
-  { Icon: BellRing, text: 'Surveillance 6 mois' },
-  { Icon: Search, text: 'Analyses devis illimitées' },
-  { Icon: ClipboardCheck, text: 'Checklist avant signature' },
-  { Icon: Scale, text: 'Guide droits et recours' },
-  { Icon: MessageSquare, text: 'Questions à poser' },
-]
-
-// ── Bloc upsell dark green ────────────────────────────────────────────────────
-function UpsellBloc({ siretArtisan, isQuota }: { siretArtisan: string | null; isQuota?: boolean }) {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
-      borderRadius: 16, padding: 28, marginTop: 32, color: 'white',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 280 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', opacity: 0.7, marginBottom: 8, margin: '0 0 8px' }}>
-            PACK SÉRÉNITÉ — 4,90€
-          </p>
-          <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 8px', lineHeight: 1.2 }}>
-            Analyses illimitées + rapport complet
-          </h3>
-          {isQuota && (
-            <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 14px', margin: '0 0 12px' }}>
-              <p style={{ margin: 0, fontSize: 14, opacity: 0.95 }}>
-                Vous avez utilisé votre analyse gratuite ce mois-ci.
-                Prochain crédit disponible le 1er du mois prochain.
-              </p>
-            </div>
-          )}
-          <p style={{ opacity: 0.8, fontSize: 14, margin: '0 0 20px', lineHeight: 1.6 }}>
-            Achetez le Pack Sérénité pour cet artisan et obtenez des analyses de devis illimitées, plus tout ceci :
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
-            {UPSELL_FEATURES.map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, opacity: 0.9 }}>
-                <span style={{ opacity: 0.7, flexShrink: 0 }}><f.Icon size={14} strokeWidth={1.5} /></span>
-                {f.text}
-              </div>
-            ))}
-          </div>
-
-          {siretArtisan ? (
-            <a
-              href={`/artisan/${siretArtisan}`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'white', color: '#1B4332', borderRadius: 10,
-                padding: '12px 24px', textDecoration: 'none', fontWeight: 700, fontSize: 15,
-              }}
-            >
-              <Shield size={16} strokeWidth={1.5} />
-              Obtenir le Pack pour cet artisan — 4,90€
-            </a>
-          ) : (
-            <a
-              href="/recherche"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'white', color: '#1B4332', borderRadius: 10,
-                padding: '12px 24px', textDecoration: 'none', fontWeight: 700, fontSize: 15,
-              }}
-            >
-              <Search size={16} strokeWidth={1.5} />
-              Rechercher l&apos;artisan et obtenir le Pack Sérénité
-            </a>
-          )}
-        </div>
-
-        {/* Témoignage */}
-        <div style={{
-          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 20,
-          maxWidth: 240, flexShrink: 0,
-        }}>
-          <p style={{ fontSize: 14, fontStyle: 'italic', margin: '0 0 12px', opacity: 0.9, lineHeight: 1.6 }}>
-            &ldquo;J&apos;ai évité une arnaque grâce à l&apos;analyse de devis. Le prix était 40% en dessous du marché — signe que l&apos;artisan allait disparaître avec l&apos;acompte.&rdquo;
-          </p>
-          <p style={{ fontSize: 13, fontWeight: 600, opacity: 0.7, margin: 0 }}>Marie D. — Tours</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 function AnalyserDevisInner() {
   const searchParams = useSearchParams()
@@ -157,16 +80,15 @@ function AnalyserDevisInner() {
 
   const [user, setUser] = useState<User | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
-  const [quotaRestant, setQuotaRestant] = useState<boolean | null>(null)
 
-  const [file, setFile] = useState<File | null>(null)
-  const [dragOver, setDragOver] = useState(false)
+  const [rapports, setRapports] = useState<RapportWithQuota[]>([])
+  const [rapportSelectionne, setRapportSelectionne] = useState<RapportWithQuota | null>(null)
+  const [loadingRapports, setLoadingRapports] = useState(true)
+
   const [loading, setLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [result, setResult] = useState<AnalyseResponse | null>(null)
-  const [siretArtisan, setSiretArtisan] = useState<string | null>(siretParam)
-  const [quotaDepasse, setQuotaDepasse] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -174,20 +96,58 @@ function AnalyserDevisInner() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       setLoadingUser(false)
-      if (user) checkQuota(user.id)
+      if (user) {
+        loadRapports(user.id)
+      } else {
+        setLoadingRapports(false)
+      }
     })
   }, [])
 
-  async function checkQuota(userId: string) {
+  async function loadRapports(userId: string) {
+    setLoadingRapports(true)
+
+    const { data: rapportsData } = await supabase
+      .from('rapports')
+      .select('id, siret, nom_entreprise, stripe_session_id')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (!rapportsData || rapportsData.length === 0) {
+      setRapports([])
+      setLoadingRapports(false)
+      return
+    }
+
     const debutMois = new Date()
     debutMois.setDate(1)
     debutMois.setHours(0, 0, 0, 0)
-    const { count } = await supabase
-      .from('analyses_devis')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', debutMois.toISOString())
-    setQuotaRestant((count ?? 0) === 0)
+
+    const rapportsWithQuota = await Promise.all(
+      rapportsData.map(async (rapport) => {
+        const { count } = await supabase
+          .from('analyses_devis')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('siret_artisan', rapport.siret)
+          .gte('created_at', debutMois.toISOString())
+
+        const analysesUtilisees = count ?? 0
+        const quotaMax = 5
+        const quotaRestant = Math.max(0, quotaMax - analysesUtilisees)
+
+        return {
+          ...rapport,
+          analysesUtilisees,
+          quotaMax,
+          quotaRestant,
+          quotaAtteint: quotaRestant === 0,
+        }
+      })
+    )
+
+    setRapports(rapportsWithQuota)
+    setLoadingRapports(false)
   }
 
   // Animer les étapes de chargement
@@ -200,21 +160,10 @@ function AnalyserDevisInner() {
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [loading])
 
-  function onFileChange(f: File | null) {
-    if (!f) return
-    setFile(f)
-    setError(null)
-    setResult(null)
-    setQuotaDepasse(false)
-  }
-
-  async function handleAnalyse(e: React.FormEvent) {
-    e.preventDefault()
-    if (!file) return
+  async function triggerAnalyse(file: File) {
     setLoading(true)
     setError(null)
     setResult(null)
-    setQuotaDepasse(false)
 
     try {
       const arrayBuffer = await file.arrayBuffer()
@@ -228,23 +177,22 @@ function AnalyserDevisInner() {
       const res = await fetch('/api/analyser-devis', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ fileBase64, mimeType, nomFichier: file.name }),
+        body: JSON.stringify({
+          fileBase64,
+          mimeType,
+          nomFichier: file.name,
+          siretArtisan: rapportSelectionne?.siret,
+        }),
       })
       const data = await res.json()
 
-      if (res.status === 429 && data.error === 'quota_depasse') {
-        setQuotaDepasse(true)
-        if (data.siret) setSiretArtisan(data.siret)
-        return
-      }
-
       if (!res.ok) {
         setError(data.message || data.error || 'Erreur lors de l\'analyse.')
+        if (user) await loadRapports(user.id)
         return
       }
 
       setResult(data)
-      if (data.siret_artisan) setSiretArtisan(data.siret_artisan)
 
       // Sauvegarder dans devis_uploads si depuis un rapport
       if (rapportId && siretParam && session) {
@@ -257,6 +205,9 @@ function AnalyserDevisInner() {
           analyse_json: data,
         }).then(() => {})
       }
+
+      // Recharger les rapports pour mettre à jour les quotas
+      if (user) await loadRapports(user.id)
     } catch {
       setError('Erreur réseau. Réessayez.')
     } finally {
@@ -271,7 +222,7 @@ function AnalyserDevisInner() {
     padding: 24,
   }
 
-  if (loadingUser) {
+  if (loadingUser || (user !== null && loadingRapports)) {
     return (
       <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
         <SiteHeader />
@@ -298,7 +249,7 @@ function AnalyserDevisInner() {
           </h2>
           <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
             L&apos;analyse de devis est réservée aux comptes connectés.<br/>
-            1 analyse gratuite par mois, illimitée avec le Pack Sérénité.
+            Incluse dans le Pack Sérénité — 5 analyses par mois par artisan.
           </p>
           <a href="/auth?redirect=/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--color-accent)', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
             Se connecter pour analyser mon devis →
@@ -308,36 +259,6 @@ function AnalyserDevisInner() {
             <a href="/auth?mode=signup&redirect=/analyser-devis" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
               Créer un compte gratuit
             </a>
-          </p>
-        </div>
-      </main>
-    )
-  }
-
-  if (user && quotaRestant === false && !result) {
-    return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
-        <SiteHeader />
-        <div style={{ maxWidth: 480, margin: '4rem auto', textAlign: 'center', padding: '0 1rem' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: '0.75rem', color: 'var(--color-text)' }}>
-            Quota mensuel atteint
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
-            Vous avez déjà utilisé votre analyse gratuite ce mois-ci.<br/>
-            Revenez le 1er du mois prochain, ou débloquez l&apos;analyse illimitée avec le Pack Sérénité.
-          </p>
-          <a href="/recherche" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1B4332', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
-            Obtenir le Pack Sérénité — 4,90 € →
-          </a>
-          <p style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: '1rem' }}>
-            Le Pack Sérénité inclut l&apos;analyse illimitée pour l&apos;artisan vérifié.
           </p>
         </div>
       </main>
@@ -373,130 +294,199 @@ function AnalyserDevisInner() {
             fontSize: 13, color: 'var(--color-accent)', fontWeight: 600, marginBottom: 16,
           }}>
             <FileSearch size={14} strokeWidth={1.5} />
-            1 analyse gratuite par mois · Illimitée avec Pack Sérénité
+            Incluse dans le Pack Sérénité · 5 analyses / mois par artisan
           </div>
           <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
             Analyser &amp; vérifier mon devis
             {version > 1 && <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-muted)', marginLeft: 10 }}>v{version}</span>}
           </h1>
           <p style={{ margin: 0, fontSize: 16, color: 'var(--color-muted)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-            Uploadez votre devis PDF — on vérifie les prix ET la conformité juridique en 30 secondes.
+            Uploadez le devis PDF de votre artisan — on vérifie les prix ET la conformité juridique.
           </p>
         </div>
 
-        {/* Quota dépassé — upsell seul */}
-        {quotaDepasse && <UpsellBloc siretArtisan={siretArtisan} isQuota />}
-
-        {/* Formulaire upload */}
-        {!quotaDepasse && !result && (
-          <form onSubmit={handleAnalyse}>
-            {/* Bandeau quota disponible */}
-            {user && quotaRestant === true && (
+        {/* État vide — aucun Pack Sérénité actif */}
+        {rapports.length === 0 && !result && (
+          <div style={{ maxWidth: 480, margin: '3rem auto', padding: '0 1rem' }}>
+            <div style={{
+              background: 'var(--color-bg)',
+              border: '0.5px solid var(--color-border)',
+              borderRadius: '14px',
+              padding: '2rem',
+              textAlign: 'center',
+            }}>
               <div style={{
-                background: '#EAF3DE',
-                border: '0.5px solid #C0DD97',
-                borderRadius: '10px',
-                padding: '10px 16px',
-                fontSize: 13,
-                color: '#27500A',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: '1.5rem',
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'var(--color-surface)',
+                border: '0.5px solid var(--color-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 1rem',
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="#3B6D11" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
-                1 analyse gratuite disponible ce mois-ci
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--color-text)', marginBottom: 8 }}>
+                Aucun Pack Sérénité actif
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                L&apos;analyse de devis est incluse dans le Pack Sérénité d&apos;un artisan.
+                Vérifiez d&apos;abord votre artisan pour accéder à cette fonctionnalité.
+              </div>
+              <a href="/recherche" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: '#1B4332', color: '#fff',
+                padding: '11px 22px', borderRadius: '10px',
+                fontSize: 13, fontWeight: 500, textDecoration: 'none',
+              }}>
+                Vérifier un artisan →
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Liste artisans + zone upload */}
+        {rapports.length > 0 && !result && (
+          <div>
+            <p style={{ fontSize: 13, color: 'var(--color-muted)', marginBottom: 12 }}>
+              Choisissez l&apos;artisan dont vous souhaitez analyser le devis
+            </p>
+
+            {rapports.map(rapport => (
+              <div
+                key={rapport.id}
+                onClick={() => !rapport.quotaAtteint && !loading && setRapportSelectionne(rapport)}
+                style={{
+                  background: rapportSelectionne?.id === rapport.id ? '#EAF3DE' : 'var(--color-surface)',
+                  border: rapportSelectionne?.id === rapport.id
+                    ? '2px solid #1B4332'
+                    : '0.5px solid var(--color-border)',
+                  borderRadius: '14px',
+                  padding: '1rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  marginBottom: 10,
+                  cursor: rapport.quotaAtteint ? 'not-allowed' : 'pointer',
+                  opacity: rapport.quotaAtteint ? 0.6 : 1,
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: rapportSelectionne?.id === rapport.id ? '#C0DD97' : '#E6F1FB',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 500,
+                    color: rapportSelectionne?.id === rapport.id ? '#27500A' : '#0C447C',
+                    flexShrink: 0,
+                  }}>
+                    {(rapport.nom_entreprise || rapport.siret).slice(0, 2).toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 14, fontWeight: 500,
+                      color: rapportSelectionne?.id === rapport.id ? '#27500A' : 'var(--color-text)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {rapport.nom_entreprise || `Artisan ${rapport.siret}`}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 2 }}>
+                      SIRET {rapport.siret}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ flexShrink: 0 }}>
+                  {rapport.quotaAtteint ? (
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, padding: '3px 10px',
+                      borderRadius: 99, background: '#F1EFE8', color: '#5F5E5A',
+                    }}>
+                      Quota atteint
+                    </span>
+                  ) : rapport.quotaRestant <= 1 ? (
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, padding: '3px 10px',
+                      borderRadius: 99, background: '#FAEEDA', color: '#854F0B',
+                    }}>
+                      {rapport.quotaRestant}/5 restante
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: 11, fontWeight: 500, padding: '3px 10px',
+                      borderRadius: 99, background: '#EAF3DE', color: '#27500A',
+                    }}>
+                      {rapport.quotaRestant}/5 restantes
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Zone upload — visible si artisan sélectionné */}
+            {rapportSelectionne && (
+              <div style={{
+                border: '1.5px dashed var(--color-border)',
+                borderRadius: '16px',
+                padding: '2.5rem 1.5rem',
+                textAlign: 'center',
+                marginTop: '1.5rem',
+                background: 'var(--color-bg)',
+              }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--color-muted)" strokeWidth="1.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  style={{ margin: '0 auto 12px', display: 'block' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)', marginBottom: 6 }}>
+                  Déposez le devis de {rapportSelectionne.nom_entreprise || rapportSelectionne.siret}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-muted)', marginBottom: 16 }}>
+                  PDF uniquement · Max 10 Mo · {rapportSelectionne.quotaRestant} analyse{rapportSelectionne.quotaRestant > 1 ? 's' : ''} restante{rapportSelectionne.quotaRestant > 1 ? 's' : ''} ce mois
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  style={{
+                    background: '#1B4332', color: '#fff',
+                    border: 'none', borderRadius: 10,
+                    padding: '10px 22px', fontSize: 13, fontWeight: 500,
+                    cursor: loading ? 'wait' : 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <Sparkles size={14} strokeWidth={1.5} />
+                  {loading ? 'Analyse en cours…' : 'Parcourir'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,image/jpeg,image/png"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const f = e.target.files?.[0]
+                    e.target.value = ''
+                    if (f && rapportSelectionne) triggerAnalyse(f)
+                  }}
+                />
               </div>
             )}
-            {/* Zone drag & drop */}
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => {
-                e.preventDefault()
-                setDragOver(false)
-                const f = e.dataTransfer.files?.[0]
-                if (f) onFileChange(f)
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                border: `2px dashed ${dragOver ? 'var(--color-accent)' : file ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                borderRadius: 16,
-                padding: '48px 24px',
-                textAlign: 'center',
-                background: dragOver ? 'rgba(45,185,110,0.04)' : file ? 'var(--color-safe-bg)' : 'var(--color-surface)',
-                transition: 'all 0.15s ease',
-                marginBottom: 16,
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,image/jpeg,image/png"
-                style={{ display: 'none' }}
-                onChange={e => onFileChange(e.target.files?.[0] ?? null)}
-              />
-              <Upload size={32} color={file ? 'var(--color-accent)' : 'var(--color-muted)'} strokeWidth={1.5} style={{ marginBottom: 12 }} />
-              {file ? (
-                <>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 15, color: 'var(--color-safe)' }}>{file.name}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--color-muted)' }}>
-                    {(file.size / 1024).toFixed(0)} Ko · Cliquez pour changer
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: 'var(--color-text)' }}>
-                    Glissez votre devis PDF ici ou cliquez pour parcourir
-                  </p>
-                  <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--color-muted)' }}>
-                    PDF uniquement · Max 10 Mo · Vos données restent privées
-                  </p>
-                  <span style={{
-                    display: 'inline-block', padding: '8px 18px', borderRadius: 10,
-                    border: '1.5px solid var(--color-border)', fontSize: 13, fontWeight: 600,
-                    color: 'var(--color-text)', background: 'var(--color-bg)',
-                  }}>
-                    Parcourir
-                  </span>
-                </>
-              )}
-            </div>
 
-            {error && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '12px 14px', background: 'var(--color-danger-bg)', borderRadius: 10, marginBottom: 16 }}>
+            {/* Erreur */}
+            {error && !loading && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '12px 14px', background: 'var(--color-danger-bg)', borderRadius: 10, marginTop: 16 }}>
                 <XCircle size={16} color="var(--color-danger)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--color-danger)' }}>{error}</p>
               </div>
             )}
-
-            <button
-              type="submit"
-              disabled={!file || loading}
-              style={{
-                width: '100%', background: !file ? 'var(--color-border)' : 'var(--color-accent)',
-                color: !file ? 'var(--color-muted)' : 'white',
-                border: 'none', borderRadius: 12, padding: '16px 24px',
-                fontSize: 16, fontWeight: 700,
-                cursor: !file || loading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                fontFamily: 'var(--font-body)', transition: 'background 0.15s ease',
-              }}
-            >
-              {loading ? (
-                <span style={{ opacity: 0.9 }}>Analyse en cours…</span>
-              ) : (
-                <>
-                  <Sparkles size={18} strokeWidth={1.5} />
-                  Analyser mon devis — gratuit
-                </>
-              )}
-            </button>
-          </form>
+          </div>
         )}
 
         {/* Animation de chargement */}
@@ -547,7 +537,7 @@ function AnalyserDevisInner() {
                 marginBottom: 20,
               }}>
                 <CheckCircle size={12} strokeWidth={2} />
-                Pack Sérénité actif — analyses illimitées pour cet artisan
+                Pack Sérénité actif — {rapportSelectionne ? `${rapportSelectionne.quotaRestant}/5 analyses restantes ce mois` : 'analyses incluses pour cet artisan'}
               </div>
             )}
 
@@ -778,12 +768,9 @@ function AnalyserDevisInner() {
               </div>
             </div>
 
-            {/* Upsell si analyse gratuite */}
-            {result.est_gratuite && <UpsellBloc siretArtisan={siretArtisan} />}
-
             {/* Bouton nouvelle analyse */}
             <button
-              onClick={() => { setResult(null); setFile(null); setError(null) }}
+              onClick={() => { setResult(null); setError(null) }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 background: 'none', border: '1.5px solid var(--color-border)',
