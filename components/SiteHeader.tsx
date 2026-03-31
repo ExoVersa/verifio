@@ -649,21 +649,13 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                             </Link>
                           ))}
                           <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
-                          <button
-                            onClick={async () => {
-                              await supabase.auth.resetPasswordForEmail(user.email || '', {
-                                redirectTo: `${window.location.origin}/auth/reset`,
-                              })
-                              alert('Un email de réinitialisation a été envoyé.')
-                            }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', width: '100%', background: 'transparent', border: 'none', fontSize: 13, color: 'var(--color-text)', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'var(--font-body)' }}
-                          >
+                          <Link href="/mon-profil" onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--color-text)', textDecoration: 'none' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                              <circle cx="12" cy="7" r="4"/>
                             </svg>
-                            Changer le mot de passe
-                          </button>
+                            Mon profil
+                          </Link>
                           <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
                           <button onClick={() => { supabase.auth.signOut(); closeAll() }}
                             style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left', transition: 'background 0.12s' }}
@@ -757,21 +749,13 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                             </Link>
                           ))}
                           <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
-                          <button
-                            onClick={async () => {
-                              await supabase.auth.resetPasswordForEmail(user.email || '', {
-                                redirectTo: `${window.location.origin}/auth/reset`,
-                              })
-                              alert('Un email de réinitialisation a été envoyé.')
-                            }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', width: '100%', background: 'transparent', border: 'none', fontSize: 13, color: 'var(--color-text)', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'var(--font-body)' }}
-                          >
+                          <Link href="/mon-profil" onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--color-text)', textDecoration: 'none' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                              <circle cx="12" cy="7" r="4"/>
                             </svg>
-                            Changer le mot de passe
-                          </button>
+                            Mon profil
+                          </Link>
                           <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
                           <button onClick={() => { supabase.auth.signOut(); closeAll() }}
                             style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-body)', width: '100%', textAlign: 'left', transition: 'background 0.12s' }}
@@ -1042,21 +1026,13 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 ))}
 
                 <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
-                <button
-                  onClick={async () => {
-                    await supabase.auth.resetPasswordForEmail(user.email || '', {
-                      redirectTo: `${window.location.origin}/auth/reset`,
-                    })
-                    alert('Un email de réinitialisation a été envoyé.')
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', width: '100%', background: 'transparent', border: 'none', fontSize: 13, color: 'var(--color-text)', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'var(--font-body)' }}
-                >
+                <a href="/mon-profil" onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--color-text)', textDecoration: 'none' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
-                  Changer le mot de passe
-                </button>
+                  Mon profil
+                </a>
                 <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
                 <button
                   onClick={() => { supabase.auth.signOut(); closeAll() }}
