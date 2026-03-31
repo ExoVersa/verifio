@@ -52,7 +52,7 @@ interface RapportWithQuota {
   nom_entreprise: string | null
   stripe_session_id: string
   analysesUtilisees: number
-  quotaMax: 5
+  quotaMax: number
   quotaRestant: number
   quotaAtteint: boolean
 }
