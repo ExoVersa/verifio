@@ -228,6 +228,13 @@ function HeroSearch() {
   }, [])
 
   function search(val: string) {
+    // Détection SIRET côté client — navigation directe sans attendre l'API
+    const normalized = val.replace(/\s/g, '')
+    if (/^\d{14}$/.test(normalized)) {
+      router.push(`/artisan/${normalized}`)
+      return
+    }
+
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (abortRef.current) abortRef.current.abort()
 
@@ -275,6 +282,11 @@ function HeroSearch() {
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
     if (!query.trim()) return
+    const normalized = query.replace(/\s/g, '')
+    if (/^\d{14}$/.test(normalized)) {
+      router.push(`/artisan/${normalized}`)
+      return
+    }
     setShowDropdown(false)
     const params = new URLSearchParams({ q: query.trim() })
     if (ville.trim()) params.set('dept', ville.trim())

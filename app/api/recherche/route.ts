@@ -91,8 +91,21 @@ export async function GET(req: NextRequest) {
 
     // SIRET exact match → redirect signal
     const normalizedQ = q.replace(/\s/g, '')
-    if (/^\d{9,14}$/.test(normalizedQ) && rawResults.length === 1) {
-      return NextResponse.json({ isExact: true, siret: normalizedQ })
+    const isSiretLike = /^\d{9,14}$/.test(normalizedQ)
+
+    if (isSiretLike) {
+      // Chercher le résultat dont le SIRET correspond exactement
+      const exactMatch = rawResults.find(
+        (r: any) => r.siret === normalizedQ || (r.siege && r.siege.siret === normalizedQ) || r.siren === normalizedQ.slice(0, 9)
+      )
+      if (exactMatch) {
+        const matchSiret = exactMatch.siege?.siret || exactMatch.siret || normalizedQ
+        return NextResponse.json({ isExact: true, siret: matchSiret })
+      }
+      // Si aucun match exact mais query de 14 chiffres → tenter direct
+      if (normalizedQ.length === 14) {
+        return NextResponse.json({ isExact: true, siret: normalizedQ })
+      }
     }
 
     // Server-side statut filter
