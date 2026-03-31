@@ -106,7 +106,8 @@ export default function PricingCards({ style }: PricingCardsProps) {
                 [true,  'Statut l\u00e9gal INSEE'],
                 [true,  'Certifications RGE ADEME'],
                 [false, 'Rapport PDF complet'],
-                [false, '[false, 'Analyse de devis (Pack requis)']              [false, 'Surveillance 6 mois'],
+                [false, 'Analyse de devis (Pack requis)'],
+                [false, 'Surveillance 6 mois'],
                 [false, 'Carnet de chantier'],
               ] as [boolean, string][]).map(([ok, text], i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
