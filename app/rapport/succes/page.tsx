@@ -760,7 +760,8 @@ export default async function SuccesPage({
               )}
 
               {/* Bandeau entreprise fermée */}
-              {result.statut !== 'actif' && result.statut !== 'A' && (
+              {(result.statut as string)?.toLowerCase().trim() !== 'a' &&
+               (result.statut as string)?.toLowerCase().trim() !== 'actif' && (
                 <div style={{
                   background: '#FCEBEB',
                   border: '1.5px solid #E24B4A',
