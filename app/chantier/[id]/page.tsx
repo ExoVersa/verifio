@@ -893,6 +893,8 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [currentPhasePhoto, setCurrentPhasePhoto] = useState<PhotoPhase>('pendant')
   const [lightboxPhoto, setLightboxPhoto] = useState<ChantierPhoto | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
@@ -1056,6 +1058,34 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     await loadAll()
   }
 
+  async function handleDeleteChantier() {
+    if (!chantier) return
+    setDeleting(true)
+    try {
+      await supabase.from('chantier_evenements').delete().eq('chantier_id', chantier.id)
+      await supabase.from('chantier_paiements').delete().eq('chantier_id', chantier.id)
+      await supabase.from('chantier_phases').delete().eq('chantier_id', chantier.id)
+
+      if (photos.length > 0) {
+        const photoPaths = photos.map(p => p.url)
+        await supabase.storage.from('chantier-photos').remove(photoPaths)
+        await supabase.from('chantier_photos').delete().eq('chantier_id', chantier.id)
+      }
+
+      if (documents.length > 0) {
+        const docPaths = documents.map(d => d.url)
+        await supabase.storage.from('chantier-documents').remove(docPaths)
+        await supabase.from('chantier_documents').delete().eq('chantier_id', chantier.id)
+      }
+
+      await supabase.from('chantiers').delete().eq('id', chantier.id)
+      router.push('/mes-chantiers')
+    } catch (e) {
+      console.error('Erreur suppression chantier:', e)
+      setDeleting(false)
+    }
+  }
+
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -1139,6 +1169,13 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
               <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
                 <Download size={12} />
                 Exporter PDF
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', border: '0.5px solid var(--color-danger, #E24B4A)', borderRadius: '8px', background: 'transparent', color: 'var(--color-danger, #E24B4A)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+              >
+                <Trash2 size={14} strokeWidth={1.5} />
+                {!isMobile && 'Supprimer le chantier'}
               </button>
             </div>
           </div>
@@ -1532,6 +1569,43 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
             >
               ×
             </button>
+          </div>
+        </div>
+      )}
+      {/* ── MODALE SUPPRESSION CHANTIER ── */}
+      {showDeleteModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => !deleting && setShowDeleteModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '1.5rem', maxWidth: 400, width: '100%' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              <Trash2 size={32} strokeWidth={1.5} color="#E24B4A" />
+            </div>
+            <p style={{ margin: 0, fontSize: 18, fontWeight: 500, textAlign: 'center' }}>Supprimer ce chantier ?</p>
+            <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--color-muted)', textAlign: 'center' }}>
+              Cette action est irréversible. Toutes les données liées (paiements, photos, documents, événements, phases) seront définitivement supprimées.
+            </p>
+            <p style={{ margin: '10px 0 0', fontSize: 14, textAlign: 'center', fontWeight: 600 }}>{chantier.nom_artisan}</p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                style={{ flex: 1, padding: '10px', border: '1px solid var(--color-border)', borderRadius: '8px', background: 'transparent', color: 'var(--color-text)', fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteChantier}
+                disabled={deleting}
+                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', background: '#E24B4A', color: '#fff', fontSize: 14, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1, fontFamily: 'var(--font-body)' }}
+              >
+                {deleting ? 'Suppression...' : 'Supprimer définitivement'}
+              </button>
+            </div>
           </div>
         </div>
       )}
