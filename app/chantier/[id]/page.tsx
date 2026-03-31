@@ -988,35 +988,71 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   }
 
   async function handlePhasePhotoUpload(files: FileList | null, phasePhoto: PhotoPhase) {
-    if (!files || files.length === 0 || !chantier) return
+    console.log('handlePhasePhotoUpload called', { files: files?.length, phasePhoto, chantier: chantier?.id })
+    if (!files || files.length === 0) { console.log('no files'); return }
+    if (!chantier) { console.log('chantier is null'); return }
     setUploadingPhoto(true)
+
     const { data: { user } } = await supabase.auth.getUser()
+    console.log('user:', user?.id)
     if (!user) { setUploadingPhoto(false); return }
+
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()
       const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      console.log('uploading to path:', path)
+
       const { error: upErr } = await supabase.storage.from('chantier-photos').upload(path, file)
-      if (!upErr) {
-        await supabase.from('chantier_photos').insert({ chantier_id: chantier.id, url: path, phase: phasePhoto })
+      if (upErr) {
+        console.error('Storage upload error:', upErr)
+        continue
+      }
+
+      console.log('storage upload OK, inserting in DB...')
+      const { error: insertErr } = await supabase.from('chantier_photos').insert({
+        chantier_id: chantier.id, url: path, phase: phasePhoto, legende: null,
+      })
+      if (insertErr) {
+        console.error('DB insert error:', insertErr)
+      } else {
+        console.log('insert OK')
       }
     }
+
     setUploadingPhoto(false)
     await loadAll()
   }
 
   async function handlePhaseDocUpload(file: File | null) {
-    if (!file || !chantier) return
+    console.log('handlePhaseDocUpload called', { file: file?.name, chantier: chantier?.id })
+    if (!file) { console.log('no file'); return }
+    if (!chantier) { console.log('chantier is null'); return }
+
     const { data: { user } } = await supabase.auth.getUser()
+    console.log('user:', user?.id)
     if (!user) return
+
     const ext = file.name.split('.').pop()
     const path = `${user.id}/${chantier.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    console.log('uploading doc to path:', path)
+
     const { error: upErr } = await supabase.storage.from('chantier-documents').upload(path, file)
-    if (!upErr) {
-      await supabase.from('chantier_documents').insert({
-        chantier_id: chantier.id, nom: file.name,
-        type: 'autre' as DocumentType, url: path, taille: file.size,
-      })
+    if (upErr) {
+      console.error('Storage doc upload error:', upErr)
+      return
     }
+
+    console.log('doc storage OK, inserting...')
+    const { error: insertErr } = await supabase.from('chantier_documents').insert({
+      chantier_id: chantier.id, nom: file.name,
+      type: 'autre' as DocumentType, url: path, taille: file.size,
+    })
+    if (insertErr) {
+      console.error('DB doc insert error:', insertErr)
+    } else {
+      console.log('doc insert OK')
+    }
+
     await loadAll()
   }
 
