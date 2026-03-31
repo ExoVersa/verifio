@@ -40,7 +40,7 @@ interface ChantierWithStats extends Chantier {
   derniere_activite?: string
 }
 
-type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'rapports' | 'analyses' | 'profil'
+type TabId = 'dashboard' | 'chantiers' | 'surveillances' | 'historique' | 'rapports' | 'analyses'
 
 interface AnalyseDevis {
   id: string
@@ -72,7 +72,6 @@ const TABS: { id: TabId; label: string; Icon: React.ComponentType<{ size: number
   { id: 'historique', label: 'Mon historique', Icon: History },
   { id: 'rapports', label: 'Mes rapports', Icon: FileText },
   { id: 'analyses', label: 'Mes analyses', Icon: FileSearch },
-  { id: 'profil', label: 'Mon profil', Icon: User },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1223,7 +1222,7 @@ function AnalysesTab({ analyses }: { analyses: AnalyseDevis[] }) {
 function MonEspaceInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'rapports', 'analyses', 'profil']
+  const validTabs: TabId[] = ['dashboard', 'chantiers', 'surveillances', 'historique', 'rapports', 'analyses']
   const tabParam = searchParams.get('tab') as TabId | null
   const [tab, setTabState] = useState<TabId>(
     tabParam && validTabs.includes(tabParam) ? tabParam : 'dashboard'
@@ -1389,10 +1388,9 @@ function MonEspaceInner() {
 
         {/* Tabs */}
         <SurfaceCard style={{
-          display: 'flex', gap: '0',
+          display: 'flex', flexWrap: 'wrap', gap: '0',
           borderBottom: '1px solid rgba(226,217,204,0.92)',
           marginBottom: '32px',
-          overflowX: 'auto', WebkitOverflowScrolling: 'touch' as const,
           padding: '0 10px',
         }}>
           {TABS.map(({ id, label, Icon }) => (
@@ -1400,14 +1398,14 @@ function MonEspaceInner() {
               key={id}
               onClick={() => setTab(id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '7px',
-                padding: '14px 16px', background: 'none', border: 'none',
-                cursor: 'pointer', fontSize: '13px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 12px', background: 'none', border: 'none',
+                cursor: 'pointer', fontSize: '12px',
                 fontWeight: tab === id ? 700 : 500,
                 color: tab === id ? 'var(--color-accent)' : 'var(--color-muted)',
                 borderBottom: `2px solid ${tab === id ? 'var(--color-accent)' : 'transparent'}`,
                 marginBottom: '-1px', fontFamily: 'var(--font-body)',
-                whiteSpace: 'nowrap', transition: 'color 0.15s',
+                transition: 'color 0.15s',
               }}
             >
               <Icon size={14} />
@@ -1439,13 +1437,6 @@ function MonEspaceInner() {
         )}
         {tab === 'analyses' && (
           <AnalysesTab analyses={analyses} />
-        )}
-        {tab === 'profil' && (
-          <ProfilTab
-            user={user!}
-            onPasswordReset={handlePasswordReset}
-            onDeleteAccount={handleDeleteAccount}
-          />
         )}
       </div>
     </main>
