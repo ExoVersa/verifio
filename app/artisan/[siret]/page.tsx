@@ -123,6 +123,12 @@ function computeScore(result: SearchResult) {
   })
 }
 
+function isEntrepriseFermee(statut: string | undefined | null): boolean {
+  if (!statut) return false
+  const s = statut.toLowerCase().trim()
+  return s !== 'a' && s !== 'actif' && s !== 'active'
+}
+
 /* ─── Décennale checklist ────────────────────────────────── */
 function DecennaleChecklist() {
   const items = [
@@ -778,7 +784,7 @@ export default function ArtisanFichePage() {
             </div>
 
             {/* Bandeau entreprise fermée */}
-            {result.statut !== 'actif' && result.statut !== 'A' && result.statut !== 'Actif' && (
+            {isEntrepriseFermee(result.statut as string) && (
               <div style={{
                 background: '#FCEBEB',
                 border: '1.5px solid #E24B4A',
@@ -1666,7 +1672,7 @@ export default function ArtisanFichePage() {
                           Accéder à mon rapport →
                         </button>
                       </div>
-                    ) : result.statut !== 'actif' && result.statut !== 'A' ? (
+                    ) : isEntrepriseFermee(result.statut as string) ? (
                       <div style={{
                         fontSize: 13, color: '#A32D2D',
                         background: '#FCEBEB',
