@@ -759,6 +759,36 @@ export default async function SuccesPage({
                 </div>
               )}
 
+              {/* Bandeau entreprise fermée */}
+              {result.statut !== 'actif' && result.statut !== 'A' && (
+                <div style={{
+                  background: '#FCEBEB',
+                  border: '1.5px solid #E24B4A',
+                  borderRadius: '12px',
+                  padding: '1rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  margin: '0 16px 12px',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="#A32D2D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ flexShrink: 0, marginTop: 1 }}>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#791F1F', marginBottom: 4 }}>
+                      Entreprise fermée — ne signez aucun contrat
+                    </div>
+                    <div style={{ fontSize: 13, color: '#A32D2D', lineHeight: 1.5 }}>
+                      Cette entreprise n&apos;est plus en activité selon les données INSEE. Tout paiement ou engagement contractuel avec une entreprise fermée présente un risque juridique et financier majeur.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Synthèse IA compacte */}
               {syntheseInput && (
                 <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border)' }}>

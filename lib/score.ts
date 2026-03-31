@@ -66,6 +66,11 @@ export function calculateScore(input: ScoreInput): ScoreResult {
     return { score: -1, totalPoints: 0, totalMax: 0, criteres: [], loading: true }
   }
 
+  /* Court-circuit : entreprise fermée → score 0 immédiat */
+  if (!isActif(input.statut)) {
+    return { score: 0, totalPoints: 0, totalMax: 0, criteres: [] }
+  }
+
   const criteres: ScoreCritere[] = []
 
   /* 1. Statut légal — 40 pts, toujours disponible */
