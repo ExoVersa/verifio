@@ -302,7 +302,7 @@ export default function ResultCard({ result, onSelect }: Props) {
   // ── Verdict ──────────────────────────────────────────────
   const hasDanger = result.alerts.some((a) => a.type === 'danger')
   const verdictLevel: 'fiable' | 'prudence' | 'risque' =
-    result.statut !== 'actif' || result.bodacc.procedureCollective || result.score < 45
+    (String(result.statut || '').toLowerCase().trim() !== 'a' && String(result.statut || '').toLowerCase().trim() !== 'actif') || result.bodacc.procedureCollective || result.score < 45
       ? 'risque'
       : result.score < 70 || hasDanger
       ? 'prudence'

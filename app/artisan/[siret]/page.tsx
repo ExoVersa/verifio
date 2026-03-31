@@ -784,7 +784,7 @@ export default function ArtisanFichePage() {
             </div>
 
             {/* Bandeau entreprise fermée */}
-            {isEntrepriseFermee(result.statut as string) && (
+            {(String(result.statut || '').toLowerCase().trim() !== 'a' && String(result.statut || '').toLowerCase().trim() !== 'actif') && (
               <div style={{
                 background: '#FCEBEB',
                 border: '1.5px solid #E24B4A',
@@ -1672,7 +1672,7 @@ export default function ArtisanFichePage() {
                           Accéder à mon rapport →
                         </button>
                       </div>
-                    ) : isEntrepriseFermee(result.statut as string) ? (
+                    ) : (String(result.statut || '').toLowerCase().trim() !== 'a' && String(result.statut || '').toLowerCase().trim() !== 'actif') ? (
                       <div style={{
                         fontSize: 13, color: '#A32D2D',
                         background: '#FCEBEB',
