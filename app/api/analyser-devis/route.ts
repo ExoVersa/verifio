@@ -49,7 +49,56 @@ export async function POST(req: NextRequest) {
 
   // ── 3. Valider le fichier ─────────────────────────────────────────────────
   const body = await req.json()
-  const { fileBase64, mimeType, nomFichier } = body
+  const { fileBase64, mimeType, nomFichier, siretArtisan: siretClient } = body
+
+  // ── 3b. Vérification des droits d'accès basée sur le SIRET client ────────
+  if (!siretClient) {
+    return NextResponse.json(
+      { error: 'siret_manquant', message: 'Aucun artisan sélectionné.' },
+      { status: 400 }
+    )
+  }
+
+  const { data: rapportPack } = await supabaseAdmin
+    .from('rapports')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('siret', siretClient)
+    .maybeSingle()
+
+  if (!rapportPack) {
+    return NextResponse.json(
+      {
+        error: 'pack_requis',
+        message: 'Un Pack Sérénité est requis pour analyser le devis de cet artisan.',
+        siret_artisan: siretClient,
+      },
+      { status: 403 }
+    )
+  }
+
+  const debutMois = new Date()
+  debutMois.setDate(1)
+  debutMois.setHours(0, 0, 0, 0)
+
+  const { count: analysesCount } = await supabaseAdmin
+    .from('analyses_devis')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('siret_artisan', siretClient)
+    .gte('created_at', debutMois.toISOString())
+
+  if ((analysesCount ?? 0) >= 5) {
+    return NextResponse.json(
+      {
+        error: 'quota_depasse',
+        message: 'Quota atteint pour cet artisan (5/mois). Revenez le 1er du mois prochain.',
+        analyses_utilisees: analysesCount,
+        quota_max: 5,
+      },
+      { status: 429 }
+    )
+  }
 
   if (!fileBase64 || !mimeType) {
     return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
@@ -109,43 +158,7 @@ export async function POST(req: NextRequest) {
     } catch { /* SIRET extraction échouée */ }
   }
 
-  // ── 5. Vérifier les droits d'analyse ─────────────────────────────────────
-  let analyseGratuite = false
-  let packSereniteActif = false
-
-  if (user && siretExtrait) {
-    const { data: rapport } = await supabaseAdmin
-      .from('rapports')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('siret', siretExtrait)
-      .maybeSingle()
-    if (rapport) packSereniteActif = true
-  }
-
-  if (!packSereniteActif) {
-    const debutMois = new Date()
-    debutMois.setDate(1)
-    debutMois.setHours(0, 0, 0, 0)
-
-    const { count } = await supabaseAdmin
-      .from('analyses_devis')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', debutMois.toISOString())
-
-    if ((count ?? 0) === 0) {
-      analyseGratuite = true
-    } else {
-      return NextResponse.json({
-        error: 'quota_depasse',
-        siret: siretExtrait,
-        message: 'Quota mensuel atteint. Revenez le 1er du mois.',
-      }, { status: 429 })
-    }
-  }
-
-  // ── 6. Analyses parallèles : prix + juridique ─────────────────────────────
+  // ── 5. Analyses parallèles : prix + juridique ────────────────────────────
   const docContent = mimeType === 'application/pdf'
     ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 } }
     : { type: 'image' as const, source: { type: 'base64' as const, media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp', data: fileBase64 } }
@@ -244,16 +257,19 @@ Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
     prix: prixRaw,
     juridique: juridiqueRaw,
     score_global: scoreGlobal,
-    siret_artisan: siretFinal,
-    est_gratuite: analyseGratuite,
-    pack_serenite_actif: packSereniteActif,
+    siret_artisan: siretClient,
+    est_gratuite: false,
+    pack_serenite_actif: true,
+    analyses_utilisees: (analysesCount ?? 0) + 1,
+    quota_max: 5,
+    quota_restant: Math.max(0, 5 - ((analysesCount ?? 0) + 1)),
   }
 
   // ── 7. Logger l'analyse ──────────────────────────────────────────────────
   try {
     const { error: insertError } = await supabaseAdmin.from('analyses_devis').insert({
       user_id: user.id,
-      siret_artisan: siretFinal || null,
+      siret_artisan: siretClient || null,
       pages_pdf: pagesCount || null,
       taille_pdf_bytes: fileBytes.length || null,
       nom_fichier: nomFichier || null,
