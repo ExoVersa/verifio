@@ -1,6 +1,6 @@
 # PROJECT_AUDIT.md — Verifio
-> Audit technique complet — état réel du code au 29 mars 2026.
-> Inclut toutes les modifications effectuées du 24 au 29 mars 2026.
+> Audit technique complet — état réel du code au 1er avril 2026.
+> Inclut toutes les modifications effectuées du 24 mars au 1er avril 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
 ## Utilisation par les agents
@@ -155,7 +155,8 @@ Input JSON :
 2. Sub-header sticky : "Verifio · Rapport complet · [Nom entreprise]" + boutons PDF / Partage
 3. Bouton retour contextuel (`?from=mon-espace` → "Mes rapports", sinon → "Retour à la fiche")
 4. Bandeau features débloquées : 6 items avec icônes (PDF, Analyse devis, Surveillance, BODACC, Synthèse IA, Carnet chantier)
-5. Score + statut (ScoreRing animé)
+4b. **Bannière rouge si entreprise fermée** (ajoutée le 31 mars) : `(result.statut as string)?.toLowerCase().trim() !== 'a' && !== 'actif'` → bloc rouge AlertTriangle avant la SyntheseIA
+5. Score + statut (ScoreRing animé — affiche 0 si entreprise fermée)
 6. Synthèse IA (skeleton pendant chargement, fallback "indisponible" si pas de clé)
 7. Données identité (SIRET, forme juridique, date création, adresse, capital, effectif)
 8. Certifications RGE (cards avec icônes thématiques)
@@ -335,6 +336,31 @@ interface ScoreInput {
 - `score = -1` si `procedures.disponible === false` → ScoreRing gris
 - Couleurs breakdown : ratio ≥ 0.8 → vert, ≥ 0.5 → orange, < 0.5 → rouge
 
+**Court-circuit entreprise fermée (ajouté le 31 mars 2026) :**
+
+```typescript
+function isActif(statut: string): boolean {
+  const s = String(statut || '').toLowerCase().trim()
+  return s === 'a' || s === 'actif'
+}
+
+// Dans calculateScore() :
+if (!isActif(input.statut)) {
+  return { score: 0, totalPoints: 0, totalMax: 0, criteres: [] }
+}
+```
+
+Toute entreprise dont le statut n'est pas `'a'` ou `'actif'` retourne **score = 0** immédiatement, sans calculer les critères. Le `ScoreRing` affiche 0.
+
+**Comparaison statut — pattern canonique :**
+
+Dans tous les fichiers (fiche artisan, rapport, ResultCard), la comparaison se fait uniquement via :
+```typescript
+String(result.statut || '').toLowerCase().trim() !== 'a'
+&& String(result.statut || '').toLowerCase().trim() !== 'actif'
+```
+Ne jamais utiliser une fonction helper externe — inliner le pattern directement.
+
 ---
 
 ## 5. Fiche Artisan `/artisan/[siret]`
@@ -369,6 +395,19 @@ supabase.auth.getUser().then(({ data: { user } }) => {
   - Bouton secondaire "Retour à la recherche" → `router.push('/recherche')`
 - Le `useEffect` reset `isServiceDown(false)` à chaque déclenchement
 
+### Bannière entreprise fermée (ajoutée le 31 mars 2026)
+
+Bandeau rouge d'avertissement affiché en tête de page si l'entreprise n'est pas active :
+```tsx
+{String(result.statut || '').toLowerCase().trim() !== 'a'
+ && String(result.statut || '').toLowerCase().trim() !== 'actif' && (
+  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', ... }}>
+    <AlertTriangle .../>
+    Entreprise fermée ou radiée — ...
+  </div>
+)}
+```
+
 ### Affichage conditionnel Pack Sérénité
 
 - `rapportExistant !== null` → bloc "Rapport déjà acheté" (fond vert translucide, bouton "Accéder à mon rapport →")
@@ -376,6 +415,7 @@ supabase.auth.getUser().then(({ data: { user } }) => {
 - `rapportExistant && surveillanceActive` → bloc "Surveillance active" (bordure verte)
 - `rapportExistant && !surveillanceActive` → bloc "Surveillance inactive"
 - Ni l'un ni l'autre → teaser surveillance verrouillé + lien "Débloquer avec le Pack Sérénité"
+- **Entreprise fermée** → CTA d'achat bloqué : bouton grisé + message "Rapport non disponible pour une entreprise fermée"
 
 ### Revendication fiche artisan
 
@@ -403,7 +443,27 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
    - Affiche nom entreprise ou fallback 'Entreprise inconnue' (plus `SIRET [...]`)
    - Bouton "Accéder au rapport →" → `/rapport/succes?session_id=...&siret=...&from=mon-espace`
 
-3. **Profil** — données utilisateur auth
+~~3. **Profil**~~ — **Supprimé le 31 mars 2026**. Les données profil ont été déplacées vers la page `/mon-profil` (accessible via le dropdown avatar dans le header).
+
+**Tabs container :** `flexWrap: 'wrap'` — plus de scroll horizontal sur mobile.
+
+---
+
+## 6b. Page Profil `/mon-profil`
+
+**Fichier :** `app/mon-profil/page.tsx` (`'use client'`) — **Ajoutée le 31 mars 2026**
+
+**Accès :** Lien dans le dropdown avatar du `SiteHeader` (icône User + "Mon profil").
+
+**Auth :** `supabase.auth.getUser()` au montage → redirect `/auth?redirect=/mon-profil` si non connecté.
+
+**Sections :**
+- Avatar circulaire (initiale de l'email), email, date création du compte
+- Bouton "Changer le mot de passe" → `supabase.auth.resetPasswordForEmail(email, { redirectTo: .../auth?mode=reset })` → remplacé par confirmation verte inline
+- Bouton "Se déconnecter" → `supabase.auth.signOut()` → redirect `/`
+- Zone dangereuse : bouton "Supprimer mon compte" → `DELETE /api/account/delete` (avec confirm() + spinner)
+
+**Route API :** `DELETE /api/account/delete` — supprime le compte via service role.
 
 ---
 
@@ -421,11 +481,11 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
 - Score de fiabilité
 - Statut INSEE
 - Certifications RGE
-- Analyse devis IA — 1 analyse gratuite / mois (ajouté le 27 mars)
+- ~~Analyse devis IA gratuite~~ — **supprimée le 30 mars** (l'analyse devis requiert un Pack)
 
 ### Pack Sérénité — 4,90€ (one-time)
 - Rapport PDF complet
-- Analyse devis IA illimitée pour cet artisan (quota ignoré si rapport acheté pour le même SIRET)
+- Analyse de devis — **5/mois par artisan** (prix + juridique)
 - Surveillance 6 mois (alertes email)
 - Historique BODACC complet
 - Synthèse IA (claude-sonnet-4-6)
@@ -440,19 +500,23 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
 
 ## 8. Analyse Devis IA `/analyser-devis`
 
-**Ajouté / refondu le 27 mars 2026**
+**Créé le 27 mars, refondu en hub le 30 mars 2026**
 
 ### Route `POST /api/analyser-devis`
 
 **Fichier :** `app/api/analyser-devis/route.ts`
 
-**Flux :**
-1. Auth optionnelle — token JWT parsé si présent, `user` peut être `null`
-2. IP extraite depuis `x-forwarded-for`
-3. Étape 1 : extraction légère du SIRET (100 tokens max, Haiku) — retourne JSON `{ siret }`
-4. Étape 2 : si SIRET trouvé → vérifie rapport Pack Sérénité dans `rapports` → `packSereniteActif`
-5. Étape 3 : si pas de Pack → vérifie quota mensuel dans `analyses_devis` par `user_id` ou `ip_address` ; si `count > 0` → HTTP 429 `quota_depasse`
-6. Étape 4 : `Promise.all([prixCall, juridiqueCall])` — deux appels Anthropic Haiku en parallèle
+**Flux (version hub — 30 mars 2026) :**
+1. **Auth obligatoire** — token JWT depuis `Authorization: Bearer`. Si absent ou invalide → HTTP 401 `non_connecte`
+2. `siretArtisan` (alias `siretClient`) extrait du body — obligatoire (HTTP 400 si absent)
+3. **Vérification Pack Sérénité** : SELECT dans `rapports` où `user_id = user.id AND siret = siretClient`. Si aucun rapport → HTTP 403 `pack_requis`
+4. **Quota** : COUNT dans `analyses_devis` où `user_id = user.id AND siret_artisan = siretClient AND created_at >= début_du_mois`. Si count ≥ 5 → HTTP 429 `quota_depasse`
+5. Validation fichier (taille ≤ 10Mo, pages ≤ 10 si PDF)
+6. Extraction SIRET légère (Haiku, 100 tokens) → `siretExtrait` (utilisé uniquement pour metadata — **ne sert plus à la vérification des droits**)
+7. `Promise.all([prixCall, juridiqueCall])` — deux appels Anthropic Haiku en parallèle
+8. INSERT dans `analyses_devis` avec `siret_artisan: siretClient`
+
+⚠️ **IMPORTANT — siretClient vs siretExtrait** : `siretClient` (envoyé par le front) est la seule source de vérité pour l'autorisation. `siretExtrait` (extrait par IA du PDF) n'est jamais utilisé pour les contrôles d'accès — il peut être `null` si l'extraction échoue.
 
 **Réponse JSON :**
 ```typescript
@@ -460,7 +524,7 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
   prix: {
     siret, nom_artisan, type_travaux, region,
     montant_devis, fourchette_basse, fourchette_haute, prix_moyen,
-    verdict_prix,        // 'normal' | 'sur-evalué' | 'sous-evalué'
+    verdict_prix,        // 'normal' | 'surevalue' | 'sous-evalue'
     ecart_pourcentage,
     facteurs: string[],
     alerte: string
@@ -473,42 +537,67 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
     verdict_juridique,
     recommandations: string[]
   },
-  score_global,          // (score_conformite + scorePrix) / 2 — scorePrix: normal=10, sous-evalué=4, sur-évalué=6
-  siret_artisan,
-  est_gratuite,          // true si quota utilisé (non pack)
-  pack_serenite_actif    // true si rapport acheté pour ce SIRET
+  score_global,          // (score_conformite + scorePrix) / 2
+  siret_artisan,         // = siretClient
+  est_gratuite: false,
+  pack_serenite_actif: true,
+  analyses_utilisees,
+  quota_max: 5,
+  quota_restant
 }
 ```
 
-**Logs dans `analyses_devis` :** `user_id`, `siret_artisan`, `ip_address`, `pages_pdf`, `taille_pdf_bytes`
+**Table `analyses_devis` — schéma réel :**
+```sql
+TABLE analyses_devis:
+  id              uuid          PK
+  user_id         uuid          FK → auth.users(id)
+  siret_artisan   text          -- siretClient
+  pages_pdf       int
+  taille_pdf_bytes bigint
+  nom_fichier     text
+  resultat_json   jsonb
+  created_at      timestamptz   DEFAULT now()
+```
+⚠️ `ip_address` n'existe plus. Le modèle est user-centric + siret-centric. Analyse gratuite anonyme supprimée.
 
-### Page `/analyser-devis`
+### Page `/analyser-devis` — Hub artisan
 
 **Fichier :** `app/analyser-devis/page.tsx` (`'use client'`, wrappé dans `<Suspense>`)
 
-**États :** `file`, `dragOver`, `loading`, `loadingStep`, `completedSteps`, `result`, `siretArtisan`, `quotaDepasse`, `error`
+**Nouveau flux (hub) :**
+1. Au montage : `supabase.auth.getUser()` → si non connecté, redirect `/auth?redirect=/analyser-devis`
+2. `loadRapports(userId)` : SELECT dans `rapports` + COUNT analyses ce mois par SIRET → liste `RapportWithQuota[]`
+3. Affichage liste des artisans vérifiés avec badge quota `X/5 ce mois`
+4. Clic → `setRapportSelectionne(r)` → zone upload affichée
+5. Upload → `triggerAnalyse(file)` → envoie `{ fileBase64, mimeType, nomFichier, siretArtisan: rapportSelectionne.siret }`
+6. Token : `supabase.auth.getSession()` → `session.access_token` → `Authorization: Bearer`
 
-**Upload :** Fichier converti en base64 via `arrayBuffer()` + `Buffer.from(...).toString('base64')`. Envoi JSON `{ fileBase64, mimeType }` (pas FormData).
+**Interface `RapportWithQuota` :**
+```typescript
+interface RapportWithQuota {
+  id: string
+  siret: string
+  nom_entreprise: string | null
+  stripe_session_id: string
+  analysesUtilisees: number
+  quotaMax: number   // toujours 5
+  quotaRestant: number
+  quotaAtteint: boolean
+}
+```
 
-**Animation de chargement :** 3 étapes avec `setTimeout` à 1200ms et 2600ms :
-1. Lecture du document (icône `FileText`)
-2. Analyse des prix du marché (icône `BarChart2`)
-3. Vérification juridique (icône `Scale`)
+**États :** `rapports`, `rapportSelectionne`, `file`, `dragOver`, `loading`, `loadingStep`, `completedSteps`, `result`, `error`
 
-**Composants intégrés :**
-- `JaugePrix` : jauge horizontale avec zones rouge/vert/orange, marqueurs verticaux pour prix moyen et montant devis
-- `ScoreCercle` : affichage circulaire du score global
-- `UpsellBloc` : fond dégradé vert foncé, grille 6 features, CTA vers `/artisan/{siret}` ou `/recherche`, témoignage
+**Animation chargement :** 3 étapes (1200ms / 2600ms) — FileText → BarChart2 → Scale.
 
-**Comportement quota :**
-- Si `quota_depasse` (HTTP 429) → affiche `UpsellBloc` sans formulaire d'upload
-- Si `result.est_gratuite` → affiche résultats + `UpsellBloc` en dessous
+**Composants intégrés :** `JaugePrix`, `ScoreCercle`. `UpsellBloc` supprimé (Pack toujours requis).
 
 ### SiteHeader — badge "Analyser un devis"
 
 **Interface `NavItem`** : champ `badge?: string` ajouté
 
-Item nav : `{ href: '/analyser-devis', label: 'Analyser & vérifier mon devis', desc: 'Prix du marché + conformité juridique en 1 clic', badge: 'Gratuit · 1/mois' }`
+Item nav : `{ href: '/analyser-devis', label: 'Analyser & vérifier mon devis', desc: '5 analyses par mois par artisan vérifié', badge: 'Pack Sérénité' }`
 
 Badge rendu dans `MegaMenuPanel` : fond `rgba(45,185,110,0.12)`, couleur `var(--color-accent)`
 
@@ -542,6 +631,18 @@ Dans `NouveauChantierForm` :
 ### Page `/chantier/[id]`
 
 **Fichier :** `app/chantier/[id]/page.tsx` (`'use client'`)
+
+**Suppression chantier (ajoutée le 30 mars 2026) :**
+- Bouton Trash2 à côté de "Exporter PDF" dans le header du chantier
+- Modal de confirmation → `handleDeleteChantier()` : cascade delete en ordre :
+  1. `chantier_evenements` WHERE `chantier_id`
+  2. `chantier_paiements` WHERE `chantier_id`
+  3. `chantier_phases` WHERE `chantier_id` (si existe)
+  4. Photos : list storage bucket `chantier-photos` + DELETE tous + DELETE `chantier_photos`
+  5. Documents : list storage bucket `chantier-documents` + DELETE tous + DELETE `chantier_documents`
+  6. DELETE `chantiers` WHERE `id`
+  7. `router.push('/mes-chantiers')`
+- États : `showDeleteModal: boolean`, `deleting: boolean`
 
 **5 onglets :**
 
@@ -640,6 +741,15 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
 ### Route `GET /api/recherche`
 
 - `export const maxDuration = 30` ajouté
+- **SIRET exact (31 mars 2026)** : recherche `exactMatch` sur les champs `siret`, `siege.siret`, `siren` des résultats bruts. Si trouvé → retourne ce résultat en premier. Remplace l'ancienne logique `rawResults.length === 1` qui pouvait échouer si l'API retournait plusieurs résultats pour un SIRET.
+
+### Page d'accueil `/` — Détection SIRET (31 mars 2026)
+
+**Fichier :** `app/page.tsx`
+
+- Dans `search()` : si l'input normalisé fait 14 chiffres → `router.push('/artisan/${normalized}')` directement, sans passer par `/recherche`
+- Dans `handleSubmit()` : même vérification 14 chiffres avant de construire l'URL de recherche
+- `normalized = query.replace(/\s/g, '')` — supprime tous les espaces (SIRET peut être saisi "123 456 789 00012")
 
 ---
 
@@ -717,7 +827,7 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 
 ---
 
-## 15. Bugs Corrigés (24–29 mars 2026)
+## 15. Bugs Corrigés (24 mars – 1er avril 2026)
 
 | Bug | Date | Correction |
 |-----|------|-----------|
@@ -741,6 +851,13 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 | Cron faux positifs (statut 'A' vs 'actif') | 27 mars | `normalizeStatut()` + gestion `statut_initial = null` sans alerte |
 | `/api/search` timeout (500 sur Vercel) | 27 mars | `maxDuration=30` + `fetchWithRetry` + `AbortSignal.timeout()` + 503 |
 | Utilisateur bloqué sans message clair si INSEE down | 27 mars | `isServiceDown` + bouton "Réessayer" dans fiche artisan |
+| Pack Sérénité vérifié sur siretExtrait (pouvait être null) | 30 mars | Vérification basée sur `siretClient` (envoyé par le front) |
+| Analyse devis : quota global (1/mois tous artisans) | 30 mars | Quota par artisan (5/mois par SIRET) — séparé par rapport |
+| Score non nul pour entreprise fermée | 31 mars | Court-circuit `isActif()` → score = 0 immédiatement |
+| Statut entreprise : comparaison 'A' vs 'actif' TypeScript | 31 mars | `String(result.statut \|\| '').toLowerCase().trim()` partout |
+| Suppression chantier impossible | 30 mars | `handleDeleteChantier()` avec cascade + modal de confirmation |
+| Onglet Mon Profil dans Mon Espace | 31 mars | Déplacé vers `/mon-profil` (standalone) + lien dropdown avatar |
+| Recherche SIRET 14 chiffres → résultats multiples | 31 mars | `exactMatch` lookup + redirect direct depuis la home |
 
 ---
 
@@ -755,7 +872,7 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 | Synthèse IA | Dépend clé | `ANTHROPIC_API_KEY` nécessaire — fallback affiché si absente |
 | Cron surveillance | Non testé | `vercel.json` configuré, non déclenché en prod |
 | Migration `statut_initial` | À appliquer | `ALTER TABLE surveillances ADD COLUMN IF NOT EXISTS statut_initial text;` |
-| Migrations Supabase | À appliquer | `20260325000000_create_rapports.sql` + `20260326_add_nom_entreprise_rapports.sql` + `20260325000000_surveillance_devis.sql` à exécuter dans Supabase Dashboard si pas déjà fait |
+| Migrations Supabase | À appliquer | `20260325000000_create_rapports.sql` + `20260326_add_nom_entreprise_rapports.sql` + `20260325000000_surveillance_devis.sql` + ajout colonnes `nom_fichier`/`resultat_json` sur `analyses_devis` à exécuter dans Supabase Dashboard si pas déjà fait |
 | Google OAuth prod | À tester | Nécessite config Google Console + Supabase Providers |
 | ScoreRing flash | Mineur | Bref flash gris avant que BODACC charge |
 | Timeline mobile | Mineur | 2 colonnes ne passent pas toujours en 1 colonne |
@@ -802,7 +919,9 @@ Formulaire 2 étapes. Le SIRET est pré-rempli si passé en `?siret=...`.
 | `BodaccSection` | `components/BodaccSection.tsx` | Cards colorées par type + pagination |
 | `PackBadge` | `components/PackBadge.tsx` | Badge "Pack Sérénité" inline, server-compatible |
 | `AnalyserDevisButton` | `components/AnalyserDevisButton.tsx` | Bouton client avec hover state |
-| `SiteHeader` | `components/SiteHeader.tsx` | Header mega-menu, auth, mobile ; `badge?` sur NavItem |
+| `SiteHeader` | `components/SiteHeader.tsx` | Header mega-menu, auth, mobile ; `badge?` sur NavItem ; dropdown avatar avec lien `/mon-profil` |
+| `ResultCard` | `components/ResultCard.tsx` | Card résultat de recherche ; `verdictLevel` basé sur `String(statut).toLowerCase()` |
+| `PricingCards` | `components/PricingCards.tsx` | Cards pricing ; Gratuit sans analyse devis ; Pack avec 5 analyses/mois |
 | `GuideChantier` | `components/GuideChantier.tsx` | Checklist 4 phases, état localStorage |
 | `WelcomeModal` | `components/WelcomeModal.tsx` | Modal premier achat |
 | `ModeleContrat` | `components/ModeleContrat.tsx` | Modèle contrat pré-rempli avec badge |
