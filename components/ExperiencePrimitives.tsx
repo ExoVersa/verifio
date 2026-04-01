@@ -108,12 +108,18 @@ export function PageHero({
 export function SurfaceCard({
   children,
   style,
+  className,
+  onClick,
 }: {
   children: ReactNode
   style?: CSSProperties
+  className?: string
+  onClick?: () => void
 }) {
   return (
     <div
+      className={className}
+      onClick={onClick}
       style={{
         background: 'rgba(255,255,255,0.78)',
         border: '1px solid rgba(226,217,204,0.86)',

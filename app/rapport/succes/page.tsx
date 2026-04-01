@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   ShieldCheck, CheckCircle2, XCircle, AlertCircle, Info, MapPin, Calendar,
-  Building2, Hash, Leaf, Users, Scale, Clock, ArrowLeft, Shield, FileText,
-  CreditCard, ClipboardCheck, FileSignature, LifeBuoy, FolderOpen,
+  Building2, Hash, Leaf, Users, Scale, ArrowLeft, Shield, FileText,
+  CreditCard, ClipboardCheck, FileSignature, FolderOpen,
   Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, FileSearch,
   Search, MessageSquare,
 } from 'lucide-react'
@@ -22,6 +22,7 @@ import WelcomeModal from '@/components/WelcomeModal'
 import SiteHeader from '@/components/SiteHeader'
 import PackBadge from '@/components/PackBadge'
 import AnalyserDevisButton from '@/components/AnalyserDevisButton'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -92,13 +93,23 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: React.Rea
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '10px',
-      padding: '12px 16px', marginBottom: '16px',
-      background: 'var(--color-neutral-bg)',
-      borderRadius: '10px',
-      borderLeft: '3px solid var(--color-accent)',
+      padding: '14px 16px', marginBottom: '18px',
+      background: 'linear-gradient(180deg, rgba(248,243,236,0.92) 0%, rgba(255,255,255,0.9) 100%)',
+      borderRadius: '16px',
+      border: '1px solid rgba(226,217,204,0.8)',
     }}>
-      <span style={{ color: 'var(--color-accent)' }}>{icon}</span>
-      <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</h2>
+      <span style={{
+        color: 'var(--color-accent)',
+        width: '36px',
+        height: '36px',
+        borderRadius: '12px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(21,59,46,0.08)',
+        flexShrink: 0,
+      }}>{icon}</span>
+      <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</h2>
     </div>
   )
 }
@@ -221,8 +232,8 @@ export default async function SuccesPage({
   try {
     result = await fetchCompany(siret)
     if (result.siren) etablissements = await fetchEtablissements(result.siren)
-  } catch (err: any) {
-    fetchError = err.message || 'Erreur lors du chargement des données.'
+  } catch (err: unknown) {
+    fetchError = err instanceof Error ? err.message : 'Erreur lors du chargement des données.'
   }
 
   // 3. Rapport persistence + surveillance + email
@@ -375,12 +386,13 @@ export default async function SuccesPage({
   return (
     <>
     <SiteHeader />
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)' }}>
 
       {/* Sub-header rapport */}
       <header style={{
-        padding: '14px 24px', borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-surface)',
+        padding: '14px 24px', borderBottom: '1px solid rgba(226,217,204,0.82)',
+        background: 'rgba(252,249,245,0.86)',
+        backdropFilter: 'blur(18px)',
         display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
@@ -412,62 +424,100 @@ export default async function SuccesPage({
       )}
 
       {result && (
-        <div className="rapport-layout">
+        <div className="rapport-layout" style={{ paddingTop: '28px', paddingBottom: '52px' }}>
 
           {/* ══════════════ COLONNE PRINCIPALE ══════════════ */}
           <div className="rapport-main">
 
             {/* 0. Bandeau features débloquées */}
-            <div style={{
-              background: '#1B4332', borderRadius: '12px',
-              padding: '16px 20px', marginBottom: '16px',
+            <SurfaceCard style={{
+              position: 'relative',
+              overflow: 'hidden',
+              padding: '26px 24px',
+              marginBottom: '18px',
+              background: 'linear-gradient(135deg, #153b2e 0%, #1e4d3d 62%, #2a5d49 100%)',
+              border: '1px solid rgba(21,59,46,0.08)',
+              boxShadow: '0 24px 60px rgba(21,59,46,0.18)',
             }}>
-              <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 700, color: '#D8F3DC', letterSpacing: '-0.01em' }}>
-                Pack Sérénité activé — 6 fonctionnalités débloquées
-              </p>
               <div style={{
-                display: 'flex', gap: '8px',
-                overflowX: 'auto', paddingBottom: '2px',
-                scrollbarWidth: 'none',
-              }}>
-                {([
-                  { Icon: FileText, label: 'PDF' },
-                  { Icon: Search, label: 'Analyse devis' },
-                  { Icon: BellRing, label: 'Surveillance 6 mois' },
-                  { Icon: Scale, label: 'Droits & recours' },
-                  { Icon: ClipboardCheck, label: 'Checklist' },
-                  { Icon: MessageSquare, label: 'Questions' },
-                ] as const).map(({ Icon, label }) => (
-                  <div key={label} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: '20px', padding: '6px 12px',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                  }}>
-                    <Icon size={13} color="#D8F3DC" strokeWidth={1.5} />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#D8F3DC' }}>{label}</span>
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(circle at 14% 18%, rgba(255,255,255,0.10), transparent 24%), radial-gradient(circle at 82% 20%, rgba(123,242,193,0.16), transparent 20%)',
+              }} />
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                  <div style={{ maxWidth: '560px' }}>
+                    <SectionBadge text="Pack Serenite active" tone="light" />
+                    <h1 className="font-display" style={{ margin: '16px 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.02, letterSpacing: '-0.05em', color: '#ffffff', fontWeight: 800 }}>
+                      Votre lecture complete de {result.nom}
+                    </h1>
+                    <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.7, color: 'rgba(240,248,243,0.78)' }}>
+                      Toutes les donnees utiles sont reunies ici pour vous aider a choisir, signer et suivre avec plus de confiance.
+                    </p>
                   </div>
-                ))}
+                  <div style={{
+                    minWidth: '180px',
+                    padding: '14px 16px',
+                    borderRadius: '18px',
+                    background: 'rgba(255,255,255,0.10)',
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    color: '#eff8f3',
+                  }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.78 }}>Statut du rapport</p>
+                    <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>Debloque</p>
+                    <p style={{ margin: '8px 0 0', fontSize: '12px', lineHeight: 1.5, opacity: 0.76 }}>
+                      Paiement verifie, surveillance activee et outils premium disponibles.
+                    </p>
+                  </div>
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+                  gap: '10px',
+                }}>
+                  {([
+                    { Icon: FileText, label: 'PDF' },
+                    { Icon: Search, label: 'Analyse devis' },
+                    { Icon: BellRing, label: 'Surveillance 6 mois' },
+                    { Icon: Scale, label: 'Droits & recours' },
+                    { Icon: ClipboardCheck, label: 'Checklist' },
+                    { Icon: MessageSquare, label: 'Questions utiles' },
+                  ] as const).map(({ Icon, label }) => (
+                    <div key={label} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px 14px',
+                      borderRadius: '16px',
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                    }}>
+                      <Icon size={14} color="#d8f3dc" strokeWidth={1.6} />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#eef8f3' }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* 1. Bannière confirmation */}
-            <div style={{
+            <SurfaceCard style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '12px 16px', borderRadius: '10px',
-              background: 'var(--color-safe-bg)',
-              border: '1px solid color-mix(in srgb, var(--color-safe) 30%, transparent)',
+              padding: '16px 18px',
+              background: 'linear-gradient(180deg, rgba(234,243,222,0.9) 0%, rgba(255,255,255,0.94) 100%)',
+              border: '1px solid rgba(59,109,17,0.16)',
               marginBottom: '24px',
+              boxShadow: '0 14px 28px rgba(39,80,10,0.08)',
             }}>
               <CheckCircle2 size={18} color="var(--color-safe)" />
               <div>
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-safe)' }}>Paiement confirmé — Rapport complet</p>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Paiement confirme, rapport complet disponible</p>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>Toutes les données sont débloquées ci-dessous</p>
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* 2. Score + statut + identité */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
                 <ScoreRing score={result.score} />
                 <div style={{ flex: 1, minWidth: '200px' }}>
@@ -485,7 +535,7 @@ export default async function SuccesPage({
                   )}
                   <div>
                     {result.alerts.map((alert, i) => (
-                      <div key={i} className={`badge badge-${alert.type}`} style={{ marginBottom: '6px', width: '100%', justifyContent: 'flex-start' }}>
+                      <div key={i} className={`badge badge-${alert.type}`} style={{ marginBottom: '6px', width: '100%', justifyContent: 'flex-start', background: 'rgba(255,255,255,0.72)' }}>
                         {alertIcons[alert.type]}
                         <span>{alert.message}</span>
                       </div>
@@ -506,8 +556,8 @@ export default async function SuccesPage({
                   ...(result.capitalSocial !== undefined ? [{ icon: <Building2 size={14} />, label: 'Capital social', value: `${result.capitalSocial.toLocaleString('fr-FR')} €` }] : []),
                   ...(result.effectif ? [{ icon: <Users size={14} />, label: 'Effectif', value: result.effectif }] : []),
                 ].filter(r => r.value).map((row, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '1px' }}>{row.icon}</span>
+                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(248,243,236,0.8)', border: '1px solid rgba(226,217,204,0.76)', borderRadius: '16px', padding: '14px 15px' }}>
+                    <span style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '1px', width: '30px', height: '30px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(21,59,46,0.06)' }}>{row.icon}</span>
                     <div>
                       <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{row.label}</p>
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 500 }}>{row.value}</p>
@@ -515,11 +565,11 @@ export default async function SuccesPage({
                   </div>
                 ))}
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* 3. Carte localisation */}
             {result.adresse && (
-              <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
                 <SectionTitle icon={<MapPin size={18} />} title="Localisation du siège" />
                 <iframe
                   src={`https://maps.google.com/maps?q=${encodeURIComponent(result.adresse)}&output=embed`}
@@ -535,12 +585,12 @@ export default async function SuccesPage({
                     Ouvrir Maps →
                   </a>
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* 4. Établissements */}
             {etablissements.length > 0 && (
-              <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
                 <SectionTitle icon={<Building2 size={18} />} title={`Établissements (${etablissements.length})`} />
                 {etablissements.length === 1 ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'var(--color-safe-bg)', border: '1px solid color-mix(in srgb, var(--color-safe) 30%, transparent)' }}>
@@ -565,11 +615,11 @@ export default async function SuccesPage({
                     ))}
                   </div>
                 )}
-              </div>
+              </SurfaceCard>
             )}
 
             {/* 5. Certifications RGE */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Leaf size={18} />} title="Certifications RGE" />
               {!result.rge.certifie ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', background: 'var(--color-neutral-bg)' }}>
@@ -598,10 +648,10 @@ export default async function SuccesPage({
                   ))}
                 </div>
               )}
-            </div>
+            </SurfaceCard>
 
             {/* 6. Dirigeants */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Users size={18} />} title="Dirigeants" />
               {result.dirigeants.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucun dirigeant trouvé</p>
@@ -619,10 +669,10 @@ export default async function SuccesPage({
                   ))}
                 </div>
               )}
-            </div>
+            </SurfaceCard>
 
             {/* 7. BODACC */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               {result.bodacc.procedureCollective && (
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', marginBottom: '16px' }}>
                   <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
@@ -635,10 +685,10 @@ export default async function SuccesPage({
                 </div>
               )}
               <BodaccSection annonces={result.bodacc.annonces} />
-            </div>
+            </SurfaceCard>
 
             {/* 8. Vos droits avant de signer */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Scale size={18} />} title={<>Vos droits avant de signer<PackBadge /></>} />
               <p style={{ margin: '-8px 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>Ce que la loi vous garantit</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
@@ -660,10 +710,10 @@ export default async function SuccesPage({
                   </div>
                 ))}
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* 9. Modèle de contrat */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <ModeleContrat
                 nomEntreprise={result.nom}
                 siret={result.siret}
@@ -671,12 +721,12 @@ export default async function SuccesPage({
                 nomDirigeant={nomDirigeant}
                 sessionId={session_id}
               />
-            </div>
+            </SurfaceCard>
 
             {/* 10. Guide si ça se passe mal */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <GuideRecours />
-            </div>
+            </SurfaceCard>
 
             {/* Disclaimer */}
             <p style={{ fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-surface)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
@@ -686,7 +736,7 @@ export default async function SuccesPage({
 
           {/* ══════════════ SIDEBAR STICKY ══════════════ */}
           <div className="rapport-sidebar">
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', overflow: 'hidden' }}>
+            <SurfaceCard style={{ overflow: 'hidden', position: 'sticky', top: '92px' }}>
 
               {/* PDF + Partager */}
               <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid var(--color-border)' }}>
@@ -851,7 +901,7 @@ export default async function SuccesPage({
                 </a>
               </div>
 
-            </div>
+            </SurfaceCard>
           </div>
 
         </div>

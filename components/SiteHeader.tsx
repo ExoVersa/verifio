@@ -242,7 +242,7 @@ function MegaMenuPanel({
           </p>
         </div>
 
-        <a
+        <Link
           href={menu.ctaHref}
           onClick={onClose}
           style={{
@@ -261,7 +261,7 @@ function MegaMenuPanel({
           onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
         >
           {menu.ctaLabel} →
-        </a>
+        </Link>
       </div>
     </div>
   )
@@ -412,7 +412,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       >
         {/* ── TOP BAR ── */}
         <div style={{
-          background: '#1B4332',
+          background: 'linear-gradient(90deg, #10251d 0%, #153b2e 45%, #1b4332 100%)',
           color: 'rgba(255,255,255,0.9)',
           fontSize: 12,
           padding: '8px 16px',
@@ -455,12 +455,12 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             padding: '0 24px',
             height: '78px',
             borderBottom: '1px solid rgba(214, 206, 193, 0.75)',
-            background: 'rgba(255,255,255,0.86)',
+            background: 'rgba(252,249,245,0.82)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             transition: 'box-shadow 0.2s, backdrop-filter 0.2s',
-            boxShadow: scrolled ? '0 18px 40px rgba(20,32,27,0.08)' : 'none',
+            boxShadow: scrolled ? '0 22px 50px rgba(20,32,27,0.10)' : 'none',
             backdropFilter: 'blur(18px)',
           }}
         >
@@ -521,7 +521,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                 )}
               </div>
             ))}
-            <a
+            <Link
               href="/pricing"
               style={{
                 display: 'flex', alignItems: 'center',
@@ -535,8 +535,8 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/pricing' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               <Gem size={14} strokeWidth={1.5} style={{ marginRight: '5px' }} />Tarifs
-            </a>
-            <a
+            </Link>
+            <Link
               href="/a-propos"
               style={{
                 display: 'flex', alignItems: 'center',
@@ -550,8 +550,8 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/a-propos' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               À propos
-            </a>
-            <a
+            </Link>
+            <Link
               href="/espace-artisan"
               style={{
                 display: 'flex', alignItems: 'center',
@@ -565,7 +565,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
             >
               <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
-            </a>
+            </Link>
           </nav>
 
           {/* ── RIGHT ── */}
@@ -768,7 +768,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     </div>
 
                     {/* CTA vérifier artisan */}
-                    <a
+                    <Link
                       href="/recherche"
                       style={{
                         fontSize: '13px', fontWeight: 700, color: '#fff',
@@ -781,13 +781,13 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                       onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                     >
                       Vérifier un artisan →
-                    </a>
+                    </Link>
                   </div>
                 )
               ) : (
                 /* ── NON CONNECTÉ ── */
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <a
+                  <Link
                     href="/auth"
                     style={{
                       fontSize: '13px', fontWeight: 500, color: 'var(--color-text)',
@@ -798,8 +798,8 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text)' }}
                   >
                     Se connecter
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/recherche"
                     style={{
                       fontSize: '13px', fontWeight: 700, color: '#fff',
@@ -812,7 +812,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                   >
                     Vérifier un artisan →
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>
@@ -913,7 +913,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                         )
                       }
                       return (
-                        <a
+                        <Link
                           key={item.href}
                           href={item.href}
                           onClick={closeAll}
@@ -922,7 +922,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         >
                           {inner}
-                        </a>
+                        </Link>
                       )
                     })}
                   </div>
@@ -931,7 +931,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             ))}
 
             {/* À propos link */}
-            <a
+            <Link
               href="/a-propos"
               onClick={closeAll}
               style={{
@@ -945,10 +945,10 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/a-propos' ? 'var(--color-bg)' : 'transparent')}
             >
               À propos
-            </a>
+            </Link>
 
             {/* Espace Artisan link */}
-            <a
+            <Link
               href="/espace-artisan"
               onClick={closeAll}
               style={{
@@ -962,7 +962,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent')}
             >
               <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
-            </a>
+            </Link>
 
             <div style={{ height: '1px', background: 'var(--color-border)', margin: '16px 0' }} />
 
@@ -1007,7 +1007,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   { href: '/mes-chantiers', label: 'Mes chantiers', Icon: HardHat },
                   { href: '/mon-espace?tab=surveillances', label: 'Mes surveillances', Icon: Bell },
                 ]).map(({ href, label, Icon }) => (
-                  <a
+                  <Link
                     key={href}
                     href={href}
                     onClick={closeAll}
@@ -1022,17 +1022,17 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   >
                     <Icon size={16} color="var(--color-accent)" />
                     {label}
-                  </a>
+                  </Link>
                 ))}
 
                 <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
-                <a href="/mon-profil" onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--color-text)', textDecoration: 'none' }}>
+                <Link href="/mon-profil" onClick={closeAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--color-text)', textDecoration: 'none' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                   </svg>
                   Mon profil
-                </a>
+                </Link>
                 <div style={{ height: '0.5px', background: 'var(--color-border)', margin: '4px 0' }} />
                 <button
                   onClick={() => { supabase.auth.signOut(); closeAll() }}
@@ -1053,7 +1053,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               </>
             ) : (
               <div style={{ display: 'flex', gap: '10px' }}>
-                <a
+                <Link
                   href="/auth"
                   onClick={closeAll}
                   style={{
@@ -1068,8 +1068,8 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   Se connecter
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/auth"
                   onClick={closeAll}
                   style={{
@@ -1084,7 +1084,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
                 >
                   S&apos;inscrire
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -1121,7 +1121,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
         {bottomNavLinks.map(({ href, Icon, label }) => {
           const isActive = pathname === href
           return (
-            <a
+            <Link
               key={label}
               href={href}
               style={{
@@ -1138,7 +1138,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             >
               <Icon size={20} />
               <span>{label}</span>
-            </a>
+            </Link>
           )
         })}
       </nav>

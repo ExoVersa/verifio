@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useRef, use, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 import GuideChantier from '@/components/GuideChantier'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
 import {
   type Chantier, type ChantierPaiement, type ChantierEvenement,
@@ -193,9 +195,9 @@ function JournalTab({
                   <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.5 }}>{ev.description}</p>
                 )}
                 {ev.type === 'alerte' && ev.id === 'auto-litige' && (
-                  <a href="/assistant-juridique" style={{ display: 'inline-block', marginTop: '6px', fontSize: '12px', color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>
-                    → Consulter l'assistant juridique
-                  </a>
+                  <Link href="/assistant-juridique" style={{ display: 'inline-block', marginTop: '6px', fontSize: '12px', color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>
+                    → Consulter l&apos;assistant juridique
+                  </Link>
                 )}
               </div>
             </div>
@@ -207,7 +209,7 @@ function JournalTab({
         <Modal title="Ajouter un événement" onClose={() => setShowModal(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={lbl}>Type d'événement</label>
+              <label style={lbl}>Type d&apos;événement</label>
               <select style={inp} value={form.type} onChange={e => set('type', e.target.value)}>
                 <option value="note">📝 Note</option>
                 <option value="appel">📞 Appel téléphonique</option>
@@ -316,7 +318,7 @@ function PaiementsTab({
           <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', background: 'var(--color-warn-bg)', border: '1px solid var(--color-warn-border)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
             <AlertCircle size={14} color="var(--color-warn)" style={{ flexShrink: 0, marginTop: '1px' }} />
             <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-warn)', fontWeight: 500 }}>
-              L'acompte versé ({Math.round(acomptePct * 100)}%) dépasse 30% du total. Vérifiez votre contrat.
+              L&apos;acompte versé ({Math.round(acomptePct * 100)}%) dépasse 30% du total. Vérifiez votre contrat.
             </p>
           </div>
         )}
@@ -905,21 +907,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  useEffect(() => {
-    if (phases.length > 0 && phaseOuverte === null) {
-      const enCours = phases.find(p => p.statut === 'en_cours')
-      setPhaseOuverte(enCours?.nom || null)
-    }
-  }, [phases])
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/auth'); return }
-      loadAll()
-    })
-  }, [id])
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     const [{ data: c }, { data: ev }, { data: pa }, { data: ph }, { data: do_ }] = await Promise.all([
       supabase.from('chantiers').select('*').eq('id', id).single(),
@@ -950,11 +938,12 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
         })))
         .select()
       setPhases(created || [])
+      setPhaseOuverte(prev => prev ?? created?.find(p => p.statut === 'en_cours')?.nom ?? null)
     } else {
       setPhases(phasesData)
+      setPhaseOuverte(prev => prev ?? phasesData.find(p => p.statut === 'en_cours')?.nom ?? null)
     }
 
-    // Analyses de devis pour cet artisan
     if (c.siret) {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (currentUser) {
@@ -969,7 +958,14 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     }
 
     setLoading(false)
-  }
+  }, [id, router])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) { router.push('/auth'); return }
+      loadAll()
+    })
+  }, [id, loadAll, router])
 
   const reloadPhases = useCallback(async () => {
     const { data } = await supabase
@@ -981,7 +977,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
     if (!chantier) return
     setSavingStatut(true)
     await supabase.from('chantiers').update({ statut }).eq('id', id)
-    setChantier({ ...chantier, statut: statut as any })
+    setChantier({ ...chantier, statut: statut as Chantier['statut'] })
     if (statut === 'litige') {
       await supabase.from('chantier_evenements').insert({ chantier_id: id, titre: 'Statut changé en Litige', description: 'Consultez l\'assistant juridique pour vos recours.', type: 'alerte', date_evenement: new Date().toISOString() })
       setEvenements(prev => [{ id: Date.now().toString(), chantier_id: id, titre: 'Statut changé en Litige', description: 'Consultez l\'assistant juridique pour vos recours.', type: 'alerte', date_evenement: new Date().toISOString(), created_at: new Date().toISOString() }, ...prev])
@@ -1088,7 +1084,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+      <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 38%, #fcfaf7 100%)' }}>
         <SiteHeader />
         <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent)' }} className="spin" />
@@ -1110,17 +1106,23 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const mLbl: React.CSSProperties = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-muted)', marginBottom: 6, display: 'block' }
-  const mVal: React.CSSProperties = { fontSize: 20, fontWeight: 500, color: 'var(--color-text)', lineHeight: 1, display: 'block', marginBottom: 4 }
+  const mVal: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1, display: 'block', marginBottom: 6, letterSpacing: '-0.03em' }
   const mSub: React.CSSProperties = { fontSize: 11, color: 'var(--color-muted)', display: 'block' }
   const sectionLbl: React.CSSProperties = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-muted)', fontWeight: 600 }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 38%, #fcfaf7 100%)' }}>
       <SiteHeader />
 
       {/* ── HEADER ── */}
-      <div style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 24px 0' }}>
+      <div style={{ padding: '24px 24px 0' }}>
+        <SurfaceCard style={{ maxWidth: '1120px', margin: '0 auto', padding: '28px 28px 0', overflow: 'hidden', position: 'relative' }}>
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at 10% 16%, rgba(82,183,136,0.12), transparent 22%), radial-gradient(circle at 88% 16%, rgba(255,196,153,0.18), transparent 18%)',
+          }} />
+          <div style={{ position: 'relative' }}>
 
           <button
             onClick={() => router.push('/mes-chantiers')}
@@ -1132,8 +1134,11 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ marginBottom: '12px' }}>
+                <SectionBadge text="Carnet de chantier" tone="sand" />
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                <h1 className="font-display" style={{ margin: 0, fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                <h1 className="font-display" style={{ margin: 0, fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.02 }}>
                   {chantier.nom_artisan}
                 </h1>
                 {chantier.siret && (
@@ -1162,9 +1167,9 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                 {(Object.entries(STATUT_LABELS) as [string, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               {chantier.statut === 'litige' && (
-                <a href="/assistant-juridique" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '20px', color: '#dc2626', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+                <Link href="/assistant-juridique" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '20px', color: '#dc2626', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
                   Assistant juridique
-                </a>
+                </Link>
               )}
               <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--color-muted)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
                 <Download size={12} />
@@ -1180,42 +1185,62 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.35fr 0.9fr', gap: '14px', marginBottom: '18px' }}>
+            <div style={{ padding: '18px 18px 20px', borderRadius: '22px', background: 'linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(248,243,236,0.92) 100%)', border: '1px solid rgba(226,217,204,0.82)' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7b8a83', fontWeight: 700 }}>Vision d’ensemble</p>
+              <p style={{ margin: '0 0 10px', fontSize: '16px', color: '#14201b', fontWeight: 700 }}>
+                Suivez le budget, les phases, les preuves photo et les documents dans un seul espace.
+              </p>
+              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: '#56625d' }}>
+                Chaque onglet doit vous aider a prendre une decision simple: continuer, documenter, relancer ou vous proteger en cas de doute.
+              </p>
+            </div>
+            <div style={{ padding: '18px', borderRadius: '22px', background: 'linear-gradient(135deg, #153b2e 0%, #1f4c3d 100%)', border: '1px solid rgba(21,59,46,0.08)', color: '#eef8f3' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, opacity: 0.76 }}>Statut actuel</p>
+              <p style={{ margin: '0 0 10px', fontSize: '26px', fontWeight: 800, letterSpacing: '-0.04em' }}>{STATUT_LABELS[chantier.statut]}</p>
+              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(238,248,243,0.76)' }}>
+                {retard ? `Le chantier accuse actuellement ${Math.abs(jours || 0)} jour${Math.abs(jours || 0) > 1 ? 's' : ''} de retard.` : 'Le carnet reste a jour pour garder une trace claire des decisions et des preuves.'}
+              </p>
+            </div>
+          </div>
+
           {/* Tab nav — 2 onglets */}
-          <div style={{ display: 'flex', borderBottom: '0.5px solid var(--color-border)', marginBottom: '-1px' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(226,217,204,0.82)', marginBottom: '-1px' }}>
             {(['chantier', 'checklist'] as TabKey[]).map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                style={{ padding: '10px 16px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1B4332' : '2px solid transparent', cursor: 'pointer', fontSize: 13, fontWeight: tab === t ? 500 : 400, color: tab === t ? 'var(--color-text)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}
+                style={{ padding: '12px 18px', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1B4332' : '2px solid transparent', cursor: 'pointer', fontSize: 13, fontWeight: tab === t ? 700 : 500, color: tab === t ? 'var(--color-text)' : 'var(--color-muted)', fontFamily: 'var(--font-body)', transition: 'color 0.15s' }}
               >
                 {t === 'chantier' ? 'Chantier' : 'Checklist'}
               </button>
             ))}
           </div>
+          </div>
+        </SurfaceCard>
         </div>
-      </div>
 
       {/* ── CONTENU ── */}
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 24px 80px' }}>
+      <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '28px 24px 80px' }}>
 
         {/* MÉTRIQUES */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))', gap: '10px', marginBottom: '1.5rem' }}>
-          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))', gap: '12px', marginBottom: '1.75rem' }}>
+          <SurfaceCard style={{ padding: '18px 18px 16px', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,243,236,0.92) 100%)' }}>
             <span style={mLbl}>Budget total</span>
             <span style={mVal}>{chantier.montant_total ? formatEur(chantier.montant_total) : 'Non défini'}</span>
             <span style={mSub}>montant contractuel</span>
-          </div>
-          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+          </SurfaceCard>
+          <SurfaceCard style={{ padding: '18px 18px 16px', background: 'linear-gradient(180deg, rgba(234,243,222,0.88) 0%, rgba(255,255,255,0.92) 100%)' }}>
             <span style={mLbl}>Payé</span>
             <span style={{ ...mVal, color: '#27500A' }}>{formatEur(paye)}</span>
             <span style={mSub}>{payePct}% du total</span>
-          </div>
-          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+          </SurfaceCard>
+          <SurfaceCard style={{ padding: '18px 18px 16px', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,243,236,0.92) 100%)' }}>
             <span style={mLbl}>Restant</span>
             <span style={mVal}>{chantier.montant_total ? formatEur(Math.max(0, chantier.montant_total - paye)) : '—'}</span>
             <span style={mSub}>à verser</span>
-          </div>
-          <div style={{ background: 'var(--color-bg)', borderRadius: '10px', padding: '12px 14px' }}>
+          </SurfaceCard>
+          <SurfaceCard style={{ padding: '18px 18px 16px', background: retard ? 'linear-gradient(180deg, rgba(252,235,235,0.88) 0%, rgba(255,255,255,0.94) 100%)' : 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,243,236,0.92) 100%)' }}>
             <span style={mLbl}>Fin prévue</span>
             <span style={mVal}>
               {chantier.date_fin_prevue
@@ -1225,7 +1250,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
             <span style={mSub}>
               {jours === null ? '' : jours > 0 ? `dans ${jours} jour${jours > 1 ? 's' : ''}` : jours === 0 ? "aujourd'hui" : 'dépassée'}
             </span>
-          </div>
+          </SurfaceCard>
         </div>
 
         {/* TAB CHANTIER */}
@@ -1233,7 +1258,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
           <>
             {/* DEVIS ANALYSÉS */}
             {analyses.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
+              <SurfaceCard style={{ marginBottom: '1.5rem', padding: '18px' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1272,7 +1297,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                   )
                 })}
-              </div>
+              </SurfaceCard>
             )}
 
             {/* PHASES ACCORDÉON */}
@@ -1310,11 +1335,11 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
               const badgeLabel = phase.statut === 'terminee' ? 'Terminée' : phase.statut === 'en_cours' ? 'En cours' : 'En attente'
 
               return (
-                <div key={phaseName} style={{ borderRadius: '14px', border: borderColor, overflow: 'hidden', background: 'var(--color-surface)', marginBottom: '10px' }}>
+                <SurfaceCard key={phaseName} style={{ borderRadius: '22px', border: borderColor, overflow: 'hidden', marginBottom: '12px', background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(248,243,236,0.9) 100%)', boxShadow: '0 16px 36px rgba(20,32,27,0.05)' }}>
                   {/* Header */}
                   <div
                     onClick={() => setPhaseOuverte(isOpen ? null : phaseName)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '18px 18px', cursor: 'pointer' }}
                   >
                     <div style={circleStyle}>
                       {phase.statut === 'terminee'
@@ -1323,7 +1348,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                       }
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 500 }}>{PHASE_LABELS[phaseName]}</p>
+                      <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em' }}>{PHASE_LABELS[phaseName]}</p>
                       {(phase.date_debut_prevue || phase.date_fin_prevue) && (
                         <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>
                           {phase.date_debut_prevue && new Date(phase.date_debut_prevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -1340,10 +1365,10 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
                   {/* Body */}
                   {isOpen && (
-                    <div style={{ borderTop: '0.5px solid var(--color-border)' }}>
+                    <div style={{ borderTop: '1px solid rgba(226,217,204,0.76)' }}>
                       {/* Métriques 3 colonnes */}
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,minmax(0,1fr))', gap: '1px', background: 'var(--color-border)' }}>
-                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.72)', padding: '14px 15px' }}>
                           <span style={{ ...mLbl, marginBottom: 4 }}>Dates prévues</span>
                           <span style={{ fontSize: 13, color: 'var(--color-text)' }}>
                             {phase.date_debut_prevue || phase.date_fin_prevue
@@ -1351,7 +1376,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                               : 'Non planifiée'}
                           </span>
                         </div>
-                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.72)', padding: '14px 15px' }}>
                           <span style={{ ...mLbl, marginBottom: 4 }}>Budget phase</span>
                           <span style={{ fontSize: 13, color: 'var(--color-text)' }}>
                             {phase.budget !== null ? formatEur(phase.budget) : 'Non défini'}
@@ -1360,7 +1385,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                             <span style={{ ...mSub, marginTop: 2 }}>sur {formatEur(chantier.montant_total)} total</span>
                           )}
                         </div>
-                        <div style={{ background: 'var(--color-surface)', padding: '12px 14px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.72)', padding: '14px 15px' }}>
                           <span style={{ ...mLbl, marginBottom: 4 }}>Avancement</span>
                           {avancement === null ? (
                             <span style={{ fontSize: 13, color: 'var(--color-muted)' }}>—</span>
@@ -1494,7 +1519,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                       </button>
                     </div>
                   )}
-                </div>
+                </SurfaceCard>
               )
             })}
 

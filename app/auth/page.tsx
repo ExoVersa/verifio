@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, Zap, Gift } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -217,8 +218,10 @@ function LeftPanel() {
         <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, fontStyle: 'italic' }}>
           &quot;Ce que j&apos;ai aime, c&apos;est de comprendre tout de suite quoi verifier et quoi demander avant de signer.&quot;
         </p>
-        <div style={{ display: 'flex', gap: '2px' }}>
-          {'⭐⭐⭐⭐⭐'.split('').map((s, i) => <span key={i} style={{ fontSize: '14px' }}>{s}</span>)}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} style={{ width: '8px', height: '8px', borderRadius: '999px', background: '#74c69d' }} />
+          ))}
         </div>
       </div>
     </div>
@@ -274,9 +277,9 @@ function LoginForm({
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
           <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Mot de passe</label>
-          <a href="/auth/reset" style={{ fontSize: '12px', color: '#1B4332', textDecoration: 'none', fontWeight: 500 }}>
+          <Link href="/auth/reset" style={{ fontSize: '12px', color: '#1B4332', textDecoration: 'none', fontWeight: 500 }}>
             Mot de passe oublié ?
-          </a>
+          </Link>
         </div>
         <div style={{ position: 'relative' }}>
           <input
@@ -511,9 +514,9 @@ function SignupForm({
         />
         <span style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>
           J&apos;accepte les{' '}
-          <a href="/cgu" target="_blank" style={{ color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}>CGU</a>
+          <Link href="/cgu" target="_blank" style={{ color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}>CGU</Link>
           {' '}et la{' '}
-          <a href="/politique-confidentialite" target="_blank" style={{ color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}>politique de confidentialité</a>
+          <Link href="/politique-confidentialite" target="_blank" style={{ color: '#1B4332', fontWeight: 600, textDecoration: 'none' }}>politique de confidentialité</Link>
         </span>
       </label>
 
@@ -649,7 +652,7 @@ function AuthPageInner() {
           .auth-right { width: 100% !important; }
         }
       `}</style>
-      <main style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(180deg, #fbf8f4 0%, #f3ede5 100%)' }}>
+      <main style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f4eee6 40%, #fcfaf7 100%)' }}>
         {/* Colonne gauche */}
         <div className="auth-left" style={{ flex: '0 0 45%', maxWidth: '45%' }}>
           <LeftPanel />
@@ -672,9 +675,9 @@ function AuthPageInner() {
           <SurfaceCard style={{
             width: '100%',
             maxWidth: '430px',
-            padding: '36px 32px',
+            padding: '38px 34px',
             background: 'rgba(255,255,255,0.90)',
-            boxShadow: '0 20px 42px rgba(20,32,27,0.08)',
+            boxShadow: '0 28px 56px rgba(20,32,27,0.10)',
             backdropFilter: 'blur(16px)',
           }}>
             {mode === 'login' ? (

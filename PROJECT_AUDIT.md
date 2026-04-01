@@ -133,6 +133,12 @@ Input JSON :
 
 **Fichier :** `app/rapport/succes/page.tsx` — Server Component (`force-dynamic`)
 
+**Refonte visuelle (2 avril 2026) :**
+- hero premium "Pack Sérénité activé" en tête de rapport
+- cartes principales et sidebar migrées vers `SurfaceCard`
+- hiérarchie renforcée sur les blocs score, identité, droits, guide et actions
+- aucune modification du workflow Stripe / Supabase / email / PDF
+
 **Vérification Stripe :** La page vérifie `payment_status === 'paid'` via `stripe.checkout.sessions.retrieve(session_id)`. Si non payé → `redirect('/recherche')`. Si `session_id` absent → `redirect('/recherche')`.
 
 **Récupération `user_id` :** `stripeSession.metadata?.user_id` (transmis lors du checkout)
@@ -431,6 +437,12 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
 
 **Fichier :** `app/mon-espace/page.tsx` (`'use client'`)
 
+**Refonte visuelle (2 avril 2026) :**
+- fond global aligné sur le nouveau langage visuel premium (`linear-gradient` chaud)
+- hero éditorial avec `SectionBadge`, panneau de contexte compte et copy plus produit
+- tabs refaites en pills dans `SurfaceCard` (plus de simple barre basse)
+- dashboard : cartes stats, activité récente et raccourcis migrés vers `SurfaceCard`
+
 ### Onglets
 
 1. **Mes surveillances** — requête `.eq('user_id', u.id)` (corrigé, était `.eq('email', ...)`)
@@ -468,6 +480,11 @@ Prix affiché dans la sidebar : 4,90€ (était 19,90€)
 ---
 
 ## 7. Pricing
+
+**Refonte visuelle (2 avril 2026) :**
+- `app/pricing/page.tsx` conserve les mêmes plans/prix, mais utilise désormais des surfaces premium cohérentes avec le reste de la plateforme
+- `PricingCards` reste la source de vérité de la grille tarifaire
+- FAQ et CTA final sont maintenant encapsulées dans des `SurfaceCard`
 
 ### Cohérence des prix
 
@@ -565,6 +582,11 @@ TABLE analyses_devis:
 
 **Fichier :** `app/analyser-devis/page.tsx` (`'use client'`, wrappé dans `<Suspense>`)
 
+**Refonte visuelle (2 avril 2026) :**
+- page transformée en hub plus éditorial
+- hero + shells premium via `PageHero`, `SectionBadge`, `SurfaceCard`
+- zone upload et résultats davantage mis en scène, sans changement de logique métier
+
 **Nouveau flux (hub) :**
 1. Au montage : `supabase.auth.getUser()` → si non connecté, redirect `/auth?redirect=/analyser-devis`
 2. `loadRapports(userId)` : SELECT dans `rapports` + COUNT analyses ce mois par SIRET → liste `RapportWithQuota[]`
@@ -609,6 +631,11 @@ Badge rendu dans `MegaMenuPanel` : fond `rgba(45,185,110,0.12)`, couleur `var(--
 
 Liste des chantiers de l'utilisateur avec statut, montant, dates.
 
+**Refonte visuelle (2 avril 2026) :**
+- header premium avec `SurfaceCard`
+- cartes chantier plus aérées et plus cohérentes avec le nouveau shell
+- aucun changement de logique métier
+
 ### Page `/nouveau-chantier`
 
 **Fichier :** `app/nouveau-chantier/page.tsx`
@@ -631,6 +658,13 @@ Dans `NouveauChantierForm` :
 ### Page `/chantier/[id]`
 
 **Fichier :** `app/chantier/[id]/page.tsx` (`'use client'`)
+
+**Refonte visuelle (2 avril 2026) :**
+- fond global harmonisé avec les autres écrans coeur
+- header chantier transformé en hero premium avec résumé de contexte
+- métriques de pilotage migrées vers `SurfaceCard`
+- accordéons de phases restylés avec surfaces, bordures et hiérarchie plus haut de gamme
+- la logique Supabase / uploads / suppressions reste inchangée
 
 **Suppression chantier (ajoutée le 30 mars 2026) :**
 - Bouton Trash2 à côté de "Exporter PDF" dans le header du chantier
@@ -927,3 +961,25 @@ Formulaire 2 étapes. Le SIRET est pré-rempli si passé en `?siret=...`.
 | `ModeleContrat` | `components/ModeleContrat.tsx` | Modèle contrat pré-rempli avec badge |
 | `GuideRecours` | `components/GuideRecours.tsx` | Guide recours avec badge |
 | `BoutonPDF` | `components/BoutonPDF.tsx` | Déclencheur téléchargement PDF |
+| `ExperiencePrimitives` | `components/ExperiencePrimitives.tsx` | Primitives visuelles partagées : `SectionBadge`, `PageHero`, `SurfaceCard`, `PrimaryLink` |
+
+### Couche design / expérience (2 avril 2026)
+
+Les écrans suivants ont été remontés sur un langage visuel commun "confiance premium" :
+- `app/recherche/page.tsx`
+- `app/analyser-devis/page.tsx`
+- `app/artisan/[siret]/page.tsx`
+- `app/rapport/succes/page.tsx`
+- `app/chantier/[id]/page.tsx`
+- `app/mon-espace/page.tsx`
+- `app/mes-chantiers/page.tsx`
+- `app/pricing/page.tsx`
+- `app/auth/page.tsx`
+- `app/contact/page.tsx`
+
+Points communs de cette couche :
+- fonds chauds en dégradé plutôt que surfaces plates
+- usage répété de `SurfaceCard` pour unifier cards, shells et sidebars
+- badges de section via `SectionBadge`
+- `SiteHeader` plus premium avec navigation interne migrée vers `Link`
+- hiérarchie plus éditoriale sur les écrans de décision sans modification des flows critiques

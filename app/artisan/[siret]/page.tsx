@@ -9,6 +9,7 @@ import {
   Smartphone, Link, Download, Star,
 } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
 import { dirigeantSlug } from '@/lib/dirigeant'
 import { calculateScore, getYears as getYearsUtil, scoreColor } from '@/lib/score'
@@ -121,12 +122,6 @@ function computeScore(result: SearchResult) {
       collectives: nbProceduresCollectives,
     },
   })
-}
-
-function isEntrepriseFermee(statut: string | undefined | null): boolean {
-  if (!statut) return false
-  const s = statut.toLowerCase().trim()
-  return s !== 'a' && s !== 'actif' && s !== 'active'
 }
 
 /* ─── Décennale checklist ────────────────────────────────── */
@@ -601,7 +596,7 @@ export default function ArtisanFichePage() {
   const rgeVisibleDomaines = showAllRGE ? rgeDomainesUniques : rgeDomainesUniques.slice(0, RGE_MAX)
 
   return (
-    <main style={{ minHeight: '100vh', background: 'transparent', fontFamily: 'var(--font-body)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)' }}>
       <SiteHeader />
 
       <style>{`
@@ -687,10 +682,10 @@ export default function ArtisanFichePage() {
         {!loading && result && (
           <>
             {/* ── HEADER CARD ── */}
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+            <SurfaceCard style={{
+              position: 'relative',
+              overflow: 'hidden',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(250,246,241,0.94) 100%)',
               padding: '32px',
               marginBottom: '24px',
               display: 'flex',
@@ -698,6 +693,16 @@ export default function ArtisanFichePage() {
               gap: '20px',
               flexWrap: isMobile ? 'wrap' : 'nowrap',
             }}>
+              <div style={{
+                position: 'absolute',
+                top: '-40px',
+                right: '-30px',
+                width: '220px',
+                height: '220px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(82,183,136,0.16) 0%, rgba(82,183,136,0.04) 42%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
               {/* Avatar */}
               <div style={{
                 width: 64, height: 64, borderRadius: '50%',
@@ -705,12 +710,32 @@ export default function ArtisanFichePage() {
                 fontSize: '24px', fontWeight: 800,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, fontFamily: 'var(--font-body)',
+                position: 'relative',
+                zIndex: 1,
               }}>
                 {getInitial(result.nom)}
               </div>
 
               {/* Middle info */}
-              <div style={{ flexGrow: 1, minWidth: 0 }}>
+              <div style={{ flexGrow: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  <SectionBadge text="Fiche de vérification" />
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '7px 12px',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.82)',
+                    border: '1px solid rgba(226,217,204,0.9)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#5f6c66',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                  }}>
+                    Décision assistée
+                  </span>
+                </div>
                 <h1 style={{
                   fontSize: isMobile ? '22px' : '28px',
                   fontWeight: 800,
@@ -724,21 +749,23 @@ export default function ArtisanFichePage() {
                 </h1>
 
                 {/* Chips */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                   {result.formeJuridique && (
                     <span style={{
-                      background: '#f0fdf4', color: '#15803d',
-                      fontSize: '12px', fontWeight: 600,
-                      padding: '3px 10px', borderRadius: '20px',
+                      background: 'rgba(255,255,255,0.84)', color: '#15803d',
+                      fontSize: '12px', fontWeight: 700,
+                      padding: '5px 10px', borderRadius: '999px',
+                      border: '1px solid rgba(226,217,204,0.9)',
                     }}>
                       {result.formeJuridique}
                     </span>
                   )}
                   {result.activite && (
                     <span style={{
-                      background: '#f0fdf4', color: '#15803d',
-                      fontSize: '12px', fontWeight: 600,
-                      padding: '3px 10px', borderRadius: '20px',
+                      background: 'rgba(255,255,255,0.84)', color: '#15803d',
+                      fontSize: '12px', fontWeight: 700,
+                      padding: '5px 10px', borderRadius: '999px',
+                      border: '1px solid rgba(226,217,204,0.9)',
                     }}>
                       {result.activite}
                     </span>
@@ -759,12 +786,12 @@ export default function ArtisanFichePage() {
               </div>
 
               {/* Status badge */}
-              <div style={{ flexShrink: 0 }}>
+              <div style={{ flexShrink: 0, position: 'relative', zIndex: 1 }}>
                 {result.statut === 'actif' ? (
                   <span style={{
                     background: '#52B788', color: 'white',
                     fontSize: '13px', fontWeight: 800,
-                    padding: '8px 20px', borderRadius: '24px',
+                    padding: '10px 20px', borderRadius: '999px',
                     whiteSpace: 'nowrap', display: 'inline-block',
                   }}>
                     ● ACTIF
@@ -773,7 +800,7 @@ export default function ArtisanFichePage() {
                   <span style={{
                     background: '#ef4444', color: 'white',
                     fontSize: '13px', fontWeight: 800,
-                    padding: '8px 20px', borderRadius: '24px',
+                    padding: '10px 20px', borderRadius: '999px',
                     whiteSpace: 'nowrap', display: 'inline-flex',
                     alignItems: 'center', gap: '4px',
                   }}>
@@ -781,7 +808,7 @@ export default function ArtisanFichePage() {
                   </span>
                 )}
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* Bandeau entreprise fermée */}
             {(String(result.statut || '').toLowerCase().trim() !== 'a' && String(result.statut || '').toLowerCase().trim() !== 'actif') && (

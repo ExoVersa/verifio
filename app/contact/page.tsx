@@ -57,7 +57,7 @@ export default function ContactPage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 38%, #fcfaf7 100%)' }}>
       <SiteHeader />
 
       <PageHero

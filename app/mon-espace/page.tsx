@@ -150,15 +150,15 @@ function DashboardTab({
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '36px' }}>
         {stats.map(({ label, value, icon, color, bg, href }) => (
-          <div
+          <SurfaceCard
             key={label}
             onClick={href ? () => router.push(href) : undefined}
             style={{
-              background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-card)', padding: '20px 24px',
+              padding: '22px 24px',
               display: 'flex', alignItems: 'center', gap: '16px',
               cursor: href ? 'pointer' : 'default',
               transition: 'box-shadow 0.15s, transform 0.15s',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(248,243,236,0.94) 100%)',
             }}
             className={href ? 'card-hover' : ''}
           >
@@ -177,7 +177,7 @@ function DashboardTab({
                 {label}
               </p>
             </div>
-          </div>
+          </SurfaceCard>
         ))}
       </div>
 
@@ -185,7 +185,7 @@ function DashboardTab({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '24px', alignItems: 'start' }}>
 
         {/* Dernière activité */}
-        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', padding: '24px' }}>
+        <SurfaceCard style={{ padding: '24px' }}>
           <h2 className="font-display" style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: 700 }}>
             Dernière activité
           </h2>
@@ -259,10 +259,10 @@ function DashboardTab({
               ))}
             </div>
           )}
-        </div>
+        </SurfaceCard>
 
         {/* Raccourcis */}
-        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', padding: '24px' }}>
+        <SurfaceCard style={{ padding: '24px', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(244,238,230,0.92) 100%)' }}>
           <h2 className="font-display" style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 700 }}>
             Raccourcis
           </h2>
@@ -272,7 +272,7 @@ function DashboardTab({
               { label: 'Nouveau chantier', href: '/nouveau-chantier', Icon: Plus, accent: true },
               { label: 'Mes alertes', href: '/mon-espace?tab=surveillances', Icon: Bell, accent: false },
             ].map(({ label, href, Icon, accent }) => (
-              <a
+              <Link
                 key={href}
                 href={href}
                 style={{
@@ -289,10 +289,10 @@ function DashboardTab({
               >
                 <Icon size={15} />
                 {label}
-              </a>
+              </Link>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
       </div>
     </div>
   )
@@ -1356,7 +1356,7 @@ function MonEspaceInner() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 38%, #fcfaf7 100%)' }}>
       <SiteHeader />
 
       {/* Toast d'erreur */}
@@ -1371,27 +1371,39 @@ function MonEspaceInner() {
         </div>
       )}
 
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '32px 24px 88px' }}>
+      <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '32px 24px 88px' }}>
 
         {/* Page header */}
-        <SurfaceCard style={{ padding: '26px 28px', marginBottom: '22px' }}>
-        <div>
-          <SectionBadge text="Espace personnel" tone="green" />
-          <h1 className="font-display" style={{ margin: '14px 0 6px', fontSize: '34px', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Mon espace
-          </h1>
-          <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.7 }}>
-            {user?.email}
-          </p>
+        <SurfaceCard style={{ padding: '28px 30px', marginBottom: '22px', overflow: 'hidden', position: 'relative', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(244,238,230,0.94) 100%)' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 10% 16%, rgba(82,183,136,0.12), transparent 22%), radial-gradient(circle at 88% 18%, rgba(255,196,153,0.18), transparent 20%)' }} />
+        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(260px, 0.85fr)', gap: '18px', alignItems: 'start' }}>
+          <div>
+            <SectionBadge text="Espace personnel" tone="green" />
+            <h1 className="font-display" style={{ margin: '14px 0 8px', fontSize: 'clamp(34px, 5vw, 46px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.02 }}>
+              Votre espace de pilotage
+            </h1>
+            <p style={{ margin: 0, fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.75, maxWidth: '560px' }}>
+              Centralisez vos rapports, surveillances, analyses et chantiers dans une seule interface plus calme, plus claire et plus utile au quotidien.
+            </p>
+          </div>
+          <div style={{ padding: '18px 18px 16px', borderRadius: '22px', background: 'linear-gradient(135deg, #153b2e 0%, #1f4c3d 100%)', color: '#eef8f3', border: '1px solid rgba(21,59,46,0.08)' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.76, fontWeight: 700 }}>Compte actif</p>
+            <p style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 700, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+              {user?.email}
+            </p>
+            <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: 'rgba(238,248,243,0.76)' }}>
+              Utilisez les onglets ci-dessous pour passer rapidement d&apos;une decision a l&apos;autre, sans perdre le fil de votre chantier.
+            </p>
+          </div>
         </div>
         </SurfaceCard>
 
         {/* Tabs */}
         <SurfaceCard style={{
-          display: 'flex', flexWrap: 'wrap', gap: '0',
-          borderBottom: '1px solid rgba(226,217,204,0.92)',
+          display: 'flex', flexWrap: 'wrap', gap: '8px',
           marginBottom: '32px',
-          padding: '0 10px',
+          padding: '12px',
+          background: 'rgba(255,255,255,0.74)',
         }}>
           {TABS.map(({ id, label, Icon }) => (
             <button
@@ -1399,13 +1411,15 @@ function MonEspaceInner() {
               onClick={() => setTab(id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 12px', background: 'none', border: 'none',
+                padding: '10px 14px',
+                background: tab === id ? 'rgba(21,59,46,0.08)' : 'transparent',
+                border: `1px solid ${tab === id ? 'rgba(21,59,46,0.14)' : 'transparent'}`,
+                borderRadius: '999px',
                 cursor: 'pointer', fontSize: '12px',
                 fontWeight: tab === id ? 700 : 500,
                 color: tab === id ? 'var(--color-accent)' : 'var(--color-muted)',
-                borderBottom: `2px solid ${tab === id ? 'var(--color-accent)' : 'transparent'}`,
-                marginBottom: '-1px', fontFamily: 'var(--font-body)',
-                transition: 'color 0.15s',
+                fontFamily: 'var(--font-body)',
+                transition: 'color 0.15s, background 0.15s, border-color 0.15s',
               }}
             >
               <Icon size={14} />

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { X, ExternalLink, Wrench, Zap, Home, Square, Paintbrush, Snowflake, Leaf, MapPin, AlertTriangle, HardHat, Search, Layers, Thermometer, Hammer, Map } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
+import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { SearchAutocomplete, saveRecent } from '@/components/SearchAutocomplete'
 import { scoreColor, scoreBg } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
@@ -192,7 +193,8 @@ function VilleAutocomplete({
 /* ─── CandidateCard ─────────────────────────────────────────── */
 function CandidateCard({ c }: { c: CandidateResult }) {
   const router = useRouter()
-  const isActif = c.statut === 'actif'
+  const statut = String(c.statut || '').toLowerCase().trim()
+  const isActif = statut === 'actif' || statut === 'a'
   const age = c.dateCreation
     ? Math.max(0, CURRENT_YEAR - new Date(c.dateCreation).getFullYear())
     : null
@@ -206,34 +208,69 @@ function CandidateCard({ c }: { c: CandidateResult }) {
     <div
       onClick={() => router.push(`/artisan/${c.siret}`)}
       style={{
-        background: 'rgba(255,255,255,0.9)', border: `1px solid ${cv('border')}`,
-        borderRadius: '20px', padding: '18px 22px', cursor: 'pointer',
-        transition: 'box-shadow 0.15s, border-color 0.15s, transform 0.12s',
-        boxShadow: '0 12px 26px rgba(20,32,27,0.04)',
-        backdropFilter: 'blur(10px)',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(250,246,241,0.94) 100%)',
+        border: '1px solid rgba(220,208,193,0.9)',
+        borderRadius: '28px',
+        padding: '24px',
+        cursor: 'pointer',
+        transition: 'box-shadow 0.18s, border-color 0.18s, transform 0.18s',
+        boxShadow: '0 22px 44px rgba(20,32,27,0.07)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.borderColor = cv('accent')
-        el.style.boxShadow = '0 18px 34px rgba(21,59,46,0.1)'
-        el.style.transform = 'translateY(-2px)'
+        el.style.borderColor = 'rgba(21,59,46,0.32)'
+        el.style.boxShadow = '0 28px 52px rgba(21,59,46,0.12)'
+        el.style.transform = 'translateY(-3px)'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.borderColor = cv('border')
-        el.style.boxShadow = 'none'
+        el.style.borderColor = 'rgba(220,208,193,0.9)'
+        el.style.boxShadow = '0 22px 44px rgba(20,32,27,0.07)'
         el.style.transform = 'none'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+      <div style={{
+        position: 'absolute',
+        top: '-32px',
+        right: '-22px',
+        width: '180px',
+        height: '180px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(82,183,136,0.18) 0%, rgba(82,183,136,0.05) 40%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name + badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '6px' }}>
-            <span style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-display)', color: cv('text'), lineHeight: 1.2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '7px 12px',
+              borderRadius: '999px',
+              background: 'rgba(255,255,255,0.76)',
+              border: '1px solid rgba(226,217,204,0.9)',
+              fontSize: '11px',
+              fontWeight: 700,
+              color: cv('muted'),
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}>
+              Lecture Verifio
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            <span style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: cv('text'), lineHeight: 1.1 }}>
               {c.nom}
             </span>
             <span style={{
-              fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', flexShrink: 0,
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '6px 10px',
+              borderRadius: '999px',
+              flexShrink: 0,
               background: isActif ? '#dcfce7' : '#fee2e2',
               color: isActif ? '#166534' : '#991b1b',
             }}>
@@ -241,57 +278,79 @@ function CandidateCard({ c }: { c: CandidateResult }) {
             </span>
             {c.rge && (
               <span style={{
-                fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
-                background: '#d1fae5', color: '#065f46', flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                fontWeight: 800,
+                padding: '6px 10px',
+                borderRadius: '999px',
+                background: '#d1fae5',
+                color: '#065f46',
+                flexShrink: 0,
               }}>
-                <Leaf size={10} strokeWidth={1.5} style={{ marginRight: '3px' }} />RGE
+                <Leaf size={12} strokeWidth={1.5} />
+                RGE
               </span>
             )}
           </div>
 
-          {/* Chips: forme juridique + activité */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '7px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
             {c.formeJuridique && (
-              <span style={{ fontSize: '11px', color: cv('muted'), background: '#f3f4f6', padding: '2px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '12px', color: cv('muted'), background: 'rgba(255,255,255,0.82)', padding: '5px 10px', borderRadius: '999px', border: '1px solid rgba(226,217,204,0.9)' }}>
                 {c.formeJuridique}
               </span>
             )}
             {c.activite && (
               <span style={{
-                fontSize: '11px', color: cv('muted'), background: '#f3f4f6', padding: '2px 8px', borderRadius: '8px',
-                maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                fontSize: '12px',
+                color: cv('muted'),
+                background: 'rgba(255,255,255,0.82)',
+                padding: '5px 10px',
+                borderRadius: '999px',
+                border: '1px solid rgba(226,217,204,0.9)',
+                maxWidth: '300px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}>
                 {c.activite}
               </span>
             )}
           </div>
 
-          {/* Location + age */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
             {(c.ville || c.codePostal) && (
-              <span style={{ fontSize: '12px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}><MapPin size={12} strokeWidth={1.5} />{c.codePostal} {c.ville}</span>
+              <span style={{ fontSize: '13px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '5px' }}><MapPin size={13} strokeWidth={1.5} />{c.codePostal} {c.ville}</span>
             )}
             {age !== null && (
-              <span style={{ fontSize: '12px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '3px' }}><HardHat size={12} strokeWidth={1.5} />{age} an{age > 1 ? 's' : ''} d&apos;activité</span>
+              <span style={{ fontSize: '13px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '5px' }}><HardHat size={13} strokeWidth={1.5} />{age} an{age > 1 ? 's' : ''} d&apos;activité</span>
             )}
           </div>
         </div>
 
-        {/* Right column: score + CTA */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-          {/* Score badge */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', minWidth: '148px' }}>
           <div style={{
-            display: 'flex', alignItems: 'baseline', gap: '1px',
-            background: bg, border: `1px solid ${color}22`,
-            borderRadius: '10px', padding: '4px 10px',
+            minWidth: '132px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '2px',
+            background: bg,
+            border: `1px solid ${color}22`,
+            borderRadius: '22px',
+            padding: '14px 16px 12px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
           }}>
-            <span style={{ fontSize: '18px', fontWeight: 800, color, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-              {score}
-            </span>
-            <span style={{ fontSize: '10px', fontWeight: 600, color, opacity: 0.7 }}>/100</span>
+            <span style={{ fontSize: '10px', fontWeight: 800, color, opacity: 0.72, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Score Verifio</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+              <span style={{ fontSize: '30px', fontWeight: 800, color, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                {score}
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color, opacity: 0.7 }}>/100</span>
+            </div>
           </div>
-          {/* CTA */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: cv('accent'), whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, color: cv('accent'), whiteSpace: 'nowrap' }}>
             Voir la fiche <ExternalLink size={12} />
           </div>
         </div>
@@ -548,63 +607,127 @@ function RechercheInner() {
     : results
 
   return (
-    <main style={{ minHeight: '100vh', background: cv('bg') }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)' }}>
       <SiteHeader />
 
-      {/* ── Sticky search section ── */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: 'rgba(255,255,255,0.84)',
-        borderBottom: `1px solid ${cv('border')}`,
-        padding: '18px 24px 16px',
-        boxShadow: '0 12px 30px rgba(20,32,27,0.06)',
-        backdropFilter: 'blur(18px)',
-      }}>
-        <div style={{ maxWidth: '880px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '12px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: cv('accent'), letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Recherche de confiance
-            </p>
-            <p style={{ margin: 0, fontSize: '14px', color: cv('muted') }}>
-              Trouvez vite un artisan et comprenez immédiatement les signaux qui comptent.
-            </p>
-          </div>
-
-          {/* Search form */}
-          <form onSubmit={handleSubmit} style={{ marginBottom: '10px' }}>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <SearchAutocomplete
-                value={queryInput}
-                onChange={v => setQueryInput(v)}
-                villeLabel={villeInput}
-                onSearch={launchSearch}
-                onSelectRecent={handleSelectRecent}
-              />
-              <VilleAutocomplete value={villeInput} onChange={handleVilleChange} onSelect={handleVilleSelect} />
-              <button
-                type="submit"
-                style={{
-                  height: '52px', padding: '0 22px',
-                  background: 'linear-gradient(135deg, #153b2e 0%, #245845 100%)', color: 'white', border: 'none', borderRadius: '14px',
-                  fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', flexShrink: 0,
-                  transition: 'opacity 0.15s, transform 0.15s',
-                  boxShadow: '0 14px 30px rgba(21,59,46,0.18)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.94'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
-              >
-                Rechercher →
-              </button>
-            </div>
-          </form>
-
-          {/* Filter bar — only visible when a search is active */}
-          {hasQuery && (
+      <section style={{ position: 'relative', overflow: 'hidden', padding: hasQuery ? '34px 24px 18px' : '40px 24px 18px' }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 18% 12%, rgba(82,183,136,0.16), transparent 26%), radial-gradient(circle at 82% 10%, rgba(255,191,143,0.22), transparent 22%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{ position: 'relative', maxWidth: '1140px', margin: '0 auto' }}>
+          {!hasQuery && (
             <div style={{
-              display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center',
-              marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${cv('border')}`,
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1.15fr) minmax(300px, 0.85fr)',
+              gap: '24px',
+              alignItems: 'stretch',
+              marginBottom: '24px',
             }}>
+              <SurfaceCard style={{ padding: '32px', background: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(251,248,243,0.9) 100%)' }}>
+                <SectionBadge text="Recherche d'artisans" />
+                <h1 style={{ margin: '18px 0 12px', fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: 0.98, letterSpacing: '-0.05em', color: cv('text') }}>
+                  Choisissez un artisan avec plus de recul, pas juste un bon feeling.
+                </h1>
+                <p style={{ margin: '0 0 22px', maxWidth: '620px', fontSize: '17px', lineHeight: 1.75, color: cv('text-secondary') }}>
+                  Verifio transforme une recherche brute en lecture de confiance immédiate: statut, ancienneté, score, zone d&apos;intervention et points de vigilance.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {['Lecture instantanée du profil', 'Résultats triés pour décider plus vite', 'Navigation pensée mobile'].map(item => (
+                    <span key={item} style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.76)', border: '1px solid rgba(226,217,204,0.9)', fontSize: '12px', fontWeight: 700, color: cv('text-secondary') }}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </SurfaceCard>
+
+              <SurfaceCard style={{ padding: '28px', background: 'linear-gradient(135deg, #173428 0%, #1f4737 56%, #275540 100%)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <SectionBadge text="Méthode Verifio" tone="light" />
+                <div style={{ marginTop: '20px', display: 'grid', gap: '14px' }}>
+                  {[
+                    ['1', 'Vous cherchez un métier ou un nom', 'Par activité, ville, département ou SIRET.'],
+                    ['2', 'On met les bons signaux en avant', 'Statut, RGE, score, ancienneté et zone.'],
+                    ['3', 'Vous ouvrez la fiche qui mérite votre attention', 'Pour comparer plus finement avant de signer.'],
+                  ].map(([step, title, text]) => (
+                    <div key={step} style={{ display: 'grid', gridTemplateColumns: '40px 1fr', gap: '12px', alignItems: 'start', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 800 }}>{step}</div>
+                      <div>
+                        <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#f7fbf8' }}>{title}</p>
+                        <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.72)' }}>{text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SurfaceCard>
+            </div>
+          )}
+
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, paddingBottom: '10px' }}>
+            <SurfaceCard style={{
+              padding: hasQuery ? '18px' : '22px',
+              background: 'rgba(255,255,255,0.82)',
+              backdropFilter: 'blur(18px)',
+              boxShadow: '0 18px 38px rgba(20,32,27,0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                <div>
+                  <p style={{ margin: '0 0 5px', fontSize: '12px', fontWeight: 800, color: cv('accent'), letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Moteur de confiance
+                  </p>
+                  <p style={{ margin: 0, fontSize: '14px', color: cv('muted') }}>
+                    Recherchez, filtrez, puis ouvrez la fiche qui mérite vraiment votre temps.
+                  </p>
+                </div>
+                {hasQuery && !loading && total > 0 && (
+                  <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(244,238,230,0.88)', border: '1px solid rgba(226,217,204,0.9)', fontSize: '13px', color: cv('text-secondary') }}>
+                    <strong style={{ color: cv('text') }}>{total.toLocaleString('fr-FR')}</strong> profil{total > 1 ? 's' : ''} disponibles
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSubmit} style={{ marginBottom: hasQuery ? '10px' : 0 }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <SearchAutocomplete
+                    value={queryInput}
+                    onChange={v => setQueryInput(v)}
+                    villeLabel={villeInput}
+                    onSearch={launchSearch}
+                    onSelectRecent={handleSelectRecent}
+                  />
+                  <VilleAutocomplete value={villeInput} onChange={handleVilleChange} onSelect={handleVilleSelect} />
+                  <button
+                    type="submit"
+                    style={{
+                      height: '52px',
+                      padding: '0 24px',
+                      background: 'linear-gradient(135deg, #153b2e 0%, #245845 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '16px',
+                      fontSize: '15px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-body)',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      boxShadow: '0 16px 34px rgba(21,59,46,0.2)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.95'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
+                  >
+                    Lancer la recherche
+                  </button>
+                </div>
+              </form>
+
+              {hasQuery && (
+                <div style={{
+                  display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center',
+                  marginTop: '10px', paddingTop: '12px', borderTop: `1px solid ${cv('border')}`,
+                }}>
               {/* RGE */}
               <Chip
                 active={filterRge}
@@ -695,45 +818,37 @@ function RechercheInner() {
                   <X size={12} /> Réinitialiser
                 </button>
               )}
-
-              {/* Count — pushed to the right */}
-              {!loading && total > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: '12px', color: cv('muted'), whiteSpace: 'nowrap' }}>
-                  <strong style={{ color: cv('text') }}>{total.toLocaleString('fr-FR')}</strong> résultat{total > 1 ? 's' : ''}
-                </span>
+                </div>
               )}
-            </div>
-          )}
+            </SurfaceCard>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Results section ── */}
-      <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 80px' }}>
+      <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '8px 24px 80px' }}>
 
         {/* Initial state */}
         {!hasQuery && !loading && (
-          <div style={{ padding: '40px 0 80px' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(238,248,243,0.9) 100%)',
-              border: `1px solid ${cv('border')}`,
-              borderRadius: '28px',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(20,32,27,0.05)',
-              marginBottom: '28px',
-            }}>
-              <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', color: cv('text') }}>
-                Trouver le bon artisan, sans stress inutile
-              </h1>
-              <p style={{ margin: 0, fontSize: '15px', color: cv('text-secondary'), lineHeight: 1.7 }}>
-                Commencez par un métier ou une ville. Verifio met ensuite en avant les profils qui inspirent le plus confiance.
-              </p>
+          <div style={{ padding: '18px 0 80px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 800, color: cv('accent'), letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Démarrer rapidement
+                </p>
+                <h2 style={{ margin: 0, fontSize: 'clamp(24px, 4vw, 34px)', lineHeight: 1.08, letterSpacing: '-0.04em', color: cv('text') }}>
+                  Les recherches qui lancent le plus souvent un parcours de décision.
+                </h2>
+              </div>
+              <div style={{ maxWidth: '340px', fontSize: '14px', lineHeight: 1.7, color: cv('text-secondary') }}>
+                Des entrées simples pour tester le moteur, puis affiner par statut, score minimal ou ancienneté.
+              </div>
             </div>
-            {/* Quick action grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '12px',
-              marginBottom: '32px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '14px',
+              marginBottom: '28px',
             }}>
               {QUICK_ACTIONS.map((action) => { const { label, kw } = action; return (
                 <button
@@ -745,38 +860,42 @@ function RechercheInner() {
                     router.push(`/recherche?${url}`)
                   }}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    gap: '8px', padding: '20px 12px',
-                    background: cv('surface'), border: `1px solid ${cv('border')}`,
-                    borderRadius: '20px', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between',
+                    gap: '20px', padding: '22px 20px',
+                    minHeight: '156px',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(247,243,237,0.92) 100%)',
+                    border: '1px solid rgba(220,208,193,0.9)',
+                    borderRadius: '26px', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
                     fontFamily: 'var(--font-body)',
-                    boxShadow: '0 10px 24px rgba(20,32,27,0.04)',
+                    boxShadow: '0 18px 34px rgba(20,32,27,0.05)',
                   }}
                   onMouseEnter={e => {
                     const el = e.currentTarget
-                    el.style.borderColor = cv('accent')
-                    el.style.boxShadow = '0 4px 16px rgba(27,67,50,0.1)'
+                    el.style.borderColor = 'rgba(21,59,46,0.32)'
+                    el.style.boxShadow = '0 24px 44px rgba(21,59,46,0.11)'
                     el.style.transform = 'translateY(-2px)'
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget
-                    el.style.borderColor = cv('border')
-                    el.style.boxShadow = 'none'
+                    el.style.borderColor = 'rgba(220,208,193,0.9)'
+                    el.style.boxShadow = '0 18px 34px rgba(20,32,27,0.05)'
                     el.style.transform = 'none'
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: cv('accent') }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '54px', height: '54px', borderRadius: '18px', color: cv('accent'), background: 'rgba(82,183,136,0.12)' }}>
                     {(() => { const Ic = action.Icon as React.ComponentType<{ size: number; strokeWidth: number }>; return <Ic size={28} strokeWidth={1.5} /> })()}
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: cv('text') }}>{label}</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <span style={{ display: 'block', fontSize: '16px', fontWeight: 700, color: cv('text'), marginBottom: '4px' }}>{label}</span>
+                    <span style={{ display: 'block', fontSize: '13px', color: cv('muted'), lineHeight: 1.6 }}>Lancer une recherche préremplie et consulter les profils les plus solides.</span>
+                  </div>
                 </button>
               )})}
 
             </div>
 
-            {/* Popular searches — discrete text line */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '12px', color: cv('muted'), flexShrink: 0 }}>Recherches populaires :</span>
+              <span style={{ fontSize: '12px', color: cv('muted'), flexShrink: 0, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Exemples populaires</span>
               {POPULAR.map((p, i) => (
                 <span key={p.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {i > 0 && <span style={{ color: cv('border') }}>·</span>}
@@ -846,14 +965,22 @@ function RechercheInner() {
         {/* Results list */}
         {!loading && !hasError && sortedResults.length > 0 && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 800, color: cv('accent'), letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Résultats
+                </p>
+                <h2 style={{ margin: 0, fontSize: 'clamp(24px, 4vw, 34px)', lineHeight: 1.05, letterSpacing: '-0.04em', color: cv('text') }}>
+                  Des profils présentés pour décider vite, pas pour tout relire.
+                </h2>
+              </div>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortBy)}
                 style={{
-                  padding: '4px 10px', borderRadius: '10px',
-                  border: `1px solid ${cv('border')}`, background: 'white',
-                  color: cv('muted'), fontSize: '12px', fontWeight: 600,
+                  padding: '10px 14px', borderRadius: '16px',
+                  border: `1px solid ${cv('border')}`, background: 'rgba(255,255,255,0.86)',
+                  color: cv('muted'), fontSize: '13px', fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none',
                 }}
               >
@@ -862,7 +989,7 @@ function RechercheInner() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {sortedResults.map(c => <CandidateCard key={c.siret} c={c} />)}
             </div>
 

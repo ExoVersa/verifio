@@ -69,11 +69,11 @@ function FaqItem({ q, r }: { q: string; r: string }) {
 
 export default function PricingPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)' }}>
       <SiteHeader />
 
       {/* ── Cartes pricing ── */}
-      <PricingCards />
+      <PricingCards style={{ paddingBottom: '56px' }} />
 
       {/* ── Pourquoi monter en gamme ── */}
       <section style={{ padding: '0 24px 72px' }}>
@@ -94,7 +94,7 @@ export default function PricingPage() {
               { icon: Zap, title: '4,90\u00a0\u20ac seulement', desc: "Moins cher qu\u2019un caf\u00e9, pour \u00e9viter des milliers d\u2019euros de probl\u00e8mes sur votre chantier." },
               { icon: Gem, title: 'Donn\u00e9es officielles', desc: "BODACC, INSEE, RGE ADEME \u2014 les m\u00eames sources que les notaires et professionnels." },
             ].map(({ icon: Icon, title, desc }) => (
-              <SurfaceCard key={title} style={{ padding: '24px 18px' }}>
+              <SurfaceCard key={title} style={{ padding: '26px 20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(248,243,236,0.94) 100%)' }}>
                 <div style={{
                   width: '48px', height: '48px', borderRadius: '14px',
                   background: 'var(--color-accent-light)',
@@ -113,20 +113,22 @@ export default function PricingPage() {
 
       {/* ── FAQ ── */}
       <section style={{ padding: '80px 24px', maxWidth: '680px', margin: '0 auto' }}>
-        <h2 style={{
-          fontFamily: 'var(--font-display)', fontWeight: 700,
-          fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A',
-          textAlign: 'center', margin: '0 0 48px', letterSpacing: '-0.02em',
-        }}>
-          Questions fr&#233;quentes
-        </h2>
-        {FAQ.map(({ q, r }) => <FaqItem key={q} q={q} r={r} />)}
+        <SurfaceCard style={{ padding: '30px 30px 14px', background: 'rgba(255,255,255,0.78)' }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 700,
+            fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A',
+            textAlign: 'center', margin: '0 0 36px', letterSpacing: '-0.02em',
+          }}>
+            Questions fr&#233;quentes
+          </h2>
+          {FAQ.map(({ q, r }) => <FaqItem key={q} q={q} r={r} />)}
+        </SurfaceCard>
       </section>
 
       {/* ── CTA finale ── */}
       <section style={{ padding: '0 24px 80px', textAlign: 'center' }}>
         <div style={{ maxWidth: '520px', margin: '0 auto' }}>
-          <SurfaceCard style={{ padding: '30px 28px' }}>
+          <SurfaceCard style={{ padding: '32px 30px', background: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(244,238,230,0.94) 100%)' }}>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontWeight: 700,
               fontSize: 'clamp(22px, 3vw, 32px)', color: '#1A1A1A',

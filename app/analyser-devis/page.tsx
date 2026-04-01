@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
+import { PageHero, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import {
@@ -215,16 +217,9 @@ function AnalyserDevisInner() {
     }
   }
 
-  const CARD: React.CSSProperties = {
-    background: 'var(--color-surface)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 16,
-    padding: 24,
-  }
-
   if (loadingUser || (user !== null && loadingRapports)) {
     return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+      <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)' }}>
         <SiteHeader />
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 58px)' }}>
           <div className="spin" style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
@@ -235,53 +230,73 @@ function AnalyserDevisInner() {
 
   if (!user) {
     return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+      <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)' }}>
         <SiteHeader />
-        <div style={{ maxWidth: 480, margin: '4rem auto', textAlign: 'center', padding: '0 1rem' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: '0.75rem', color: 'var(--color-text)' }}>
-            Connexion requise
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
-            L&apos;analyse de devis est réservée aux comptes connectés.<br/>
-            Incluse dans le Pack Sérénité — 5 analyses par mois par artisan.
-          </p>
-          <a href="/auth?redirect=/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--color-accent)', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
-            Se connecter pour analyser mon devis →
-          </a>
-          <p style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: '1rem' }}>
-            Pas encore de compte ?{' '}
-            <a href="/auth?mode=signup&redirect=/analyser-devis" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
-              Créer un compte gratuit
-            </a>
-          </p>
+        <PageHero
+          badge={<SectionBadge text="Analyse de devis" />}
+          title="Connectez-vous pour sécuriser vos devis."
+          subtitle="Cette analyse est réservée aux comptes connectés ayant un Pack Sérénité actif sur l’artisan concerné."
+          maxWidth="880px"
+        />
+        <div style={{ maxWidth: 640, margin: '-28px auto 0', padding: '0 20px 80px', position: 'relative', zIndex: 2 }}>
+          <SurfaceCard style={{ padding: '32px', textAlign: 'center', background: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(16px)' }}>
+            <div style={{ width: 60, height: 60, borderRadius: '20px', background: '#eef8f3', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#153b2e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 28, lineHeight: 1.05, letterSpacing: '-0.04em', margin: '0 0 10px', color: 'var(--color-text)' }}>
+              Connexion requise
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.7, margin: '0 0 20px' }}>
+              L&apos;analyse de devis est incluse dans le Pack Sérénité et limitée à 5 analyses par mois et par artisan.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <Link href="/auth?redirect=/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--color-accent)', color: '#fff', padding: '14px 24px', borderRadius: '16px', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Se connecter pour analyser mon devis
+              </Link>
+              <Link href="/auth?mode=signup&redirect=/analyser-devis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.92)', color: 'var(--color-text)', padding: '14px 24px', borderRadius: '16px', fontSize: 15, fontWeight: 700, textDecoration: 'none', border: '1px solid var(--color-border)' }}>
+                Créer un compte gratuit
+              </Link>
+            </div>
+          </SurfaceCard>
         </div>
       </main>
     )
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)' }}>
       <SiteHeader />
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
+      <PageHero
+        badge={<SectionBadge text="Analyse de devis" />}
+        title="Votre devis mérite une vraie lecture avant signature."
+        subtitle="Choisissez l’artisan concerné, téléversez le document, puis obtenez une lecture prix + juridique beaucoup plus claire et actionnable."
+        maxWidth="980px"
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {['Prix + conformité', '5 analyses / mois / artisan', 'Parcours pensé mobile'].map(item => (
+            <span key={item} style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.76)', border: '1px solid rgba(226,217,204,0.9)', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+              {item}
+            </span>
+          ))}
+        </div>
+      </PageHero>
+      <div style={{ maxWidth: 1040, margin: '-34px auto 0', padding: '0 20px 80px', position: 'relative', zIndex: 2 }}>
 
         {/* Bouton retour si depuis rapport */}
         {rapportId && siretParam && (
-          <a
+          <Link
             href={`/rapport/succes?siret=${siretParam}&session_id=${sessionId}`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--color-muted)', textDecoration: 'none', marginBottom: 28 }}
           >
             <ArrowLeft size={14} strokeWidth={1.5} /> Retour au rapport
-          </a>
+          </Link>
         )}
 
         {/* Header page */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <SurfaceCard style={{ padding: 28, background: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(16px)', marginBottom: 28 }}>
           {nomArtisan && (
             <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {nomArtisan}
@@ -303,20 +318,14 @@ function AnalyserDevisInner() {
           <p style={{ margin: 0, fontSize: 16, color: 'var(--color-muted)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
             Uploadez le devis PDF de votre artisan — on vérifie les prix ET la conformité juridique.
           </p>
-        </div>
+        </SurfaceCard>
 
         {/* État vide — aucun Pack Sérénité actif */}
         {rapports.length === 0 && !result && (
-          <div style={{ maxWidth: 480, margin: '3rem auto', padding: '0 1rem' }}>
-            <div style={{
-              background: 'var(--color-bg)',
-              border: '0.5px solid var(--color-border)',
-              borderRadius: '14px',
-              padding: '2rem',
-              textAlign: 'center',
-            }}>
+          <div style={{ maxWidth: 640, margin: '3rem auto', padding: '0 1rem' }}>
+            <SurfaceCard style={{ padding: '32px', textAlign: 'center', background: 'rgba(255,255,255,0.9)' }}>
               <div style={{
-                width: 48, height: 48, borderRadius: '50%',
+                width: 56, height: 56, borderRadius: '20px',
                 background: 'var(--color-surface)',
                 border: '0.5px solid var(--color-border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -335,24 +344,34 @@ function AnalyserDevisInner() {
                 L&apos;analyse de devis est incluse dans le Pack Sérénité d&apos;un artisan.
                 Vérifiez d&apos;abord votre artisan pour accéder à cette fonctionnalité.
               </div>
-              <a href="/recherche" style={{
+              <Link href="/recherche" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: '#1B4332', color: '#fff',
-                padding: '11px 22px', borderRadius: '10px',
-                fontSize: 13, fontWeight: 500, textDecoration: 'none',
+                padding: '13px 22px', borderRadius: '16px',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
               }}>
                 Vérifier un artisan →
-              </a>
-            </div>
+              </Link>
+            </SurfaceCard>
           </div>
         )}
 
         {/* Liste artisans + zone upload */}
         {rapports.length > 0 && !result && (
-          <div>
-            <p style={{ fontSize: 13, color: 'var(--color-muted)', marginBottom: 12 }}>
-              Choisissez l&apos;artisan dont vous souhaitez analyser le devis
-            </p>
+          <SurfaceCard style={{ padding: 28, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: 'var(--color-accent)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Étape 1
+                </p>
+                <h2 style={{ margin: 0, fontSize: 'clamp(24px, 4vw, 32px)', lineHeight: 1.06, letterSpacing: '-0.04em', color: 'var(--color-text)' }}>
+                  Sélectionnez l&apos;artisan concerné.
+                </h2>
+              </div>
+              <div style={{ maxWidth: 320, fontSize: 14, lineHeight: 1.7, color: 'var(--color-muted)' }}>
+                Chaque Pack Sérénité ouvre 5 analyses mensuelles pour l&apos;artisan choisi.
+              </div>
+            </div>
 
             {rapports.map(rapport => (
               <div
@@ -429,12 +448,12 @@ function AnalyserDevisInner() {
             {/* Zone upload — visible si artisan sélectionné */}
             {rapportSelectionne && (
               <div style={{
-                border: '1.5px dashed var(--color-border)',
-                borderRadius: '16px',
-                padding: '2.5rem 1.5rem',
+                border: '1.5px dashed rgba(220,208,193,0.95)',
+                borderRadius: '24px',
+                padding: '3rem 1.5rem',
                 textAlign: 'center',
                 marginTop: '1.5rem',
-                background: 'var(--color-bg)',
+                background: 'linear-gradient(180deg, rgba(250,246,241,0.9) 0%, rgba(255,255,255,0.86) 100%)',
               }}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
                   stroke="var(--color-muted)" strokeWidth="1.5"
@@ -455,11 +474,12 @@ function AnalyserDevisInner() {
                   disabled={loading}
                   style={{
                     background: '#1B4332', color: '#fff',
-                    border: 'none', borderRadius: 10,
-                    padding: '10px 22px', fontSize: 13, fontWeight: 500,
+                    border: 'none', borderRadius: 16,
+                    padding: '12px 22px', fontSize: 14, fontWeight: 700,
                     cursor: loading ? 'wait' : 'pointer',
                     display: 'inline-flex', alignItems: 'center', gap: 8,
                     fontFamily: 'var(--font-body)',
+                    boxShadow: '0 16px 32px rgba(21,59,46,0.16)',
                   }}
                 >
                   <Sparkles size={14} strokeWidth={1.5} />
@@ -486,12 +506,12 @@ function AnalyserDevisInner() {
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--color-danger)' }}>{error}</p>
               </div>
             )}
-          </div>
+          </SurfaceCard>
         )}
 
         {/* Animation de chargement */}
         {loading && (
-          <div style={{ marginTop: 28, ...CARD }}>
+          <SurfaceCard style={{ marginTop: 28, padding: 24 }}>
             <p style={{ margin: '0 0 20px', fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
               Analyse en cours...
             </p>
@@ -522,7 +542,7 @@ function AnalyserDevisInner() {
                 )
               })}
             </div>
-          </div>
+          </SurfaceCard>
         )}
 
         {/* Résultats */}
@@ -549,7 +569,7 @@ function AnalyserDevisInner() {
               marginBottom: 16,
             }}>
               {/* Colonne gauche — Analyse des prix */}
-              <div style={CARD}>
+              <SurfaceCard style={{ padding: 24, background: 'rgba(255,255,255,0.9)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                   <BarChart2 size={20} color="var(--color-accent)" strokeWidth={1.5} />
                   <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Analyse des prix</h2>
@@ -569,9 +589,9 @@ function AnalyserDevisInner() {
                     {result.siret_artisan && (
                       <>
                         <span style={{ color: 'var(--color-muted)', margin: '0 6px' }}>·</span>
-                        <a href={`/artisan/${result.siret_artisan}`} style={{ color: 'var(--color-accent)', fontSize: 12, fontWeight: 600 }}>
+                        <Link href={`/artisan/${result.siret_artisan}`} style={{ color: 'var(--color-accent)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
                           Voir la fiche →
-                        </a>
+                        </Link>
                       </>
                     )}
                   </div>
@@ -654,10 +674,10 @@ function AnalyserDevisInner() {
                     </div>
                   </div>
                 )}
-              </div>
+              </SurfaceCard>
 
               {/* Colonne droite — Conformité juridique */}
-              <div style={CARD}>
+              <SurfaceCard style={{ padding: 24, background: 'rgba(255,255,255,0.9)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                   <Scale size={20} color="var(--color-accent)" strokeWidth={1.5} />
                   <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Conformité juridique</h2>
@@ -742,12 +762,12 @@ function AnalyserDevisInner() {
                     </ol>
                   </div>
                 )}
-              </div>
+              </SurfaceCard>
             </div>
 
             {/* Score global — pleine largeur */}
-            <div style={{
-              ...CARD,
+            <SurfaceCard style={{
+              padding: 24,
               display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
               background: result.score_global >= 8 ? 'var(--color-safe-bg)' : result.score_global >= 5 ? '#fffbeb' : 'var(--color-danger-bg)',
               border: `1.5px solid ${result.score_global >= 8 ? 'rgba(45,185,110,0.3)' : result.score_global >= 5 ? '#fde68a' : 'rgba(220,38,38,0.2)'}`,
@@ -766,7 +786,7 @@ function AnalyserDevisInner() {
                   {result.score_global < 5 && 'Devis problématique — ne signez pas'}
                 </p>
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* Bouton nouvelle analyse */}
             <button
