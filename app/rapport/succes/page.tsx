@@ -7,6 +7,7 @@ import {
   Flame, Thermometer, Sun, Home, Wind, Zap, Droplets, BellRing, FileSearch,
   Search, MessageSquare,
 } from 'lucide-react'
+import Anthropic from '@anthropic-ai/sdk'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
@@ -244,30 +245,51 @@ export default async function SuccesPage({
     fetchError = err instanceof Error ? err.message : 'Erreur lors du chargement des données.'
   }
 
-  // Droits personnalisés par IA
+  // Droits personnalisés par IA — appel direct Anthropic
   let droitsPersonnalises: DroitPersonnalise[] = []
-  if (result) {
+  if (result && process.env.ANTHROPIC_API_KEY) {
     try {
-      const droitsRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/droits-personnalises`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          formeJuridique: result.formeJuridique,
-          codeNaf: result.codeNaf,
-          activite: result.activite,
-          dateCreation: result.dateCreation,
-          score: result.score,
-          rge: result.rge,
-          bodacc: result.bodacc,
-          effectif: result.effectif,
-        }),
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+      const anciennete = result.dateCreation
+        ? Math.floor((Date.now() - new Date(result.dateCreation).getTime()) / (1000 * 60 * 60 * 24 * 365))
+        : null
+
+      const droitsResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: `Tu es un expert juridique en droit de la construction et de la consommation en France.
+
+Un particulier s'apprête à signer un contrat avec cet artisan :
+- Forme juridique : ${result.formeJuridique || 'inconnue'}
+- Activité : ${result.activite || 'inconnue'} (code NAF : ${result.codeNaf || 'inconnu'})
+- Ancienneté : ${anciennete !== null ? `${anciennete} an(s)` : 'inconnue'}
+- Score de fiabilité : ${result.score}/100
+- Certifié RGE : ${result.rge?.certifie ? `oui (${result.rge.domaines?.join(', ')})` : 'non'}
+- Procédure collective BODACC : ${result.bodacc?.procedureCollective ? 'oui' : 'non'}
+- Effectif : ${result.effectif || 'non renseigné'}
+
+Génère exactement 2 ou 3 droits ou points de vigilance SPÉCIFIQUES à ce profil que le particulier doit absolument connaître avant de signer. Ces droits doivent être différents des 4 droits universels déjà affichés (garantie décennale, devis écrit, acompte 30%, PV réception).
+
+Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
+[
+  {
+    "titre": "Titre court et direct (max 6 mots)",
+    "badge": "Label court (max 3 mots)",
+    "badgeType": "danger" ou "warning" ou "info" ou "success",
+    "texte": "Explication pratique et actionnable en 2-3 phrases max."
+  }
+]`,
+        }],
       })
-      if (droitsRes.ok) {
-        const droitsData = await droitsRes.json()
-        droitsPersonnalises = droitsData.droits || []
-      }
+
+      const text = droitsResponse.content[0].type === 'text' ? droitsResponse.content[0].text : ''
+      const parsed = JSON.parse(text.trim())
+      if (Array.isArray(parsed)) droitsPersonnalises = parsed
     } catch (e) {
-      console.error('droits personnalisés fetch error:', e)
+      console.error('droits personnalisés error:', e)
     }
   }
 
