@@ -360,8 +360,8 @@ export default function ArtisanFichePage() {
 
   async function startSerenite() {
     // Vérifier la connexion avant le checkout
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
       router.push(`/auth?redirect=/artisan/${siret}`)
       return
     }
@@ -369,8 +369,11 @@ export default function ArtisanFichePage() {
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'serenite', siret, nom: result?.nom, user_id: user.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ plan: 'serenite', siret, nom: result?.nom, user_id: session.user.id }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url

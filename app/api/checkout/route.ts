@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-02-25.clover',
@@ -15,6 +16,30 @@ function getBaseUrl(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Vérification auth obligatoire
+  const authHeader = req.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  if (!token) {
+    return NextResponse.json(
+      { error: 'non_connecte', message: 'Connexion requise pour accéder au paiement.' },
+      { status: 401 }
+    )
+  }
+
+  const supabaseAuth = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token)
+
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: 'non_connecte', message: 'Session invalide. Veuillez vous reconnecter.' },
+      { status: 401 }
+    )
+  }
+
   const body = await req.json()
   const { plan, siret, nom, chantierId, user_id } = body
   const baseUrl = getBaseUrl(req)
