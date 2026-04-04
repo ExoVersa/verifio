@@ -28,6 +28,13 @@ import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
+interface DroitPersonnalise {
+  titre: string
+  badge: string
+  badgeType: 'danger' | 'warning' | 'info' | 'success'
+  texte: string
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function isProcedureCollective(a: BodaccAnnonce): boolean {
@@ -235,6 +242,33 @@ export default async function SuccesPage({
     if (result.siren) etablissements = await fetchEtablissements(result.siren)
   } catch (err: unknown) {
     fetchError = err instanceof Error ? err.message : 'Erreur lors du chargement des données.'
+  }
+
+  // Droits personnalisés par IA
+  let droitsPersonnalises: DroitPersonnalise[] = []
+  if (result) {
+    try {
+      const droitsRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/droits-personnalises`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          formeJuridique: result.formeJuridique,
+          codeNaf: result.codeNaf,
+          activite: result.activite,
+          dateCreation: result.dateCreation,
+          score: result.score,
+          rge: result.rge,
+          bodacc: result.bodacc,
+          effectif: result.effectif,
+        }),
+      })
+      if (droitsRes.ok) {
+        const droitsData = await droitsRes.json()
+        droitsPersonnalises = droitsData.droits || []
+      }
+    } catch (e) {
+      console.error('droits personnalisés fetch error:', e)
+    }
   }
 
   // 3. Rapport persistence + surveillance + email
@@ -730,6 +764,43 @@ export default async function SuccesPage({
                     <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>{text}</p>
                   </div>
                 ))}
+
+                {/* Droits personnalisés par IA */}
+                {droitsPersonnalises.length > 0 && (
+                  <>
+                    <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 4px', fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                      </svg>
+                      Spécifique à cet artisan
+                    </div>
+                    {droitsPersonnalises.map((droit, i) => {
+                      const badgeColors = {
+                        danger:  { bg: 'var(--color-danger-bg)',  color: 'var(--color-danger)',  icon: 'var(--color-danger)' },
+                        warning: { bg: '#ffedd5',                  color: '#c2410c',              icon: '#c2410c' },
+                        info:    { bg: '#e0f2fe',                  color: '#0369a1',              icon: '#0369a1' },
+                        success: { bg: 'var(--color-safe-bg)',     color: 'var(--color-safe)',    icon: 'var(--color-safe)' },
+                      }
+                      const colors = badgeColors[droit.badgeType] || badgeColors.info
+                      return (
+                        <div key={`custom-${i}`} style={{ flex: '1 1 calc(50% - 6px)', minWidth: '200px', background: 'var(--color-bg)', border: `1px solid ${colors.color}33`, borderRadius: '12px', padding: '14px', position: 'relative' }}>
+                          <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: colors.bg, color: colors.color }}>
+                            {droit.badge}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '120px' }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={colors.icon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <span style={{ fontSize: '12px', fontWeight: 700 }}>{droit.titre}</span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>{droit.texte}</p>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
               </div>
             </SurfaceCard>
 
