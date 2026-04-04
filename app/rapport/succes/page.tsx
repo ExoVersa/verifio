@@ -23,6 +23,7 @@ import SiteHeader from '@/components/SiteHeader'
 import PackBadge from '@/components/PackBadge'
 import AnalyserDevisButton from '@/components/AnalyserDevisButton'
 import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
+import { dirigeantSlug } from '@/lib/dirigeant'
 import type { SearchResult, AlertType, BodaccAnnonce } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -660,11 +661,31 @@ export default async function SuccesPage({
                   {result.dirigeants.map((d, i) => (
                     <div key={i} style={{ padding: '10px 14px', background: 'var(--color-bg)', borderRadius: '8px', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                       <div>
-                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>{[d.prenoms, d.nom].filter(Boolean).join(' ')}</p>
+                        <a
+                          href={`/dirigeant/${dirigeantSlug(d.nom, d.prenoms)}`}
+                          style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                          {[d.prenoms, d.nom].filter(Boolean).join(' ')}
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                          </svg>
+                        </a>
                         <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--color-muted)' }}>
                           {d.qualite}{d.anneeNaissance ? ` · né en ${d.anneeNaissance}` : ''}
                         </p>
                       </div>
+                      <a
+                        href={`/dirigeant/${dirigeantSlug(d.nom, d.prenoms)}`}
+                        style={{ fontSize: '12px', color: 'var(--color-accent)', textDecoration: 'none', background: 'var(--color-accent-light)', padding: '4px 10px', borderRadius: '99px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                          <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                        Voir ses entreprises →
+                      </a>
                     </div>
                   ))}
                 </div>
