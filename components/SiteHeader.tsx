@@ -306,14 +306,14 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
       setUser(data.user)
       if (data.user) {
         loadSurvCount(data.user.email!)
-        checkArtisan(data.user.id)
+        // B2B masqué : checkArtisan(data.user.id)
       }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
         loadSurvCount(session.user.email!)
-        checkArtisan(session.user.id)
+        // B2B masqué : checkArtisan(session.user.id)
       } else {
         setSurvCount(0)
         setIsArtisan(false)
@@ -551,21 +551,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
             >
               À propos
             </Link>
-            <Link
-              href="/espace-artisan"
-              style={{
-                display: 'flex', alignItems: 'center',
-                background: pathname === '/espace-artisan' ? 'rgba(21,59,46,0.07)' : 'transparent',
-                border: 'none', cursor: 'pointer', padding: '9px 14px', borderRadius: '12px',
-                fontSize: '13.5px', fontWeight: 600,
-                color: pathname === '/espace-artisan' ? 'var(--color-accent)' : 'var(--color-text)',
-                textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/espace-artisan' ? 'rgba(21,59,46,0.07)' : 'transparent' }}
-            >
-              <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
-            </Link>
+            {/* B2B masqué — Espace Artisan lien desktop supprimé pour le lancement B2C */}
           </nav>
 
           {/* ── RIGHT ── */}
@@ -947,22 +933,7 @@ export default function SiteHeader({ onLogoClick }: SiteHeaderProps) {
               À propos
             </Link>
 
-            {/* Espace Artisan link */}
-            <Link
-              href="/espace-artisan"
-              onClick={closeAll}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '13px 12px', borderRadius: '12px', marginBottom: '4px',
-                background: pathname === '/espace-artisan' ? 'var(--color-bg)' : 'none',
-                textDecoration: 'none', color: 'var(--color-text)',
-                fontSize: '15px', fontWeight: 700,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = pathname === '/espace-artisan' ? 'var(--color-bg)' : 'transparent')}
-            >
-              <Wrench size={14} strokeWidth={1.5} style={{ marginRight: '6px' }} />Espace Artisan
-            </Link>
+            {/* B2B masqué — Espace Artisan lien mobile supprimé pour le lancement B2C */}
 
             <div style={{ height: '1px', background: 'var(--color-border)', margin: '16px 0' }} />
 
