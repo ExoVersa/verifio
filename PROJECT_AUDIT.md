@@ -1,6 +1,6 @@
 # PROJECT_AUDIT.md — Verifio
-> Audit technique complet — état réel du code au 1er avril 2026.
-> Inclut toutes les modifications effectuées du 24 mars au 1er avril 2026.
+> Audit technique complet — état réel du code au 4 avril 2026.
+> Inclut toutes les modifications effectuées du 24 mars au 4 avril 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
 ## Utilisation par les agents
@@ -111,6 +111,31 @@ Pas de système de rôles custom. Distinction :
 ### `POST /api/checkout`
 
 **Fichier :** `app/api/checkout/route.ts`
+
+**Auth obligatoire (4 avril 2026) :**
+
+Vérification en tête du handler, avant toute logique Stripe :
+```typescript
+const token = req.headers.get('authorization')?.replace('Bearer ', '')
+// 401 si absent
+const { data: { user }, error } = await supabaseAuth.auth.getUser(token)
+// 401 si invalide ou expiré
+```
+- Si pas de token → HTTP 401 `{ error: 'non_connecte', message: 'Connexion requise pour accéder au paiement.' }`
+- Si token invalide → HTTP 401 `{ error: 'non_connecte', message: 'Session invalide. Veuillez vous reconnecter.' }`
+- Le client Supabase utilisé ici est initialisé avec `ANON_KEY` (pas de service role)
+
+**Frontend (`app/artisan/[siret]/page.tsx`) :**
+
+`startSerenite()` utilise désormais `supabase.auth.getSession()` pour récupérer `session.access_token` et le passe dans `Authorization: Bearer` :
+```typescript
+const { data: { session } } = await supabase.auth.getSession()
+if (!session?.user) { router.push(`/auth?redirect=/artisan/${siret}`); return }
+fetch('/api/checkout', {
+  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+  body: JSON.stringify({ ..., user_id: session.user.id })
+})
+```
 
 Input JSON :
 ```typescript
@@ -729,6 +754,34 @@ interface Chantier {
 
 ---
 
+## 9b. Page Dirigeant `/dirigeant/[slug]`
+
+**Fichier :** `app/dirigeant/[slug]/page.tsx` (`'use client'`)
+
+**Accès :** Lien cliquable sur le nom du dirigeant dans `app/artisan/[siret]/page.tsx` (fiche publique gratuite). Pas de lien depuis le rapport payant (`/rapport/succes`) — les dirigeants y sont listés sans lien.
+
+**Lib :** `lib/dirigeant.ts`
+- `toSlug(str)` : lowercase + normalize NFD + strip accents + kebab-case
+- `dirigeantSlug(nom, prenoms?)` : concatène prénom + nom → slug
+- `slugToQuery(slug)` : remplace `-` par espaces → query pour l'API
+
+**Logique :**
+1. `slugToQuery(slug)` → reconstruit le nom pour l'API
+2. Fetch `https://recherche-entreprises.api.gouv.fr/search?q=${query}&per_page=25`
+3. Trie : actifs d'abord, fermés ensuite
+4. `loadScores(list)` : fetch `/api/search?q=${siret}` en parallèle (max 10) → enrichit avec `score`
+5. `analyseLevel` : `'ok'` si 0 fermées, `'warn'` si 1-2, `'danger'` si ≥3
+
+**Interface `EntrepriseResult` :** `siret`, `siren`, `nom`, `statut: 'actif'|'fermé'`, `formeJuridique`, `dateCreation`, `dateFermeture?`, `adresse`, `activite`, `score?`
+
+**JSX :**
+- Fil d'Ariane : Accueil → `router.back()` (Fiche entreprise) → nom dirigeant
+- Header : avatar initiales 2 lettres (#1B4332), nom, compteur entreprises, badge alerte si fermées (jaune ≤2, rouge ≥3)
+- Bloc analyse coloré (vert/orange/rouge) selon `analyseLevel`
+- Liste `<a href="/artisan/${siret}">` : nom + badge ACTIF/FERMÉ, SIRET, forme juridique, dates, adresse, score circulaire 48px
+
+---
+
 ## 10. Recherche & API INSEE
 
 ### `lib/fetchCompany.ts`
@@ -892,6 +945,8 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 | Suppression chantier impossible | 30 mars | `handleDeleteChantier()` avec cascade + modal de confirmation |
 | Onglet Mon Profil dans Mon Espace | 31 mars | Déplacé vers `/mon-profil` (standalone) + lien dropdown avatar |
 | Recherche SIRET 14 chiffres → résultats multiples | 31 mars | `exactMatch` lookup + redirect direct depuis la home |
+| `/api/checkout` accessible sans auth | 4 avril | Vérification `Authorization: Bearer` + `supabaseAuth.auth.getUser(token)` → 401 si absent/invalide |
+| `startSerenite()` ne transmettait pas le token | 4 avril | `getSession()` + `Authorization: Bearer ${access_token}` dans le fetch |
 
 ---
 
@@ -914,7 +969,29 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 
 ---
 
-## 17. Flow Revendication Fiche Artisan
+## 17. Features B2B — Masquées pour le lancement B2C (4 avril 2026)
+
+Les features B2B sont masquées dans l'UI sans être supprimées du code (réversible par uncomment).
+
+### `SiteHeader.tsx`
+- Les deux appels `checkArtisan(userId)` dans `useEffect` sont commentés → `isArtisan` reste `false` en permanence → badge "Artisan vérifié", lien dashboard artisan, items dropdown artisan ne s'affichent jamais
+- Lien "Espace Artisan" desktop (nav) : supprimé, remplacé par commentaire
+- Lien "Espace Artisan" mobile (drawer) : supprimé, remplacé par commentaire
+
+### Pages B2B à rediriger vers `/` (TODO — non encore fait)
+- `app/espace-artisan/page.tsx` — Server Component : `redirect('/')`
+- `app/espace-artisan/inscription/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
+- `app/artisan/dashboard/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
+- `app/artisan/dashboard/devis/nouveau/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
+- `app/admin/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
+
+### Autres (TODO — non encore fait)
+- `app/page.tsx` : supprimer `{ label: 'Espace artisan', href: '/espace-artisan' }` du footer
+- `app/artisan/[siret]/page.tsx` : commenter le bloc "Revendiquez cette fiche →"
+
+---
+
+## 18. Flow Revendication Fiche Artisan
 
 ### Inscription artisan
 
@@ -944,7 +1021,7 @@ Formulaire 2 étapes. Le SIRET est pré-rempli si passé en `?siret=...`.
 
 ---
 
-## 18. Composants Partagés Clés
+## 19. Composants Partagés Clés
 
 | Composant | Fichier | Rôle |
 |-----------|---------|------|
