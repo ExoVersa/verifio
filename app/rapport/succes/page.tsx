@@ -286,7 +286,8 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
       })
 
       const text = droitsResponse.content[0].type === 'text' ? droitsResponse.content[0].text : ''
-      const parsed = JSON.parse(text.trim())
+      const cleaned = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
+      const parsed = JSON.parse(cleaned)
       if (Array.isArray(parsed)) droitsPersonnalises = parsed
     } catch (e) {
       console.error('droits personnalisés error:', e)
