@@ -865,7 +865,7 @@ export default function ArtisanFichePage() {
                   <h3 style={cardTitleStyle}><Building2 size={20} strokeWidth={1.5} /> Informations légales</h3>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                     gap: '12px 20px',
                   }}>
                     {/* SIRET */}
@@ -1379,7 +1379,7 @@ export default function ArtisanFichePage() {
                                     {isOpen && (
                                       <div style={{ padding: '0 14px 14px', borderTop: '1px solid #e5e7eb' }}>
                                         {/* Infos de base */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px', marginBottom: '10px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px', marginTop: '12px', marginBottom: '10px' }}>
                                           {a.numeroAnnonce && <BodaccField label="N° annonce" value={String(a.numeroAnnonce)} />}
                                           {a.numeroBodacc && <BodaccField label="N° BODACC" value={a.numeroBodacc} />}
                                           {a.registre && <BodaccField label="RCS" value={a.registre} />}
