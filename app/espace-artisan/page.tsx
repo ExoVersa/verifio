@@ -1,3 +1,6 @@
+import { redirect } from 'next/navigation'
+redirect('/')
+
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import { BadgeCheck, FileText, BarChart3, ArrowRight } from 'lucide-react'
