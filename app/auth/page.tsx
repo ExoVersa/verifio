@@ -420,7 +420,7 @@ function SignupForm({
       </div>
 
       {/* Prénom + Nom */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+      <div className="auth-name-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Prénom</label>
           <input
@@ -649,7 +649,9 @@ function AuthPageInner() {
       <style>{`
         @media (max-width: 768px) {
           .auth-left { display: none !important; }
-          .auth-right { width: 100% !important; }
+          .auth-right { width: 100% !important; padding: 20px 16px !important; }
+          .auth-name-grid { grid-template-columns: 1fr !important; }
+          .auth-card { padding: 24px 20px !important; }
         }
       `}</style>
       <main style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f4eee6 40%, #fcfaf7 100%)' }}>
@@ -672,7 +674,7 @@ function AuthPageInner() {
             boxSizing: 'border-box',
           }}
         >
-          <SurfaceCard style={{
+          <SurfaceCard className="auth-card" style={{
             width: '100%',
             maxWidth: '430px',
             padding: '38px 34px',
