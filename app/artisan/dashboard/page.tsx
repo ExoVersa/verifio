@@ -32,6 +32,7 @@ interface ArtisanProfil {
 
 export default function ArtisanDashboardPage() {
   const router = useRouter()
+  useEffect(() => { router.push('/') }, [])
   const [profil, setProfil] = useState<ArtisanProfil | null>(null)
   const [loading, setLoading] = useState(true)
   const [authToken, setAuthToken] = useState<string | null>(null)
