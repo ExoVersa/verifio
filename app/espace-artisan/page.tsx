@@ -1,6 +1,4 @@
 import { redirect } from 'next/navigation'
-redirect('/')
-
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import { BadgeCheck, FileText, BarChart3, ArrowRight } from 'lucide-react'
@@ -12,6 +10,7 @@ export const metadata = {
 }
 
 export default function EspaceArtisanPage() {
+  redirect('/')
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <SiteHeader />
