@@ -1946,8 +1946,8 @@ export default function ArtisanFichePage() {
                         L&apos;existence légale de cet artisan a été vérifiée.
                       </p>
                     </div>
-                  ) : (
-                    <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', textAlign: 'center' }}>
+                  ) : null}
+                  {/* <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', textAlign: 'center' }}>
                       Vous êtes le dirigeant ?{' '}
                       <a
                         href="/espace-artisan"
@@ -1961,8 +1961,7 @@ export default function ArtisanFichePage() {
                       >
                         Revendiquez cette fiche →
                       </a>
-                    </p>
-                  )}
+                    </p> */}
                 </div>
 
               </div>
