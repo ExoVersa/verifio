@@ -39,6 +39,7 @@ interface ArtisanInfo {
 
 export default function NouveauDevisPage() {
   const router = useRouter()
+  useEffect(() => { router.push('/') }, [])
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [artisan, setArtisan] = useState<ArtisanInfo | null>(null)
   const [loading, setLoading] = useState(true)
