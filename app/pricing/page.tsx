@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Shield, Zap, Gem,
@@ -68,6 +68,14 @@ function FaqItem({ q, r }: { q: string; r: string }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function PricingPage() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)' }}>
       <SiteHeader />
@@ -88,7 +96,7 @@ export default function PricingPage() {
           }}>
             Pourquoi passer au Pack S&#233;r&#233;nit&#233;&nbsp;?
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px', textAlign: 'center' }} className="pricing-why-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '18px', textAlign: 'center' }}>
             {[
               { icon: Shield, title: '1 achat = 1 rapport', desc: "Pas d\u2019abonnement. Vous payez une seule fois et acc\u00e9dez \u00e0 vie au rapport de cet artisan." },
               { icon: Zap, title: '4,90\u00a0\u20ac seulement', desc: "Moins cher qu\u2019un caf\u00e9, pour \u00e9viter des milliers d\u2019euros de probl\u00e8mes sur votre chantier." },
@@ -157,13 +165,6 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <style>{`
-        @media (max-width: 900px) {
-          .pricing-why-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </main>
   )
 }
