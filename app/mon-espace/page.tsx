@@ -105,6 +105,13 @@ function DashboardTab({
   searches: SearchRecord[]
   router: ReturnType<typeof useRouter>
 }) {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const enCours = chantiers.filter(c => c.statut === 'en_cours').length
 
   const stats = [
@@ -182,7 +189,7 @@ function DashboardTab({
       </div>
 
       {/* Deux colonnes : dernière activité + raccourcis */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: isMobile ? '16px' : '24px', alignItems: 'start' }}>
 
         {/* Dernière activité */}
         <SurfaceCard style={{ padding: '24px' }}>
@@ -1227,6 +1234,13 @@ function MonEspaceInner() {
   const [tab, setTabState] = useState<TabId>(
     tabParam && validTabs.includes(tabParam) ? tabParam : 'dashboard'
   )
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
@@ -1371,12 +1385,12 @@ function MonEspaceInner() {
         </div>
       )}
 
-      <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '32px 24px 88px' }}>
+      <div style={{ maxWidth: '1040px', margin: '0 auto', padding: isMobile ? '20px 16px 88px' : '32px 24px 88px' }}>
 
         {/* Page header */}
-        <SurfaceCard style={{ padding: '28px 30px', marginBottom: '22px', overflow: 'hidden', position: 'relative', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(244,238,230,0.94) 100%)' }}>
+        <SurfaceCard style={{ padding: isMobile ? '20px 16px' : '28px 30px', marginBottom: '22px', overflow: 'hidden', position: 'relative', background: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(244,238,230,0.94) 100%)' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 10% 16%, rgba(82,183,136,0.12), transparent 22%), radial-gradient(circle at 88% 18%, rgba(255,196,153,0.18), transparent 20%)' }} />
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(260px, 0.85fr)', gap: '18px', alignItems: 'start' }}>
+        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.25fr) minmax(260px, 0.85fr)', gap: '18px', alignItems: 'start' }}>
           <div>
             <SectionBadge text="Espace personnel" tone="green" />
             <h1 className="font-display" style={{ margin: '14px 0 8px', fontSize: 'clamp(34px, 5vw, 46px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1.02 }}>
@@ -1400,10 +1414,11 @@ function MonEspaceInner() {
 
         {/* Tabs */}
         <SurfaceCard style={{
-          display: 'flex', flexWrap: 'wrap', gap: '8px',
+          display: 'flex', flexWrap: isMobile ? 'nowrap' : 'wrap', gap: '8px',
           marginBottom: '32px',
           padding: '12px',
           background: 'rgba(255,255,255,0.74)',
+          overflowX: isMobile ? 'auto' : 'visible',
         }}>
           {TABS.map(({ id, label, Icon }) => (
             <button
