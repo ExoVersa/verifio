@@ -112,6 +112,14 @@ export interface SearchCandidate {
   score?: number
 }
 
+export interface BOAMPMarche {
+  objet: string
+  date: string | null
+  montant: string | null
+  procedure: string | null
+  acheteur: string | null
+}
+
 export interface SearchResult {
   siret: string
   siren: string
@@ -130,6 +138,7 @@ export interface SearchResult {
   rge: RGEInfo
   dirigeants: Dirigeant[]
   bodacc: BodaccInfo
+  boampMarches?: BOAMPMarche[]
   successionInfo?: SuccessionInfo
   autresResultats: Array<{
     siren: string

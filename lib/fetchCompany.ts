@@ -1,4 +1,4 @@
-import type { SearchResult, Alert, BodaccInfo, BodaccAnnonce, Dirigeant, RGEInfo } from '@/types'
+import type { SearchResult, Alert, BodaccInfo, BodaccAnnonce, Dirigeant, RGEInfo, BOAMPMarche } from '@/types'
 import { calculateScore } from '@/lib/score'
 
 const FORMES_JURIDIQUES: Record<string, string> = {
@@ -455,6 +455,30 @@ function parseDirigeants(raw: any[]): Dirigeant[] {
   }))
 }
 
+export async function fetchBOAMP(nomEntreprise: string): Promise<BOAMPMarche[]> {
+  if (!nomEntreprise) return []
+  try {
+    const query = encodeURIComponent(`"${nomEntreprise}"`)
+    const url = `https://www.boamp.fr/api/explore/v2.1/catalog/datasets/boamp/records?where=titulaires%20like%20${query}&limit=5&select=objet,datepublication,montant,procedure,acheteur&order_by=datepublication%20DESC`
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.results || []).map((r: Record<string, unknown>) => ({
+      objet: String(r.objet || 'Marché public'),
+      date: r.datepublication ? String(r.datepublication) : null,
+      montant: r.montant ? String(r.montant) : null,
+      procedure: r.procedure ? String(r.procedure) : null,
+      acheteur: r.acheteur ? String(r.acheteur) : null,
+    }))
+  } catch {
+    return []
+  }
+}
+
 /* calculateScore is now imported from lib/score.ts (single source of truth) */
 
 export async function fetchCompany(query: string): Promise<SearchResult> {
@@ -470,9 +494,11 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
   const siret = siege.siret || e.siret
   const siren = e.siren || siret?.slice(0, 9) || ''
 
-  const [rgeData, bodacc] = await Promise.all([
+  const nom = e.nom_complet || e.nom_raison_sociale || ''
+  const [rgeData, bodacc, boampMarches] = await Promise.all([
     siret ? fetchRGE(siret) : Promise.resolve(null),
     siren ? fetchBODACC(siren) : Promise.resolve(emptyBodacc()),
+    nom ? fetchBOAMP(nom).catch(() => []) : Promise.resolve([]),
   ])
 
   // Build RGEInfo for the canonical score function
@@ -554,7 +580,7 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
   return {
     siret: siret || '',
     siren,
-    nom: e.nom_complet || e.nom_raison_sociale || 'Entreprise inconnue',
+    nom,
     statut: siege.etat_administratif === 'A' ? 'actif' : 'fermé',
     formeJuridique: libelleFormeJuridique(e.nature_juridique || ''),
     dateCreation: siege.date_creation || e.date_creation || '',
@@ -570,6 +596,7 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
     rge: rgeInfo,
     dirigeants,
     bodacc,
+    boampMarches: boampMarches.length > 0 ? boampMarches : undefined,
     successionInfo: { cessionDetectee, cessionRecente },
     autresResultats: results.slice(1, 4).map((r: any) => ({
       siren: r.siren,

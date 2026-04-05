@@ -765,6 +765,52 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
               <BodaccSection annonces={result.bodacc.annonces} />
             </SurfaceCard>
 
+            {/* 7b. Marchés publics BOAMP */}
+            {result.boampMarches && result.boampMarches.length > 0 && (
+              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '16px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--color-text)' }}>
+                    Marchés publics gagnés
+                  </span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 500, padding: '2px 8px',
+                    borderRadius: 99, background: '#EAF3DE', color: '#27500A',
+                  }}>
+                    {result.boampMarches.length} trouvé{result.boampMarches.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {result.boampMarches.map((m, i) => (
+                    <div key={i} style={{
+                      padding: '10px 14px',
+                      background: 'var(--color-bg)',
+                      borderRadius: 10,
+                      border: '0.5px solid var(--color-border)',
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', marginBottom: 4 }}>
+                        {m.objet}
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--color-muted)' }}>
+                        {m.date && (
+                          <span>{new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        )}
+                        {m.montant && <span style={{ color: '#27500A', fontWeight: 500 }}>{m.montant}</span>}
+                        {m.procedure && <span>{m.procedure}</span>}
+                        {m.acheteur && <span>{m.acheteur}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 10, marginBottom: 0 }}>
+                  Source : BOAMP — Bulletin officiel des annonces des marchés publics
+                </p>
+              </SurfaceCard>
+            )}
+
             {/* 8. Vos droits avant de signer */}
             <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Scale size={18} />} title={<>Vos droits avant de signer<PackBadge /></>} />
