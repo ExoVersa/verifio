@@ -613,7 +613,7 @@ function PricingSection() {
 
 export default function HomePage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'transparent' }}>
+    <main style={{ minHeight: '100vh', background: 'transparent', overflowX: 'hidden', width: '100%' }}>
       <SiteHeader />
 
       <section style={{
@@ -639,7 +639,7 @@ export default function HomePage() {
           {/* Titre */}
           <h1 style={{
             margin: '0 0 16px',
-            fontSize: 'clamp(34px, 5vw, 52px)',
+            fontSize: 'clamp(28px, 7vw, 52px)',
             lineHeight: 1.1,
             letterSpacing: '-0.035em',
             color: '#14201b',
@@ -651,7 +651,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sous-titre */}
-          <p style={{ margin: '0 auto 32px', maxWidth: '520px', fontSize: '17px', lineHeight: 1.7, color: '#52615c' }}>
+          <p style={{ margin: '0 auto 32px', maxWidth: '520px', fontSize: 'clamp(15px, 2.5vw, 17px)', lineHeight: 1.7, color: '#52615c' }}>
             Statut légal, certifications, signaux BODACC — une lecture claire et honnête en moins de 30 secondes.
           </p>
 
@@ -1148,6 +1148,15 @@ export default function HomePage() {
 
           .hero-search-shell {
             grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .proof-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
         }
 
