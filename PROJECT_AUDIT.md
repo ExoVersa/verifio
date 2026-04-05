@@ -1,6 +1,6 @@
 # PROJECT_AUDIT.md — Verifio
-> Audit technique complet — état réel du code au 4 avril 2026.
-> Inclut toutes les modifications effectuées du 24 mars au 4 avril 2026.
+> Audit technique complet — état réel du code au 5 avril 2026.
+> Inclut toutes les modifications effectuées du 24 mars au 5 avril 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
 ## Utilisation par les agents
@@ -192,23 +192,15 @@ Input JSON :
 7. Données identité (SIRET, forme juridique, date création, adresse, capital, effectif)
 8. Certifications RGE (cards avec icônes thématiques)
 9. Régularité financière / Procédures collectives BODACC
-10. Dirigeants (jusqu'à 5)
+10. **Dirigeants** (5 avril 2026) — chaque dirigeant est un `<a href="/dirigeant/[slug]">` avec nom en vert + icône externe + CTA pill "Voir ses entreprises →". Génération du slug via `dirigeantSlug(nom, prenoms)` depuis `lib/dirigeant.ts`
 11. Historique changements statut
-12. Annonces BODACC redesign — cards colorées par type :
-    - `dpc` → bleu `#3B82F6`
-    - `modification` → orange `#F59E0B`
-    - `vente` → violet `#8B5CF6`
-    - `immatriculation` → vert `var(--color-safe)`
-    - `radiation` → rouge `var(--color-danger)`
-    - procédure collective → rouge avec fond alert + icône AlertTriangle
-    - Pagination 5 par page
-13. Checklist personnalisée avant de signer (10 items, cochables)
-14. Questions à poser à l'artisan (liste)
-15. "Vos droits avant de signer" — 4 cartes avec badge Pack Sérénité
-16. Modèle de contrat pré-rempli (avec badge Pack Sérénité)
-17. Guide recours si ça se passe mal (avec badge Pack Sérénité)
-18. Sidebar : score, surveillance active/expiry, CTA "Ouvrir un carnet de chantier" (→ `/nouveau-chantier?siret=&nom=&adresse=&from=rapport&session_id=`)
-19. `WelcomeModal` premier achat (`isNew=true`)
+12. Annonces BODACC redesign — cards colorées par type, pagination 5 par page
+13. **Marchés publics BOAMP** (5 avril 2026) — `SurfaceCard` conditionnelle si `result.boampMarches?.length > 0` : objet, date, montant, procédure, acheteur. Source affichée en bas.
+14. "Vos droits avant de signer" — 4 cartes universelles + **droits personnalisés par IA** (5 avril 2026) : appel direct Anthropic Haiku dans le Server Component, 2-3 cartes contextuelles selon profil (forme juridique, NAF, ancienneté, score, RGE, BODACC). Backticks strippés avant `JSON.parse`. Fallback silencieux si pas de clé.
+15. Modèle de contrat pré-rempli (avec badge Pack Sérénité)
+16. Guide recours si ça se passe mal (avec badge Pack Sérénité)
+17. Sidebar : score, surveillance active/expiry, CTA "Ouvrir un carnet de chantier" (→ `/nouveau-chantier?siret=&nom=&adresse=&from=rapport&session_id=`)
+18. `WelcomeModal` premier achat (`isNew=true`)
 
 **`PackBadge` :** composant partagé `components/PackBadge.tsx` — badge vert translucide avec icône Shield, affiché sur les sections premium.
 
@@ -752,6 +744,35 @@ interface Chantier {
 - `daysUntil(dateStr)` — jours avant échéance (négatif si dépassé)
 - `formatEur(n)` — formatage montant en euros fr-FR
 
+### `fetchBOAMP(nomEntreprise)` — (ajoutée le 5 avril 2026)
+
+**Fichier :** `lib/fetchCompany.ts` (exportée)
+
+```typescript
+export async function fetchBOAMP(nomEntreprise: string): Promise<BOAMPMarche[]>
+```
+
+- URL : `https://www.boamp.fr/api/explore/v2.1/catalog/datasets/boamp/records?where=titulaires like "${nom}"&limit=5&select=objet,datepublication,montant,procedure,acheteur&order_by=datepublication DESC`
+- `AbortSignal.timeout(5000)` + `next: { revalidate: 86400 }` (cache 24h)
+- Retourne `BOAMPMarche[]` ou `[]` en cas d'erreur
+- Intégré dans le `Promise.all` de `fetchCompany` (3e promesse, en parallèle RGE + BODACC)
+- `boampMarches` dans `SearchResult` : `undefined` si tableau vide → sections JSX conditionnelles
+
+**Type `BOAMPMarche` dans `types/index.ts` :**
+```typescript
+interface BOAMPMarche {
+  objet: string
+  date: string | null
+  montant: string | null
+  procedure: string | null
+  acheteur: string | null
+}
+```
+
+**Affichage :**
+- `app/artisan/[siret]/page.tsx` : section après BODACC, avant checklist, conditionnelle
+- `app/rapport/succes/page.tsx` : `SurfaceCard` entre BODACC (7) et Vos droits (8), numérotée 7b
+
 ---
 
 ## 9b. Page Dirigeant `/dirigeant/[slug]`
@@ -779,6 +800,47 @@ interface Chantier {
 - Header : avatar initiales 2 lettres (#1B4332), nom, compteur entreprises, badge alerte si fermées (jaune ≤2, rouge ≥3)
 - Bloc analyse coloré (vert/orange/rouge) selon `analyseLevel`
 - Liste `<a href="/artisan/${siret}">` : nom + badge ACTIF/FERMÉ, SIRET, forme juridique, dates, adresse, score circulaire 48px
+
+---
+
+## 9c. Droits personnalisés par IA — `/rapport/succes`
+
+**(Ajouté le 5 avril 2026)**
+
+Appel Haiku **directement dans le Server Component** `app/rapport/succes/page.tsx`, après `fetchCompany` et avant la persistence Supabase.
+
+```typescript
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// model: 'claude-haiku-4-5-20251001', max_tokens: 800
+```
+
+**Données envoyées :** `formeJuridique`, `codeNaf`, `activite`, `dateCreation`, `score`, `rge`, `bodacc`, `effectif`
+
+**Réponse :** 2-3 objets `DroitPersonnalise` :
+```typescript
+interface DroitPersonnalise {
+  titre: string           // max 6 mots
+  badge: string           // max 3 mots
+  badgeType: 'danger' | 'warning' | 'info' | 'success'
+  texte: string           // 2-3 phrases
+}
+```
+
+**Strip backticks :** `.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim()` avant `JSON.parse()` — Haiku peut wrapper le JSON dans des backticks markdown.
+
+**Fallback :** `droitsPersonnalises = []` si pas de clé API, si parse échoue, ou si le tableau est vide → les 4 cartes universelles s'affichent seules, la section "Spécifique à cet artisan" n'apparaît pas.
+
+**JSX :** dans la grille flex-wrap des cartes droits, après les 4 universelles. Séparateur "Spécifique à cet artisan" (icône éclair SVG). Bordure colorée des cartes : `${colors.color}33` (20% opacité).
+
+---
+
+## 9d. Page 404 personnalisée
+
+**(Ajoutée le 5 avril 2026)**
+
+**Fichier :** `app/not-found.tsx` — Server Component, détecté automatiquement par Next.js comme page 404 globale.
+
+Contenu : icône loupe SVG, "Erreur 404", titre, sous-titre, deux CTAs ("Accueil" bouton vert + "Vérifier un artisan" bouton outline).
 
 ---
 
@@ -947,6 +1009,11 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 | Recherche SIRET 14 chiffres → résultats multiples | 31 mars | `exactMatch` lookup + redirect direct depuis la home |
 | `/api/checkout` accessible sans auth | 4 avril | Vérification `Authorization: Bearer` + `supabaseAuth.auth.getUser(token)` → 401 si absent/invalide |
 | `startSerenite()` ne transmettait pas le token | 4 avril | `getSession()` + `Authorization: Bearer ${access_token}` dans le fetch |
+| Dirigeants rapport payant sans lien | 5 avril | `<a href="/dirigeant/[slug]">` + pill "Voir ses entreprises →" via `dirigeantSlug()` |
+| Droits avant de signer — 4 cartes génériques uniquement | 5 avril | Haiku génère 2-3 droits contextuels, appel direct dans Server Component |
+| Haiku renvoyait du JSON avec backticks markdown | 5 avril | Strip ```` ```json ```` avant `JSON.parse()` |
+| Page 404 absente | 5 avril | `app/not-found.tsx` créé — détecté automatiquement par Next.js |
+| Marchés publics non affichés | 5 avril | `fetchBOAMP()` dans `fetchCompany` + section dans fiche et rapport |
 
 ---
 
@@ -979,15 +1046,15 @@ Les features B2B sont masquées dans l'UI sans être supprimées du code (réver
 - Lien "Espace Artisan" mobile (drawer) : supprimé, remplacé par commentaire
 
 ### Pages B2B à rediriger vers `/` (TODO — non encore fait)
-- `app/espace-artisan/page.tsx` — Server Component : `redirect('/')`
-- `app/espace-artisan/inscription/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
-- `app/artisan/dashboard/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
-- `app/artisan/dashboard/devis/nouveau/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
-- `app/admin/page.tsx` — Client : `useEffect(() => router.push('/'), [])`
+- `app/espace-artisan/page.tsx` — Server Component : `import { redirect } from 'next/navigation'` + `redirect('/')`
+- `app/espace-artisan/inscription/page.tsx` — Client Component : `useEffect(() => { router.push('/') }, [])`
+- `app/artisan/dashboard/page.tsx` — Client Component : `useEffect(() => { router.push('/') }, [])` (router déjà importé)
+- `app/artisan/dashboard/devis/nouveau/page.tsx` — Client Component : `useEffect(() => { router.push('/') }, [])` (router déjà importé)
+- `app/admin/page.tsx` — Client Component : ajouter `useRouter` + `useEffect(() => { router.push('/') }, [])`
 
 ### Autres (TODO — non encore fait)
-- `app/page.tsx` : supprimer `{ label: 'Espace artisan', href: '/espace-artisan' }` du footer
-- `app/artisan/[siret]/page.tsx` : commenter le bloc "Revendiquez cette fiche →"
+- `app/page.tsx` ligne 144 : supprimer `{ label: 'Espace artisan', href: '/espace-artisan' }` du tableau `FOOTER_LINKS.produit`
+- `app/artisan/[siret]/page.tsx` : commenter le bloc else "Vous êtes le dirigeant ? Revendiquez cette fiche →" (vers `/espace-artisan`)
 
 ---
 
