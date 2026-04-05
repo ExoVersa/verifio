@@ -141,7 +141,6 @@ const FOOTER_LINKS = {
     { label: 'Rechercher un artisan', href: '/recherche' },
     { label: 'Tarifs', href: '/pricing' },
     { label: 'À propos', href: '/a-propos' },
-    { label: 'Espace artisan', href: '/espace-artisan' },
     { label: 'Contact', href: '/contact' },
   ],
   legal: [
