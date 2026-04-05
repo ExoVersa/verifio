@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 
@@ -28,6 +29,9 @@ interface FormData {
 }
 
 export default function InscriptionArtisanPage() {
+  const router = useRouter()
+  useEffect(() => { router.push('/') }, [])
+
   const [etape, setEtape] = useState<1 | 2>(1)
   const [form, setForm] = useState<FormData>({
     siret: '',
