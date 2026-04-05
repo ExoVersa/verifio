@@ -444,7 +444,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
   return (
     <>
     <SiteHeader />
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)', overflowX: 'hidden' }}>
 
       {/* Sub-header rapport */}
       <header style={{
@@ -1076,6 +1076,13 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
           nomEntreprise={result?.nom}
         />
       )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .rapport-layout { padding: 16px 12px !important; }
+          .rapport-sidebar { padding-bottom: 80px; }
+        }
+      `}</style>
     </main>
     </>
   )
