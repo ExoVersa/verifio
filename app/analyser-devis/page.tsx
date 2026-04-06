@@ -43,6 +43,7 @@ interface AnalyseResponse {
   prix: PrixResult
   juridique: JuridiqueResult
   score_global: number
+  verdict?: string | null
   siret_artisan: string | null
   est_gratuite: boolean
   pack_serenite_actif: boolean
@@ -781,9 +782,13 @@ function AnalyserDevisInner() {
                   margin: 0, fontSize: 18, fontWeight: 800,
                   color: result.score_global >= 8 ? 'var(--color-safe)' : result.score_global >= 5 ? '#d97706' : 'var(--color-danger)',
                 }}>
-                  {result.score_global >= 8 && 'Devis excellent — vous pouvez signer en confiance'}
-                  {result.score_global >= 5 && result.score_global < 8 && 'Devis à revoir — demandez des corrections'}
-                  {result.score_global < 5 && 'Devis problématique — ne signez pas'}
+                  {result.verdict ?? (
+                    result.score_global >= 9 ? 'Devis excellent — vous pouvez signer en confiance'
+                    : result.score_global >= 7 ? 'Devis correct — quelques points à clarifier avant de signer'
+                    : result.score_global >= 5 ? 'Devis à corriger — demandez les éléments manquants avant tout engagement'
+                    : result.score_global >= 3 ? 'Devis insuffisant — ne signez pas sans corrections importantes'
+                    : 'Devis à rejeter — mentions légales obligatoires absentes'
+                  )}
                 </p>
               </div>
             </SurfaceCard>

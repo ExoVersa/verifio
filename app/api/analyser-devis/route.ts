@@ -158,105 +158,147 @@ export async function POST(req: NextRequest) {
     } catch { /* SIRET extraction échouée */ }
   }
 
-  // ── 5. Analyses parallèles : prix + juridique ────────────────────────────
+  // ── 5. Analyse unifiée (prix + juridique en un seul appel) ───────────────
   const docContent = mimeType === 'application/pdf'
     ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 } }
     : { type: 'image' as const, source: { type: 'base64' as const, media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp', data: fileBase64 } }
 
-  let prixRaw: any = null
-  let juridiqueRaw: any = null
+  let analysisRaw: any = null
+
+  const SYSTEM_PROMPT = `Tu es un expert juridique et commercial spécialisé dans l'analyse de devis de travaux en France.
+
+Tu analyses le devis fourni et retournes un JSON structuré UNIQUEMENT, sans backticks, sans markdown.
+
+RÈGLES DE SCORING STRICTES :
+- Commence à 10/10
+- Chaque mention légale obligatoire manquante : -1.5 point
+- Chaque mention importante manquante : -0.5 point
+- Le score final NE PEUT PAS dépasser le plafond selon les manquements légaux :
+  * 0 manquement légal → max 10
+  * 1 manquement légal → max 8
+  * 2 manquements légaux → max 7
+  * 3 manquements légaux → max 6
+  * 4+ manquements légaux → max 5
+- Arrondis toujours à l'entier inférieur
+- Le verdict DOIT être cohérent avec le score (voir barème)
+
+MENTIONS LÉGALES OBLIGATOIRES (absence = -1.5 pt) :
+1. Délai d'exécution précis (date début et fin prévues)
+2. Droit de rétractation 14 jours (art. L.221-18 si applicable)
+3. Conditions de garantie explicites (parfait achèvement, biennale, décennale)
+4. Conditions générales de vente ou référence à un document joint
+5. Modalités de facturation et d'exécution
+
+MENTIONS IMPORTANTES (absence = -0.5 pt) :
+1. Pourcentage d'acompte justifié
+2. Clause de révision de prix
+3. Responsabilité civile avec montant de couverture
+
+ANALYSE DES PRIX :
+- Estime d'abord la fourchette de marché pour ce type de travaux et cette région SANS regarder le montant du devis
+- Compare ensuite avec le montant réel
+- Sois critique : un devis 30% au-dessus de la fourchette haute = "Élevé", pas "Dans la norme"
+
+BARÈME VERDICTS :
+- 9-10 : "Devis excellent — vous pouvez signer en confiance"
+- 7-8 : "Devis correct — quelques points à clarifier avant de signer"
+- 5-6 : "Devis à corriger — demandez les éléments manquants avant tout engagement"
+- 3-4 : "Devis insuffisant — ne signez pas sans corrections importantes"
+- 1-2 : "Devis à rejeter — mentions légales obligatoires absentes"
+
+Retourne UNIQUEMENT ce JSON (pas de backticks, pas de markdown) :
+{
+  "score": <entier 1-10>,
+  "verdict": "<texte du verdict selon barème>",
+  "mentions_presentes": ["<liste des mentions trouvées>"],
+  "mentions_manquantes": ["<liste des mentions absentes>"],
+  "recommandations": ["<liste des actions concrètes à faire>"],
+  "analyse_prix": {
+    "montant_devis": <nombre>,
+    "fourchette_min": <nombre>,
+    "fourchette_max": <nombre>,
+    "prix_moyen_marche": <nombre>,
+    "position": "<Trop bas|Dans la norme|Légèrement élevé|Élevé|Excessif>",
+    "commentaire": "<explication courte>"
+  },
+  "facteurs_variation": ["<liste des facteurs qui justifient le prix>"],
+  "type_travaux": "<catégorie détectée>",
+  "region": "<région détectée si mentionnée>"
+}`
 
   try {
-    const [prixMsg, juridiqueMsg] = await Promise.all([
-      // Appel 1 — Analyse des prix
-      anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        messages: [{
-          role: 'user',
-          content: [
-            docContent,
-            {
-              type: 'text',
-              text: `Analyse ce devis et retourne UNIQUEMENT ce JSON valide (sans markdown, sans backticks) :
-{
-  "siret": "14 chiffres ou null",
-  "nom_artisan": "string ou null",
-  "type_travaux": "string (ex: Isolation, Plomberie, Toiture...)",
-  "region": "région française ou null",
-  "montant_devis": number ou null,
-  "fourchette_basse": number,
-  "fourchette_haute": number,
-  "prix_moyen": number,
-  "verdict_prix": "normal" | "sous-evalue" | "surevalue",
-  "ecart_pourcentage": number,
-  "facteurs": ["string", "string", "string"],
-  "alerte": "string ou null"
-}
-Base-toi sur les prix du marché français 2024-2025 (main d'œuvre + matériaux). Si la région n'est pas précisée, utilise une moyenne nationale. Sois précis et réaliste.`,
-            },
-          ],
-        }],
-      }),
-      // Appel 2 — Analyse juridique
-      anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        messages: [{
-          role: 'user',
-          content: [
-            docContent,
-            {
-              type: 'text',
-              text: `Analyse la conformité juridique de ce devis français et retourne UNIQUEMENT ce JSON valide (sans markdown, sans backticks) :
-{
-  "score_conformite": number (0-10),
-  "mentions_presentes": ["string", ...],
-  "mentions_manquantes": ["string", ...],
-  "clauses_abusives": ["string", ...],
-  "verdict_juridique": "conforme" | "a_corriger" | "non_conforme",
-  "recommandations": ["string", "string", "string"]
-}
-Vérifie obligatoirement : SIRET de l'artisan, numéro d'assurance décennale, délai d'exécution, conditions de paiement (acompte ≤ 30%), droit de rétractation 14 jours si démarchage, garanties mentionnées, coordonnées complètes artisan, description détaillée des travaux et matériaux.
-Score 8-10 = conforme, 5-7 = à corriger, 0-4 = non conforme.`,
-            },
-          ],
-        }],
-      }),
-    ])
+    const analysisMsg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1200,
+      system: SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: [docContent, { type: 'text', text: 'Analyse ce devis.' }],
+      }],
+    })
 
-    const prixText = prixMsg.content[0].type === 'text' ? prixMsg.content[0].text : '{}'
-    const juridiqueText = juridiqueMsg.content[0].type === 'text' ? juridiqueMsg.content[0].text : '{}'
-
-    try { prixRaw = parseJson(prixText) } catch {
-      console.error('[analyser-devis] Prix JSON parse failed:', prixText.slice(0, 200))
-    }
-    try { juridiqueRaw = parseJson(juridiqueText) } catch {
-      console.error('[analyser-devis] Juridique JSON parse failed:', juridiqueText.slice(0, 200))
+    const analysisText = analysisMsg.content[0].type === 'text' ? analysisMsg.content[0].text : '{}'
+    try {
+      analysisRaw = parseJson(analysisText)
+    } catch {
+      console.error('[analyser-devis] JSON parse failed:', analysisText.slice(0, 200))
     }
   } catch (err: any) {
     console.error('[analyser-devis] Erreur Claude:', err?.message)
     return NextResponse.json({ error: `Erreur IA : ${err?.message || 'Appel Claude échoué'}` }, { status: 500 })
   }
 
-  if (!prixRaw || !juridiqueRaw) {
+  if (!analysisRaw) {
     return NextResponse.json({ error: 'Réponse IA invalide. Réessayez ou changez de fichier.' }, { status: 500 })
   }
 
-  // SIRET final : prix analysis en priorité, extraction légère en fallback
-  const siretFinal: string | null = prixRaw.siret || siretExtrait
+  // ── Mapper vers la structure attendue par le frontend ────────────────────
+  const positionToVerdictPrix = (position: string): 'normal' | 'sous-evalue' | 'surevalue' => {
+    if (position === 'Trop bas') return 'sous-evalue'
+    if (position === 'Dans la norme' || position === 'Légèrement élevé') return 'normal'
+    return 'surevalue' // Élevé, Excessif
+  }
 
-  // ── Score global ─────────────────────────────────────────────────────────
-  const scoreConformite: number = juridiqueRaw.score_conformite ?? 5
-  const scorePrix = prixRaw.verdict_prix === 'normal' ? 10
-    : prixRaw.verdict_prix === 'sous-evalue' ? 4
-    : 6 // surevalue
-  const scoreGlobal = Math.round((scoreConformite + scorePrix) / 2)
+  const scoreToVerdictJuridique = (score: number): 'conforme' | 'a_corriger' | 'non_conforme' => {
+    if (score >= 8) return 'conforme'
+    if (score >= 5) return 'a_corriger'
+    return 'non_conforme'
+  }
+
+  const ap = analysisRaw.analyse_prix ?? {}
+  const scoreGlobal: number = analysisRaw.score ?? 5
+
+  const prixRaw = {
+    siret: siretExtrait,
+    nom_artisan: null,
+    type_travaux: analysisRaw.type_travaux ?? null,
+    region: analysisRaw.region ?? null,
+    montant_devis: ap.montant_devis ?? null,
+    fourchette_basse: ap.fourchette_min ?? 0,
+    fourchette_haute: ap.fourchette_max ?? 0,
+    prix_moyen: ap.prix_moyen_marche ?? 0,
+    verdict_prix: positionToVerdictPrix(ap.position ?? 'Dans la norme'),
+    ecart_pourcentage: ap.montant_devis && ap.prix_moyen_marche
+      ? Math.round(((ap.montant_devis - ap.prix_moyen_marche) / ap.prix_moyen_marche) * 100)
+      : 0,
+    facteurs: analysisRaw.facteurs_variation ?? [],
+    alerte: ap.commentaire ?? null,
+  }
+
+  const juridiqueRaw = {
+    score_conformite: scoreGlobal,
+    mentions_presentes: analysisRaw.mentions_presentes ?? [],
+    mentions_manquantes: analysisRaw.mentions_manquantes ?? [],
+    clauses_abusives: [],
+    verdict_juridique: scoreToVerdictJuridique(scoreGlobal),
+    recommandations: analysisRaw.recommandations ?? [],
+  }
 
   const resultatComplet = {
     prix: prixRaw,
     juridique: juridiqueRaw,
     score_global: scoreGlobal,
+    verdict: analysisRaw.verdict ?? null,
     siret_artisan: siretClient,
     est_gratuite: false,
     pack_serenite_actif: true,
