@@ -538,6 +538,116 @@ function HeroSearch() {
         </div>
       )}
 
+      {/* Cards UI flottantes */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        gap: 12,
+        width: '100%',
+        maxWidth: 780,
+        margin: '28px auto 0',
+      }}>
+
+        {/* Card 1 — Score fiabilité */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid var(--color-border)',
+          borderRadius: 16,
+          padding: '16px',
+          borderTop: '3px solid var(--color-accent)',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-muted)', marginBottom: 12 }}>
+            Fiche artisan
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'inherit' }}>Bonsens SARL</div>
+              <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Créé en 2008 · SARL</div>
+            </div>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'var(--color-safe)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, fontWeight: 900, color: '#085041',
+            }}>94</div>
+          </div>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+            {['Actif', 'RGE · 8 domaines'].map(t => (
+              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: 'var(--color-safe)', color: '#085041' }}>{t}</span>
+            ))}
+          </div>
+          <div style={{ height: 4, background: 'var(--color-safe)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ width: '94%', height: '100%', background: 'var(--color-accent)', borderRadius: 2 }} />
+          </div>
+        </div>
+
+        {/* Card 2 — Analyse devis */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid var(--color-border)',
+          borderRadius: 16,
+          padding: '16px',
+          borderTop: '3px solid #EF9F27',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-muted)', marginBottom: 12 }}>
+            Analyse devis
+          </div>
+          {[
+            { label: 'Montant', val: '4 200 €', color: 'inherit' },
+            { label: 'Fourchette marché', val: '3 200–4 000 €', color: '#BA7517' },
+            { label: 'Droit de rétractation', val: 'Absent', color: 'var(--color-danger)' },
+            { label: 'Délai d\'exécution', val: 'Absent', color: 'var(--color-danger)' },
+          ].map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '5px 0', borderBottom: '0.5px solid var(--color-border)' }}>
+              <span style={{ color: 'var(--color-muted)' }}>{row.label}</span>
+              <span style={{ fontWeight: 700, color: row.color }}>{row.val}</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 10, background: '#FEF9F0', border: '1px solid #FAEEDA', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#633806' }}>
+            Devis à corriger avant signature
+          </div>
+        </div>
+
+        {/* Card 3 — Suivi chantier */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid var(--color-border)',
+          borderRadius: 16,
+          padding: '16px',
+          borderTop: '3px solid #378ADD',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-muted)', marginBottom: 12 }}>
+            Suivi chantier
+          </div>
+          {[
+            { phase: 'Préparation', done: true },
+            { phase: 'Travaux', done: true },
+            { phase: 'Finitions', done: false },
+            { phase: 'Réception', done: false },
+          ].map(p => (
+            <div key={p.phase} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '0.5px solid var(--color-border)' }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                background: p.done ? 'var(--color-accent)' : 'var(--color-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {p.done && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: p.done ? 600 : 400, color: p.done ? 'inherit' : 'var(--color-muted)' }}>
+                {p.phase}
+              </span>
+              {p.phase === 'Finitions' && (
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#BA7517', background: '#FAEEDA', padding: '2px 7px', borderRadius: 5 }}>En cours</span>
+              )}
+            </div>
+          ))}
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-muted)' }}>
+            Réception prévue le <strong>12 mai 2026</strong>
+          </div>
+        </div>
+
+      </div>
+
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
@@ -671,8 +781,12 @@ export default function HomePage() {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
           }}>
-            Vous êtes le chef de chantier.<br />
-            <span style={{ color: '#2c6a53' }}>On vous donne les outils pour ne rien laisser au hasard.</span>
+            <span style={{ display: 'block', color: 'inherit' }}>
+              Vous êtes le chef de chantier.
+            </span>
+            <span style={{ display: 'block', color: 'var(--color-accent)' }}>
+              On vous donne les outils<br />pour ne rien laisser au hasard.
+            </span>
           </h1>
 
           {/* Sous-titre */}
