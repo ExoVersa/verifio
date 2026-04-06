@@ -610,7 +610,7 @@ function RechercheInner() {
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)' }}>
       <SiteHeader />
 
-      <section style={{ position: 'relative', overflow: 'hidden', padding: hasQuery ? '34px 24px 18px' : '40px 24px 18px' }}>
+      <section style={{ position: 'relative', padding: hasQuery ? '34px 24px 18px' : '40px 24px 18px' }}>
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -664,7 +664,7 @@ function RechercheInner() {
             </div>
           )}
 
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, paddingBottom: '10px' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 50, paddingBottom: '10px' }}>
             <SurfaceCard style={{
               padding: hasQuery ? '18px' : '22px',
               background: 'rgba(255,255,255,0.82)',
@@ -826,7 +826,7 @@ function RechercheInner() {
       </section>
 
       {/* ── Results section ── */}
-      <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '8px 24px 80px' }}>
+      <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '8px 24px 80px', position: 'relative', zIndex: 1 }}>
 
         {/* Initial state */}
         {!hasQuery && !loading && (
