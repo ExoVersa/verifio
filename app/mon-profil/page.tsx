@@ -19,6 +19,7 @@ export default function MonProfilPage() {
   const [loading, setLoading] = useState(true)
   const [resetSent, setResetSent] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -37,19 +38,33 @@ export default function MonProfilPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) return
+    if (!showConfirm) {
+      setShowConfirm(true)
+      return
+    }
+
     setDeleting(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch('/api/account/delete', {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    })
-    if (res.ok) {
-      await supabase.auth.signOut()
-      router.push('/')
-    } else {
-      alert('Erreur lors de la suppression du compte. Veuillez réessayer.')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const res = await fetch('/api/user/delete', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+
+      if (res.ok) {
+        await supabase.auth.signOut()
+        router.push('/?compte=supprime')
+      } else {
+        alert('Une erreur est survenue. Réessayez.')
+        setDeleting(false)
+        setShowConfirm(false)
+      }
+    } catch {
+      alert('Une erreur est survenue. Réessayez.')
       setDeleting(false)
+      setShowConfirm(false)
     }
   }
 
@@ -161,20 +176,52 @@ export default function MonProfilPage() {
           </p>
           <button
             onClick={handleDeleteAccount}
-            disabled={deleting}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '11px 18px', borderRadius: '10px',
               background: '#dc2626', color: '#fff',
               border: 'none', fontSize: '13px', fontWeight: 600,
-              cursor: deleting ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-body)',
-              opacity: deleting ? 0.7 : 1,
+              cursor: 'pointer', fontFamily: 'var(--font-body)',
             }}
           >
             <Trash2 size={14} strokeWidth={1.5} />
-            {deleting ? 'Suppression…' : 'Supprimer mon compte'}
+            Supprimer mon compte
           </button>
+
+          {showConfirm && (
+            <div style={{ marginTop: '12px' }}>
+              <p style={{ fontSize: '14px', color: '#991b1b', marginBottom: '8px', margin: '0 0 8px' }}>
+                Êtes-vous sûr ? Cette action est irréversible.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  style={{
+                    padding: '10px 16px', borderRadius: '10px',
+                    background: '#dc2626', color: '#fff',
+                    border: 'none', fontSize: '13px', fontWeight: 600,
+                    cursor: deleting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    opacity: deleting ? 0.7 : 1,
+                  }}
+                >
+                  {deleting ? 'Suppression…' : 'Oui, supprimer définitivement'}
+                </button>
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  style={{
+                    padding: '10px 16px', borderRadius: '10px',
+                    background: 'var(--color-bg)', color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)', fontSize: '13px', fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
