@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
 
   try {
     const formData = await req.formData()
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Email de notification admin
     await resend.emails.send({
-      from: 'Verifio <onboarding@resend.dev>',
+      from: 'Rien qui cloche <contact@rienquicloche.fr>',
       to: process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com',
       subject: `Nouvelle inscription artisan — ${nomEntreprise}`,
       html: `

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'couratincharlie@gmail.com'
 
   try {
@@ -59,9 +59,9 @@ export async function POST(req: NextRequest) {
     // 2. Email de confirmation à l'artisan
     const prenom = artisan.nom_dirigeant?.split(' ')[0] || artisan.nom_dirigeant || 'Bonjour'
     await resend.emails.send({
-      from: 'Verifio <onboarding@resend.dev>',
+      from: 'Rien qui cloche <contact@rienquicloche.fr>',
       to: artisan.email,
-      subject: 'Bienvenue sur Verifio — Votre espace est prêt ✓',
+      subject: 'Bienvenue sur Rien qui cloche — Votre espace est prêt ✓',
       html: `
 <!DOCTYPE html>
 <html>
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <div style="text-align:center;margin-bottom:24px;">
       <div style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.04em;">
-        🛡 Verifio
+        🛡 Rien qui cloche
       </div>
     </div>
     <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #e5e7eb;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#111827;">Votre dossier est validé !</h1>
         <p style="margin:0;font-size:15px;color:#6B7280;line-height:1.6;">
           Bonjour <strong style="color:#111827;">${prenom}</strong>,<br>
-          <strong style="color:#111827;">${artisan.nom_entreprise}</strong> est maintenant certifiée Verifio.
+          <strong style="color:#111827;">${artisan.nom_entreprise}</strong> est maintenant certifiée Rien qui cloche.
         </p>
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:20px;margin-bottom:24px;">
@@ -96,10 +96,10 @@ export async function POST(req: NextRequest) {
         </a>
       </div>
       <p style="margin:0;font-size:12px;color:#9CA3AF;text-align:center;">
-        Une question ? Répondez à cet email ou écrivez à contact@verifio.fr
+        Une question ? Répondez à cet email ou écrivez à contact@rienquicloche.fr
       </p>
     </div>
-    <p style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:16px;">© Verifio — ${new Date().getFullYear()}</p>
+    <p style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:16px;">© Rien qui cloche — ${new Date().getFullYear()}</p>
   </div>
 </body>
 </html>

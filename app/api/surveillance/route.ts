@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
 
   try {
     const body = await req.json()
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const ficheLink = `${BASE_URL}/artisan/${siret}`
 
     await resend.emails.send({
-      from: 'Verifio <onboarding@resend.dev>',
+      from: 'Rien qui cloche <contact@rienquicloche.fr>',
       to: email,
       subject: `✓ Alerte activée pour ${nom || siret}`,
       html: `
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     <!-- Header -->
     <div style="text-align:center;margin-bottom:28px;">
       <div style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.04em;">
-        🛡 Verifio
+        🛡 Rien qui cloche
       </div>
     </div>
 
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     </div>
 
     <p style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:16px;">
-      © Verifio — ${new Date().getFullYear()}
+      © Rien qui cloche — ${new Date().getFullYear()}
     </p>
   </div>
 </body>

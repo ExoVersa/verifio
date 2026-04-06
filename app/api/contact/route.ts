@@ -20,14 +20,14 @@ export async function POST(req: NextRequest) {
     }
 
     await resend.emails.send({
-      from: 'Verifio Contact <onboarding@resend.dev>',
+      from: 'Rien qui cloche <contact@rienquicloche.fr>',
       to: ['couratincharlie@gmail.com'],
       replyTo: email,
-      subject: `[Verifio Contact] ${sujet} — ${nom}`,
+      subject: `[Rien qui cloche Contact] ${sujet} — ${nom}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
           <div style="background: #1B4332; padding: 24px 32px; border-radius: 12px 12px 0 0;">
-            <h1 style="margin: 0; color: #D8F3DC; font-size: 20px;">Nouveau message — Verifio</h1>
+            <h1 style="margin: 0; color: #D8F3DC; font-size: 20px;">Nouveau message — Rien qui cloche</h1>
           </div>
           <div style="background: #f9fafb; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
             <table style="width: 100%; border-collapse: collapse;">

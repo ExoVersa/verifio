@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     // 2. Email de refus à l'artisan
     const prenom = artisan.nom_dirigeant?.split(' ')[0] || artisan.nom_dirigeant || 'Bonjour'
     await resend.emails.send({
-      from: 'Verifio <onboarding@resend.dev>',
+      from: 'Rien qui cloche <contact@rienquicloche.fr>',
       to: artisan.email,
-      subject: 'Votre demande Verifio — Informations complémentaires requises',
+      subject: 'Votre demande Rien qui cloche — Informations complémentaires requises',
       html: `
 <!DOCTYPE html>
 <html>
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <div style="text-align:center;margin-bottom:24px;">
       <div style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.04em;">
-        🛡 Verifio
+        🛡 Rien qui cloche
       </div>
     </div>
     <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #e5e7eb;">
@@ -82,13 +82,13 @@ export async function POST(req: NextRequest) {
       </div>
       ` : ''}
       <p style="margin:0 0 24px;font-size:14px;color:#6B7280;line-height:1.65;">
-        Si vous souhaitez contester cette décision ou fournir des documents supplémentaires, répondez directement à cet email ou contactez-nous à <a href="mailto:contact@verifio.fr" style="color:#1B4332;">contact@verifio.fr</a>.
+        Si vous souhaitez contester cette décision ou fournir des documents supplémentaires, répondez directement à cet email ou contactez-nous à <a href="mailto:contact@rienquicloche.fr" style="color:#1B4332;">contact@rienquicloche.fr</a>.
       </p>
       <p style="margin:0;font-size:13px;color:#9CA3AF;">
-        L'équipe Verifio
+        L'équipe Rien qui cloche
       </p>
     </div>
-    <p style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:16px;">© Verifio — ${new Date().getFullYear()}</p>
+    <p style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:16px;">© Rien qui cloche — ${new Date().getFullYear()}</p>
   </div>
 </body>
 </html>

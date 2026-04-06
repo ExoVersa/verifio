@@ -48,7 +48,7 @@ async function sendAlertEmail(
   const ficheLink = `${BASE_URL}/artisan/${opts.siret}`
 
   await resend.emails.send({
-    from: 'Verifio <onboarding@resend.dev>',
+    from: 'Rien qui cloche <contact@rienquicloche.fr>',
     to: opts.email,
     subject: `⚠️ Alerte : ${opts.nom} a changé de statut`,
     html: `
@@ -60,7 +60,7 @@ async function sendAlertEmail(
 
     <div style="text-align:center;margin-bottom:28px;">
       <div style="display:inline-block;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;">
-        🛡 Verifio
+        🛡 Rien qui cloche
       </div>
     </div>
 
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
 
   try {
     const { data: surveillances, error } = await supabase
