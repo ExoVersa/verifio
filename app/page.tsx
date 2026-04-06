@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search,
   ShieldCheck,
@@ -611,6 +611,26 @@ function PricingSection() {
   return <PricingCards style={{ padding: '80px 0' }} />
 }
 
+function CompteSupprimeMessage() {
+  const searchParams = useSearchParams()
+  const compteSupprime = searchParams.get('compte') === 'supprime'
+  if (!compteSupprime) return null
+  return (
+    <div style={{
+      background: 'var(--color-surface)',
+      border: '1px solid var(--color-border)',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      fontSize: '14px',
+      color: 'var(--color-muted)',
+      textAlign: 'center',
+      marginBottom: '16px',
+    }}>
+      Votre compte a bien été supprimé. À bientôt.
+    </div>
+  )
+}
+
 export default function HomePage() {
   return (
     <main style={{ minHeight: '100vh', background: 'transparent', overflowX: 'hidden', width: '100%' }}>
@@ -629,6 +649,10 @@ export default function HomePage() {
         }} />
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '680px', margin: '0 auto', textAlign: 'center' }}>
+
+          <Suspense fallback={null}>
+            <CompteSupprimeMessage />
+          </Suspense>
 
           {/* Badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 14px', borderRadius: '999px', background: 'rgba(21,59,46,0.07)', border: '1px solid rgba(21,59,46,0.12)', color: '#153b2e', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '24px' }}>
