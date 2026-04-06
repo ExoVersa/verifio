@@ -32,6 +32,7 @@ import SiteHeader from '@/components/SiteHeader'
 import { scoreColor } from '@/lib/score'
 import type { SearchCandidate } from '@/types'
 import PricingCards from '@/components/PricingCards'
+import StatsImpact from '@/components/StatsImpact'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -697,6 +698,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <StatsImpact />
 
       <section style={{ padding: '8px 0 62px' }}>
         <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 24px' }}>
