@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
 
 interface ArtisanProfil {
   id: string
@@ -81,7 +81,7 @@ export default function ArtisanDashboardPage() {
   }
 
   function copyBadgeHtml() {
-    const html = `<a href="${BASE_URL}/artisan/${profil?.siret}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:8px 16px;border-radius:8px;text-decoration:none;font-family:sans-serif;font-size:13px;font-weight:700;">✓ Artisan Vérifié Verifio</a>`
+    const html = `<a href="${BASE_URL}/artisan/${profil?.siret}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:8px 16px;border-radius:8px;text-decoration:none;font-family:sans-serif;font-size:13px;font-weight:700;">✓ Artisan Vérifié Rien qui cloche</a>`
     navigator.clipboard.writeText(html).then(() => {
       setBadgeCopied(true)
       setTimeout(() => setBadgeCopied(false), 2500)
@@ -198,14 +198,14 @@ export default function ArtisanDashboardPage() {
             Vous pouvez nous contacter pour en savoir plus ou soumettre un nouveau dossier.
           </p>
           <a
-            href="mailto:contact@verifio.fr"
+            href="mailto:contact@rienquicloche.fr"
             style={{
               display: 'inline-flex', padding: '12px 24px', borderRadius: '12px',
               background: '#1B4332', color: '#fff',
               fontSize: '14px', fontWeight: 700, textDecoration: 'none',
             }}
           >
-            Contacter l&apos;équipe Verifio →
+            Contacter l&apos;équipe Rien qui cloche →
           </a>
         </div>
       </main>
@@ -287,7 +287,7 @@ export default function ArtisanDashboardPage() {
                 textDecoration: 'none', fontSize: '14px', fontWeight: 700,
               }}
             >
-              ✓ Artisan Vérifié Verifio
+              ✓ Artisan Vérifié Rien qui cloche
             </a>
           </div>
 
@@ -305,7 +305,7 @@ export default function ArtisanDashboardPage() {
           </button>
 
           <p style={{ margin: '10px 0 0', fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.5 }}>
-            Collez ce code HTML sur votre site web, dans vos emails ou vos devis pour afficher votre badge de confiance avec un lien vers votre fiche Verifio.
+            Collez ce code HTML sur votre site web, dans vos emails ou vos devis pour afficher votre badge de confiance avec un lien vers votre fiche Rien qui cloche.
           </p>
         </section>
 

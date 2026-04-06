@@ -34,7 +34,7 @@ const PHASES: Phase[] = [
     color: '#2563eb',
     bg: '#eff6ff',
     items: [
-      { id: 'p1-1', label: 'Vérifier le SIRET sur Verifio', tip: 'Contrôlez le statut, l\'ancienneté, les certifications RGE et l\'absence de procédure collective.' },
+      { id: 'p1-1', label: 'Vérifier le SIRET sur Rien qui cloche', tip: 'Contrôlez le statut, l\'ancienneté, les certifications RGE et l\'absence de procédure collective.' },
       { id: 'p1-2', label: 'Demander 3 devis minimum', tip: 'Comparer plusieurs offres vous protège d\'une surfacturation et vous donne un levier de négociation.' },
       { id: 'p1-3', label: 'Vérifier que le devis contient toutes les mentions légales', tip: 'Nom, SIRET, adresse, désignation précise des travaux, prix unitaires, délai d\'exécution, conditions de paiement.' },
       { id: 'p1-4', label: 'Demander l\'attestation décennale', tip: 'L\'assurance décennale est obligatoire pour tous les travaux de construction. Vérifiez sa validité et qu\'elle couvre bien le type de travaux.' },
@@ -172,7 +172,7 @@ export default function GuideChantier({ initialArtisan }: { initialArtisan?: str
     const url = window.location.href
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Guide chantier — ArtisanCheck', url })
+        await navigator.share({ title: 'Guide chantier — Rien qui cloche', url })
         return
       } catch {}
     }

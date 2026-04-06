@@ -12,17 +12,17 @@ interface SlugConfig {
 const SLUGS: Record<string, SlugConfig> = {
   'artisan-disparu': {
     question: 'Mon artisan a disparu avec l\'acompte',
-    title: 'Artisan disparu avec l\'acompte — Que faire ? | Verifio',
+    title: 'Artisan disparu avec l\'acompte — Que faire ? | Rien qui cloche',
     description: 'Votre artisan a encaissé l\'acompte et a disparu ? Découvrez vos droits, les recours légaux et les démarches à suivre : mise en demeure, Signal Conso, tribunal.',
   },
   'travaux-mal-faits': {
     question: 'Les travaux réalisés sont mal faits, avec des malfaçons importantes',
-    title: 'Travaux mal faits — Recours et droits face aux malfaçons | Verifio',
+    title: 'Travaux mal faits — Recours et droits face aux malfaçons | Rien qui cloche',
     description: 'Malfaçons, non-conformités, travaux bâclés : découvrez vos droits (garantie décennale, parfait achèvement), les recours amiables et judiciaires contre votre artisan.',
   },
   'chantier-non-termine': {
     question: 'Le chantier n\'est pas terminé et l\'artisan ne revient plus finir les travaux',
-    title: 'Chantier non terminé — Que faire si l\'artisan ne revient pas ? | Verifio',
+    title: 'Chantier non terminé — Que faire si l\'artisan ne revient pas ? | Rien qui cloche',
     description: 'Chantier abandonné, artisan qui ne revient pas finir les travaux : vos droits, la mise en demeure, les recours et comment faire terminer les travaux.',
   },
 }

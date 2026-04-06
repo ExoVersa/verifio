@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
             unit_amount: 490,
             recurring: { interval: 'month' },
             product_data: {
-              name: 'Tranquillité — Verifio',
+              name: 'Tranquillité — Rien qui cloche',
               description: 'Analyses illimitées, surveillance illimitée, export PDF, historique complet. Sans engagement.',
             },
           },

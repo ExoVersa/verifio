@@ -23,7 +23,7 @@ const FAQ = [
   },
   {
     q: 'Mes donn\u00e9es de paiement sont-elles s\u00e9curis\u00e9es\u00a0?',
-    r: 'Les paiements sont trait\u00e9s par Stripe, leader mondial des paiements en ligne. Verifio ne stocke aucune donn\u00e9e de carte bancaire.',
+    r: 'Les paiements sont trait\u00e9s par Stripe, leader mondial des paiements en ligne. Rien qui cloche ne stocke aucune donn\u00e9e de carte bancaire.',
   },
   {
     q: 'Puis-je utiliser le Pack S\u00e9r\u00e9nit\u00e9 pour plusieurs artisans\u00a0?',
@@ -161,7 +161,7 @@ export default function PricingPage() {
       {/* ── Disclaimer ── */}
       <div style={{ padding: '24px', textAlign: 'center' }}>
         <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: 1.7, maxWidth: '600px', margin: '0 auto' }}>
-          Verifio v&#233;rifie la solidit&#233; juridique des entreprises \u00e0 partir de donn&#233;es officielles publiques (INSEE, ADEME, BODACC). Ces informations ne constituent pas un conseil juridique et ne garantissent pas la qualit&#233; des prestations r&#233;alis&#233;es.
+          Rien qui cloche v&#233;rifie la solidit&#233; juridique des entreprises \u00e0 partir de donn&#233;es officielles publiques (INSEE, ADEME, BODACC). Ces informations ne constituent pas un conseil juridique et ne garantissent pas la qualit&#233; des prestations r&#233;alis&#233;es.
         </p>
       </div>
 

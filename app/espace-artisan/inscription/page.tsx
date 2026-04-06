@@ -523,7 +523,7 @@ export default function InscriptionArtisanPage() {
                 <Link href="/politique-confidentialite" target="_blank" style={{ color: '#1B4332', fontWeight: 600 }}>
                   Politique de confidentialité
                 </Link>{' '}
-                de Verifio.{' '}
+                de Rien qui cloche.{' '}
                 <span style={{ color: '#dc2626' }}>*</span>
               </span>
             </label>

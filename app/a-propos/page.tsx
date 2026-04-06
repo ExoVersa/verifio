@@ -13,7 +13,7 @@ export default function AProposPage() {
       <PageHero
         badge={<SectionBadge text="Notre mission" tone="green" />}
         title={<>Verifier un artisan devrait etre simple, lisible et rassurant</>}
-        subtitle={<>Verifio est ne d&apos;une conviction tres simple: un particulier ne devrait pas avoir besoin d&apos;etre juriste, comptable ou expert du BTP pour savoir si un artisan inspire confiance.</>}
+        subtitle={<>Rien qui cloche est ne d&apos;une conviction tres simple: un particulier ne devrait pas avoir besoin d&apos;etre juriste, comptable ou expert du BTP pour savoir si un artisan inspire confiance.</>}
       >
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {['Donnees officielles', 'Lecture pedagogique', 'Protection accessible'].map((item) => (
@@ -51,7 +51,7 @@ export default function AProposPage() {
                 en aide a la decision
               </h2>
               <p style={{ margin: '0 0 14px', fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
-                Verifio ne cree pas de donnees. Nous les croisons, les traduisons et les mettons dans un parcours que l&apos;on peut comprendre vite.
+                Rien qui cloche ne cree pas de donnees. Nous les croisons, les traduisons et les mettons dans un parcours que l&apos;on peut comprendre vite.
               </p>
               <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.8, color: '#43524c' }}>
                 L&apos;objectif n&apos;est pas de faire peur ni de vendre de l&apos;anxiete. L&apos;objectif est d&apos;aider chacun a avancer avec plus de maitrise, de recul et de serenite.
@@ -120,7 +120,7 @@ export default function AProposPage() {
             <SectionBadge text="Sources de donnees" tone="blue" />
             <h2 style={{ margin: '18px 0 10px', fontSize: '40px' }}>Nos fondations sont publiques</h2>
             <p style={{ margin: '0 auto', maxWidth: '720px', fontSize: '16px', lineHeight: 1.75, color: '#52615c' }}>
-              Verifio s&apos;appuie sur des bases ouvertes et officielles. Nous les rendons simplement lisibles et utiles dans un parcours de decision.
+              Rien qui cloche s&apos;appuie sur des bases ouvertes et officielles. Nous les rendons simplement lisibles et utiles dans un parcours de decision.
             </p>
           </div>
 
@@ -156,7 +156,7 @@ export default function AProposPage() {
               <div>
                 <SectionBadge text="Commencer maintenant" tone="light" />
                 <h2 style={{ margin: '18px 0 10px', color: '#fff', fontSize: '40px' }}>
-                  La meilleure facon de comprendre Verifio,
+                  La meilleure facon de comprendre Rien qui cloche,
                   <br />
                   c&apos;est de tester une verification
                 </h2>

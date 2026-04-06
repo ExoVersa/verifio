@@ -27,7 +27,7 @@ function Skeleton() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Sparkles size={20} color="var(--color-accent)" strokeWidth={1.5} />
-        <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Verifio</span>
+        <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Rien qui cloche</span>
         <PackBadge />
         <span style={{
           fontSize: '11px', color: 'var(--color-muted)',
@@ -87,7 +87,7 @@ export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
       {/* Titre + badge verdict */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <Sparkles size={20} color="var(--color-accent)" strokeWidth={1.5} />
-        <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Verifio</span>
+        <span style={{ fontWeight: 700, fontSize: '15px' }}>Synthèse Rien qui cloche</span>
         <PackBadge />
       </div>
 

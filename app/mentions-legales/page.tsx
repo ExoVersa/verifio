@@ -4,8 +4,8 @@ import { ShieldCheck } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Mentions légales | Verifio',
-  description: 'Mentions légales de Verifio — éditeur, hébergeur, données sources.',
+  title: 'Mentions légales | Rien qui cloche',
+  description: 'Mentions légales de Rien qui cloche — éditeur, hébergeur, données sources.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -44,11 +44,11 @@ export default function MentionsLegalesPage() {
       <section style={{ padding: '64px 24px', maxWidth: '720px', margin: '0 auto' }}>
 
         <Section title="1. Éditeur du site">
-          <p style={{ margin: '0 0 8px' }}><strong style={{ color: 'var(--color-text)' }}>Raison sociale :</strong> Verifio</p>
+          <p style={{ margin: '0 0 8px' }}><strong style={{ color: 'var(--color-text)' }}>Raison sociale :</strong> Rien qui cloche</p>
           <p style={{ margin: '0 0 8px' }}><strong style={{ color: 'var(--color-text)' }}>Responsable :</strong> Charlie Couratin</p>
           <p style={{ margin: '0 0 8px' }}><strong style={{ color: 'var(--color-text)' }}>Adresse :</strong> France</p>
           <p style={{ margin: 0 }}><strong style={{ color: 'var(--color-text)' }}>Email :</strong>{' '}
-            <a href="mailto:contact@verifio.fr" style={{ color: 'var(--color-accent)' }}>contact@verifio.fr</a>
+            <a href="mailto:contact@rienquicloche.fr" style={{ color: 'var(--color-accent)' }}>contact@rienquicloche.fr</a>
           </p>
         </Section>
 
@@ -65,22 +65,22 @@ export default function MentionsLegalesPage() {
         </Section>
 
         <Section title="4. Développement">
-          <p style={{ margin: 0 }}>Verifio — développé avec Next.js (React), TypeScript et Tailwind CSS.</p>
+          <p style={{ margin: 0 }}>Rien qui cloche — développé avec Next.js (React), TypeScript et Tailwind CSS.</p>
         </Section>
 
         <Section title="5. Sources des données affichées">
-          <p style={{ margin: '0 0 12px' }}>Les informations présentées sur Verifio sont issues de bases de données publiques et open data :</p>
+          <p style={{ margin: '0 0 12px' }}>Les informations présentées sur Rien qui cloche sont issues de bases de données publiques et open data :</p>
           <ul style={{ margin: 0, paddingLeft: '20px' }}>
             <li style={{ marginBottom: '6px' }}><strong style={{ color: 'var(--color-text)' }}>INSEE — base SIRENE :</strong> données légales des entreprises (SIRET, statut, forme juridique)</li>
             <li style={{ marginBottom: '6px' }}><strong style={{ color: 'var(--color-text)' }}>ADEME — registre RGE :</strong> certifications Reconnu Garant de l&apos;Environnement</li>
             <li style={{ marginBottom: '6px' }}><strong style={{ color: 'var(--color-text)' }}>BODACC :</strong> procédures collectives, redressements et liquidations judiciaires</li>
             <li style={{ marginBottom: '6px' }}><strong style={{ color: 'var(--color-text)' }}>INPI — RNE :</strong> dirigeants et gouvernance des sociétés</li>
           </ul>
-          <p style={{ margin: '12px 0 0' }}>Ces données sont fournies à titre informatif. Verifio ne garantit pas leur exhaustivité ni leur exactitude à 100 % et décline toute responsabilité quant aux décisions prises sur leur base.</p>
+          <p style={{ margin: '12px 0 0' }}>Ces données sont fournies à titre informatif. Rien qui cloche ne garantit pas leur exhaustivité ni leur exactitude à 100 % et décline toute responsabilité quant aux décisions prises sur leur base.</p>
         </Section>
 
         <Section title="6. Propriété intellectuelle">
-          <p style={{ margin: 0 }}>Le code source, le design, les textes et les logos de Verifio sont la propriété exclusive de leurs auteurs. Toute reproduction ou utilisation sans autorisation écrite préalable est interdite.</p>
+          <p style={{ margin: 0 }}>Le code source, le design, les textes et les logos de Rien qui cloche sont la propriété exclusive de leurs auteurs. Toute reproduction ou utilisation sans autorisation écrite préalable est interdite.</p>
         </Section>
 
         <Section title="7. Cookies et données personnelles">

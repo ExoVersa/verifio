@@ -24,7 +24,7 @@ function Step0() {
       </div>
 
       <h2 style={{ margin: '0 0 12px', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>
-        Bienvenue sur Verifio
+        Bienvenue sur Rien qui cloche
       </h2>
       <p style={{ margin: '0 0 24px', fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
         La plateforme qui protège les particuliers<br />

@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ type: str
   const { type } = await params
   const info = TYPES_SEO[type] || { label: type, description: 'Simulateur de prix travaux 2025.' }
   return {
-    title: `Prix ${info.label} 2025 — Simulateur de devis | ArtisanCheck`,
+    title: `Prix ${info.label} 2025 — Simulateur de devis | Rien qui cloche`,
     description: info.description,
   }
 }
@@ -43,7 +43,7 @@ export default async function SimulateurTypePage({ params }: { params: Promise<{
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
           <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>
-            ArtisanCheck
+            Rien qui cloche
           </span>
         </a>
         <span style={{ fontSize: '13px', color: 'var(--color-muted)', marginLeft: '4px' }}>/ Simulateur de prix</span>

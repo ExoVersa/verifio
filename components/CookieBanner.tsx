@@ -56,7 +56,7 @@ export default function CookieBanner() {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
-          Verifio utilise des cookies
+          Rien qui cloche utilise des cookies
         </p>
         <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
           Pour l&apos;authentification et améliorer votre expérience.{' '}

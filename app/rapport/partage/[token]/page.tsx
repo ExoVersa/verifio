@@ -180,7 +180,7 @@ export default async function PartageRapportPage({
       }}>
         <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
         <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-          Verifio
+          Rien qui cloche
         </span>
         <span style={{
           fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)',
@@ -202,7 +202,7 @@ export default async function PartageRapportPage({
         }}>
           <Share2 size={16} color="var(--color-muted)" />
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)' }}>
-            Rapport partagé par un utilisateur Verifio · Valable jusqu&apos;au {expiresLabel}
+            Rapport partagé par un utilisateur Rien qui cloche · Valable jusqu&apos;au {expiresLabel}
           </p>
         </div>
 
@@ -439,7 +439,7 @@ export default async function PartageRapportPage({
 
             {/* CTA bas */}
             <div style={{ marginTop: '24px', padding: '20px', background: 'var(--color-neutral-bg)', borderRadius: '12px', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600 }}>Vérifiez votre artisan avec Verifio</p>
+              <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600 }}>Vérifiez votre artisan avec Rien qui cloche</p>
               <Link
                 href="/recherche"
                 style={{
@@ -454,7 +454,7 @@ export default async function PartageRapportPage({
             </div>
 
             <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
-              Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Verifio n&apos;est pas responsable des décisions prises sur la base de ces données.
+              Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Rien qui cloche n&apos;est pas responsable des décisions prises sur la base de ces données.
             </p>
           </div>
         )}

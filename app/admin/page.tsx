@@ -148,7 +148,7 @@ export default function AdminPage() {
             Accès refusé
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
-            Cette page est réservée aux administrateurs Verifio. Connectez-vous avec le compte admin.
+            Cette page est réservée aux administrateurs Rien qui cloche. Connectez-vous avec le compte admin.
           </p>
         </div>
       </main>
@@ -226,7 +226,7 @@ export default function AdminPage() {
             margin: '0 0 4px', fontSize: '28px', fontWeight: 900,
             color: 'var(--color-text)', letterSpacing: '-0.02em',
           }}>
-            Administration Verifio
+            Administration Rien qui cloche
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-muted)' }}>
             Connecté en tant que {authEmail}

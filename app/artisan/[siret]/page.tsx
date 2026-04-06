@@ -1565,7 +1565,7 @@ export default function ArtisanFichePage() {
                   borderRadius: '12px', padding: '16px',
                 }}>
                   <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', lineHeight: 1.6 }}>
-                    Les données affichées proviennent de sources officielles publiques (INSEE, ADEME, BODACC). Elles sont mises à jour quotidiennement. Verifio n&apos;est pas responsable des décisions prises sur la base de ces informations. Ces données ne constituent pas un conseil juridique.
+                    Les données affichées proviennent de sources officielles publiques (INSEE, ADEME, BODACC). Elles sont mises à jour quotidiennement. Rien qui cloche n&apos;est pas responsable des décisions prises sur la base de ces informations. Ces données ne constituent pas un conseil juridique.
                   </p>
                 </div>
 
@@ -1625,7 +1625,7 @@ export default function ArtisanFichePage() {
                       color: hoveredBtn === 'signaler' ? 'var(--color-accent)' : '#9ca3af',
                       cursor: 'pointer', transition: 'color 0.15s ease',
                     }}
-                    onClick={() => window.location.href = `mailto:contact@verifio.fr?subject=Erreur fiche ${result.siret}`}
+                    onClick={() => window.location.href = `mailto:contact@rienquicloche.fr?subject=Erreur fiche ${result.siret}`}
                     onMouseEnter={() => setHoveredBtn('signaler')}
                     onMouseLeave={() => setHoveredBtn(null)}
                   >
@@ -1940,7 +1940,7 @@ export default function ArtisanFichePage() {
                       textAlign: 'left',
                     }}>
                       <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#14532d', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={13} strokeWidth={1.5} /> Artisan vérifié Verifio
+                        <Check size={13} strokeWidth={1.5} /> Artisan vérifié Rien qui cloche
                       </p>
                       <p style={{ margin: 0, fontSize: '11px', color: '#166534' }}>
                         L&apos;existence légale de cet artisan a été vérifiée.

@@ -52,7 +52,7 @@ export default function HistoriquePage() {
       }}>
         <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
         <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-          ArtisanCheck
+          Rien qui cloche
         </span>
       </header>
 

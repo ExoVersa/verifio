@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
 
 export async function POST(req: NextRequest) {
   // Auth via Authorization header (Bearer token from Supabase session)

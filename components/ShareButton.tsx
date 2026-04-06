@@ -48,14 +48,14 @@ export default function ShareButton({ url, nom, score, statut, label = 'Partager
 
   const emailSubject = encodeURIComponent(`Vérification artisan — ${nom}`)
   const emailBody = encodeURIComponent(
-    `J'ai vérifié cet artisan sur Verifio : ${url}` +
+    `J'ai vérifié cet artisan sur Rien qui cloche : ${url}` +
     (score !== undefined ? `\nScore de confiance : ${score}/100` : '') +
     (statut ? `\nStatut : ${statut}` : '')
   )
   const emailHref = `mailto:?subject=${emailSubject}&body=${emailBody}`
 
   const waText = encodeURIComponent(
-    `J'ai vérifié ${nom} sur Verifio : ${url}${score !== undefined ? ` (score ${score}/100)` : ''}`
+    `J'ai vérifié ${nom} sur Rien qui cloche : ${url}${score !== undefined ? ` (score ${score}/100)` : ''}`
   )
   const waHref = `https://wa.me/?text=${waText}`
 

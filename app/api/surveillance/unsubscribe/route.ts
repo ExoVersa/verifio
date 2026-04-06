@@ -39,17 +39,17 @@ function html(title: string, message: string, ok: boolean) {
   return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} — Verifio</title>
+<title>${title} — Rien qui cloche</title>
 <style>body{margin:0;padding:0;background:#f4f4f0;font-family:'DM Sans',Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}</style>
 </head>
 <body>
   <div style="max-width:480px;width:90%;text-align:center;">
-    <div style="background:#1B4332;color:#D8F3DC;display:inline-block;padding:10px 20px;border-radius:12px;font-weight:700;margin-bottom:24px;">🛡 Verifio</div>
+    <div style="background:#1B4332;color:#D8F3DC;display:inline-block;padding:10px 20px;border-radius:12px;font-weight:700;margin-bottom:24px;">🛡 Rien qui cloche</div>
     <div style="background:${bg};border:1px solid ${border};border-radius:20px;padding:32px;">
       <div style="font-size:48px;margin-bottom:16px;">${ok ? '✅' : '❌'}</div>
       <h1 style="margin:0 0 12px;font-size:22px;font-weight:800;color:${color};">${title}</h1>
       <p style="margin:0 0 24px;font-size:15px;color:#6B7280;line-height:1.6;">${message}</p>
-      <a href="/" style="display:inline-block;padding:12px 24px;border-radius:12px;background:#1B4332;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Retour à Verifio</a>
+      <a href="/" style="display:inline-block;padding:12px 24px;border-radius:12px;background:#1B4332;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Retour à Rien qui cloche</a>
     </div>
   </div>
 </body>

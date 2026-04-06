@@ -154,7 +154,7 @@ function NouveauChantierForm() {
           }}>
             <CheckCircle2 size={16} color="var(--color-safe)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>
-              Chantier pré-rempli depuis votre rapport Verifio —{' '}
+              Chantier pré-rempli depuis votre rapport Rien qui cloche —{' '}
               <strong>{nomParam}</strong> a été vérifié et validé.
               {sessionId && (
                 <>
@@ -193,7 +193,7 @@ function NouveauChantierForm() {
             <div>
               <label style={labelStyle}>
                 SIRET
-                {!siretParam && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> (optionnel — permet d&apos;accéder à la fiche Verifio)</span>}
+                {!siretParam && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> (optionnel — permet d&apos;accéder à la fiche Rien qui cloche)</span>}
                 {siretParam && <span style={{ color: 'var(--color-safe)', fontWeight: 400 }}> · Artisan vérifié</span>}
               </label>
               <input
@@ -212,7 +212,7 @@ function NouveauChantierForm() {
                   target="_blank"
                   style={{ display: 'inline-block', marginTop: '6px', fontSize: '12px', color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 500 }}
                 >
-                  → Voir la fiche Verifio ↗
+                  → Voir la fiche Rien qui cloche ↗
                 </a>
               )}
             </div>

@@ -5,8 +5,8 @@ import { BadgeCheck, FileText, BarChart3, ArrowRight } from 'lucide-react'
 import { PageHero, PrimaryLink, SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 
 export const metadata = {
-  title: 'Espace Artisan — Verifio',
-  description: 'Rejoignez Verifio, la plateforme qui certifie les artisans honnêtes. Badge de confiance, constructeur de devis pro, tableau de bord visibilité.',
+  title: 'Espace Artisan — Rien qui cloche',
+  description: 'Rejoignez Rien qui cloche, la plateforme qui certifie les artisans honnêtes. Badge de confiance, constructeur de devis pro, tableau de bord visibilité.',
 }
 
 export default function EspaceArtisanPage() {
@@ -19,11 +19,11 @@ export default function EspaceArtisanPage() {
         dark
         badge={<SectionBadge text="Programme artisans de confiance" tone="light" />}
         title={<>Vous etes un artisan serieux ? Faites-le ressentir des le premier regard.</>}
-        subtitle={<>Badge Verifio, espace pro, outils de devis et meilleure lisibilite pour les particuliers qui cherchent un artisan rassurant avant de signer.</>}
+        subtitle={<>Badge Rien qui cloche, espace pro, outils de devis et meilleure lisibilite pour les particuliers qui cherchent un artisan rassurant avant de signer.</>}
       >
         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <PrimaryLink href="/espace-artisan/inscription" light>
-            Rejoindre Verifio
+            Rejoindre Rien qui cloche
             <ArrowRight size={15} strokeWidth={1.8} />
           </PrimaryLink>
           <div style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.82)', fontSize: '13px', fontWeight: 700, background: 'rgba(255,255,255,0.08)' }}>
@@ -55,8 +55,8 @@ export default function EspaceArtisanPage() {
             {
               icon: BadgeCheck,
               title: 'Badge de confiance',
-              desc: 'Un badge certifié "Artisan Vérifié Verifio" à afficher sur votre site, vos emails et vos devis. Vos clients vérifient avant de signer — soyez celui qu\'ils trouvent.',
-              highlight: 'Visible sur Verifio.fr',
+              desc: 'Un badge certifié "Artisan Vérifié Rien qui cloche" à afficher sur votre site, vos emails et vos devis. Vos clients vérifient avant de signer — soyez celui qu\'ils trouvent.',
+              highlight: 'Visible sur Rien qui cloche.fr',
             },
             {
               icon: FileText,
@@ -148,7 +148,7 @@ export default function EspaceArtisanPage() {
               {
                 num: '4',
                 title: 'Vous gagnez en visibilité',
-                desc: 'Votre fiche est mise en avant sur Verifio. Les particuliers qui recherchent votre SIRET voient votre badge de confiance.',
+                desc: 'Votre fiche est mise en avant sur Rien qui cloche. Les particuliers qui recherchent votre SIRET voient votre badge de confiance.',
               },
             ].map(({ num, title, desc }, i, arr) => (
               <div key={num} style={{ display: 'flex', gap: '20px', paddingBottom: i < arr.length - 1 ? '32px' : '0', position: 'relative' }}>
@@ -214,7 +214,7 @@ export default function EspaceArtisanPage() {
 
           <div style={{ textAlign: 'left', marginBottom: '32px' }}>
             {[
-              'Badge "Artisan Vérifié Verifio" sur votre fiche publique',
+              'Badge "Artisan Vérifié Rien qui cloche" sur votre fiche publique',
               'Constructeur de devis professionnel illimité',
               'Tableau de bord statistiques de visibilité',
               'Fiche entreprise enrichie (description, photo)',
@@ -271,7 +271,7 @@ export default function EspaceArtisanPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
               {
-                q: 'Qui peut rejoindre Verifio ?',
+                q: 'Qui peut rejoindre Rien qui cloche ?',
                 a: 'Tout artisan immatriculé au RCS ou au RNCS avec un SIRET valide. Nous vérifions que votre entreprise est active et que votre activité correspond aux travaux déclarés. Auto-entrepreneurs bienvenus.',
               },
               {
@@ -307,13 +307,13 @@ export default function EspaceArtisanPage() {
               Une autre question ? Écrivez-nous.
             </p>
             <a
-              href="mailto:contact@verifio.fr"
+              href="mailto:contact@rienquicloche.fr"
               style={{
                 fontSize: '14px', fontWeight: 600, color: '#1B4332',
                 textDecoration: 'none',
               }}
             >
-              contact@verifio.fr →
+              contact@rienquicloche.fr →
             </a>
           </div>
         </div>

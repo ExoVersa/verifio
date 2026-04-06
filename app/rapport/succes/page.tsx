@@ -139,7 +139,7 @@ function buildConfirmationEmail({ nomEntreprise, siret, score, scoreLabel, rappo
 <div style="max-width:580px;margin:0 auto;padding:32px 16px;">
   <div style="text-align:center;margin-bottom:24px;">
     <div style="display:inline-flex;align-items:center;gap:8px;background:#1B4332;color:#D8F3DC;padding:10px 20px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.04em;">
-      Verifio
+      Rien qui cloche
     </div>
   </div>
   <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #e5e7eb;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
@@ -192,7 +192,7 @@ function buildConfirmationEmail({ nomEntreprise, siret, score, scoreLabel, rappo
     </div>
     <p style="margin:0;font-size:12px;color:#9CA3AF;text-align:center;border-top:1px solid #f3f4f6;padding-top:16px;">
       Données officielles · INSEE · ADEME · BODACC<br>
-      © Verifio ${new Date().getFullYear()}
+      © Rien qui cloche ${new Date().getFullYear()}
     </p>
   </div>
 </div>
@@ -361,10 +361,10 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
           console.log('User email for confirmation:', userEmail)
           if (userEmail && result) {
             const resend = new Resend(process.env.RESEND_API_KEY)
-            const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifio-eight.vercel.app'
+            const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.rienquicloche.fr'
             const scoreLabel = result.score >= 75 ? 'Fiable' : result.score >= 45 ? 'Vigilance' : 'Risque'
             await resend.emails.send({
-              from: 'Verifio <onboarding@resend.dev>',
+              from: 'Rien qui cloche <contact@rienquicloche.fr>',
               to: userEmail,
               subject: `Votre rapport complet — ${result.nom}`,
               html: buildConfirmationEmail({
@@ -456,7 +456,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
       }}>
         <ShieldCheck size={22} color="var(--color-accent)" strokeWidth={2} />
         <span className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-accent)' }}>
-          Verifio
+          Rien qui cloche
         </span>
         <span style={{
           fontSize: '12px', fontWeight: 600, color: 'var(--color-safe)',
@@ -891,7 +891,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
 
             {/* Disclaimer */}
             <p style={{ fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-surface)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-              Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l&apos;assurance décennale en demandant l&apos;attestation directement à l&apos;artisan. Verifio n&apos;est pas responsable des décisions prises sur la base de ces données.
+              Données issues de l&apos;INSEE (Sirene), de l&apos;ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l&apos;assurance décennale en demandant l&apos;attestation directement à l&apos;artisan. Rien qui cloche n&apos;est pas responsable des décisions prises sur la base de ces données.
             </p>
           </div>
 

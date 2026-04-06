@@ -156,12 +156,12 @@ function LeftPanel() {
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white', position: 'relative', zIndex: 1 }}>
         <IconShield />
-        <span style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>Verifio</span>
+        <span style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>Rien qui cloche</span>
       </div>
 
       {/* Citation + arguments */}
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <SectionBadge text="Espace personnel Verifio" tone="light" />
+        <SectionBadge text="Espace personnel Rien qui cloche" tone="light" />
         <h2 style={{
           margin: '18px 0 28px',
           fontSize: '36px', fontWeight: 700, color: 'white',
@@ -254,7 +254,7 @@ function LoginForm({
       <div style={{ textAlign: 'center', marginBottom: '4px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#1B4332', marginBottom: '16px' }}>
           <IconShield />
-          <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Verifio</span>
+          <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Rien qui cloche</span>
         </div>
         <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
           Bon retour
@@ -409,7 +409,7 @@ function SignupForm({
       <div style={{ textAlign: 'center', marginBottom: '4px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#1B4332', marginBottom: '16px' }}>
           <IconShield />
-          <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Verifio</span>
+          <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Rien qui cloche</span>
         </div>
         <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
           Créer un compte

@@ -257,7 +257,7 @@ function CandidateCard({ c }: { c: CandidateResult }) {
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
             }}>
-              Lecture Verifio
+              Lecture Rien qui cloche
             </span>
           </div>
 
@@ -342,7 +342,7 @@ function CandidateCard({ c }: { c: CandidateResult }) {
             padding: '14px 16px 12px',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
           }}>
-            <span style={{ fontSize: '10px', fontWeight: 800, color, opacity: 0.72, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Score Verifio</span>
+            <span style={{ fontSize: '10px', fontWeight: 800, color, opacity: 0.72, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Score Rien qui cloche</span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
               <span style={{ fontSize: '30px', fontWeight: 800, color, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
                 {score}
@@ -632,7 +632,7 @@ function RechercheInner() {
                   Choisissez un artisan avec plus de recul, pas juste un bon feeling.
                 </h1>
                 <p style={{ margin: '0 0 22px', maxWidth: '620px', fontSize: '17px', lineHeight: 1.75, color: cv('text-secondary') }}>
-                  Verifio transforme une recherche brute en lecture de confiance immédiate: statut, ancienneté, score, zone d&apos;intervention et points de vigilance.
+                  Rien qui cloche transforme une recherche brute en lecture de confiance immédiate: statut, ancienneté, score, zone d&apos;intervention et points de vigilance.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   {['Lecture instantanée du profil', 'Résultats triés pour décider plus vite', 'Navigation pensée mobile'].map(item => (
@@ -644,7 +644,7 @@ function RechercheInner() {
               </SurfaceCard>
 
               <SurfaceCard style={{ padding: '28px', background: 'linear-gradient(135deg, #173428 0%, #1f4737 56%, #275540 100%)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <SectionBadge text="Méthode Verifio" tone="light" />
+                <SectionBadge text="Méthode Rien qui cloche" tone="light" />
                 <div style={{ marginTop: '20px', display: 'grid', gap: '14px' }}>
                   {[
                     ['1', 'Vous cherchez un métier ou un nom', 'Par activité, ville, département ou SIRET.'],

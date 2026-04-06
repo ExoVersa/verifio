@@ -4,8 +4,8 @@ import { Lock } from 'lucide-react'
 import SiteHeader from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Politique de confidentialité | Verifio',
-  description: 'Politique de confidentialité et traitement des données personnelles — Verifio.',
+  title: 'Politique de confidentialité | Rien qui cloche',
+  description: 'Politique de confidentialité et traitement des données personnelles — Rien qui cloche.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -46,12 +46,12 @@ export default function PolitiqueConfidentialitePage() {
         <Section title="1. Responsable du traitement">
           <p style={{ margin: '0 0 8px' }}><strong style={{ color: 'var(--color-text)' }}>Responsable :</strong> Charlie Couratin</p>
           <p style={{ margin: 0 }}><strong style={{ color: 'var(--color-text)' }}>Contact :</strong>{' '}
-            <a href="mailto:contact@verifio.fr" style={{ color: 'var(--color-accent)' }}>contact@verifio.fr</a>
+            <a href="mailto:contact@rienquicloche.fr" style={{ color: 'var(--color-accent)' }}>contact@rienquicloche.fr</a>
           </p>
         </Section>
 
         <Section title="2. Données collectées">
-          <p style={{ margin: '0 0 12px' }}>Verifio collecte uniquement les données strictement nécessaires au fonctionnement du service :</p>
+          <p style={{ margin: '0 0 12px' }}>Rien qui cloche collecte uniquement les données strictement nécessaires au fonctionnement du service :</p>
           <ul style={{ margin: 0, paddingLeft: '20px' }}>
             <li style={{ marginBottom: '8px' }}>
               <strong style={{ color: 'var(--color-text)' }}>Adresse email</strong> — lors de la création d&apos;un compte, de l&apos;activation des alertes de surveillance ou du formulaire de contact
@@ -97,13 +97,13 @@ export default function PolitiqueConfidentialitePage() {
             <li><strong style={{ color: 'var(--color-text)' }}>Droit de limitation</strong> — limiter le traitement de vos données</li>
           </ul>
           <p style={{ margin: '12px 0 0' }}>
-            Pour exercer ces droits : <a href="mailto:contact@verifio.fr" style={{ color: 'var(--color-accent)' }}>contact@verifio.fr</a>.
+            Pour exercer ces droits : <a href="mailto:contact@rienquicloche.fr" style={{ color: 'var(--color-accent)' }}>contact@rienquicloche.fr</a>.
             Vous pouvez également adresser une réclamation à la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>CNIL</a>.
           </p>
         </Section>
 
         <Section title="6. Cookies">
-          <p style={{ margin: '0 0 12px' }}>Verifio utilise uniquement des cookies techniques indispensables au fonctionnement du service :</p>
+          <p style={{ margin: '0 0 12px' }}>Rien qui cloche utilise uniquement des cookies techniques indispensables au fonctionnement du service :</p>
           <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
@@ -120,18 +120,18 @@ export default function PolitiqueConfidentialitePage() {
                   <td style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-border)' }}>Session / 1 an</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '10px 16px', color: 'var(--color-text)', fontWeight: 600 }}>verifio_cookie_consent</td>
+                  <td style={{ padding: '10px 16px', color: 'var(--color-text)', fontWeight: 600 }}>rienquicloche_cookie_consent</td>
                   <td style={{ padding: '10px 16px' }}>Sauvegarde votre choix concernant les cookies</td>
                   <td style={{ padding: '10px 16px' }}>1 an</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p style={{ margin: '12px 0 0' }}>Aucun cookie publicitaire ou de pistage tiers n&apos;est utilisé sur Verifio.</p>
+          <p style={{ margin: '12px 0 0' }}>Aucun cookie publicitaire ou de pistage tiers n&apos;est utilisé sur Rien qui cloche.</p>
         </Section>
 
         <Section title="7. Partage des données">
-          <p style={{ margin: '0 0 8px' }}>Verifio <strong style={{ color: 'var(--color-text)' }}>ne vend aucune donnée personnelle</strong> à des tiers.</p>
+          <p style={{ margin: '0 0 8px' }}>Rien qui cloche <strong style={{ color: 'var(--color-text)' }}>ne vend aucune donnée personnelle</strong> à des tiers.</p>
           <p style={{ margin: '0 0 8px' }}>Les données peuvent être transmises à nos sous-traitants techniques dans le cadre strict de la fourniture du service :</p>
           <ul style={{ margin: 0, paddingLeft: '20px' }}>
             <li style={{ marginBottom: '6px' }}><strong style={{ color: 'var(--color-text)' }}>Supabase</strong> — hébergement de la base de données et authentification</li>

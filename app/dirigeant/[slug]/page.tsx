@@ -42,7 +42,7 @@ export default function DirigeantPage() {
 
   useEffect(() => {
     if (displayName) {
-      document.title = `${displayName} — Dirigeant · ${entreprises.length} entreprise${entreprises.length !== 1 ? 's' : ''} · Verifio`
+      document.title = `${displayName} — Dirigeant · ${entreprises.length} entreprise${entreprises.length !== 1 ? 's' : ''} · Rien qui cloche`
     }
   }, [displayName, entreprises.length])
 

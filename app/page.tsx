@@ -86,7 +86,7 @@ const EXPERIENCE_STEPS = [
   {
     number: '02',
     icon: ShieldCheck,
-    title: 'Verifio traduit le risque',
+    title: 'Rien qui cloche traduit le risque',
     text: 'Les données officielles sont transformées en lecture simple: rassurant, à vérifier, ou vigilance forte.',
     points: ['certifications', 'BODACC', 'cohérence globale'],
   },
@@ -111,7 +111,7 @@ const TESTIMONIALS = [
     name: 'Camille',
     city: 'Nantes',
     initials: 'CA',
-    text: "Je cherchais juste à me rassurer. En réalité, Verifio m'a évité de signer avec une entreprise déjà fragilisée.",
+    text: "Je cherchais juste à me rassurer. En réalité, Rien qui cloche m'a évité de signer avec une entreprise déjà fragilisée.",
     highlight: 'Acompte évité à temps',
     color: '#153b2e',
     bg: '#eef8f3',
@@ -670,13 +670,13 @@ export default function HomePage() {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
           }}>
-            Vérifiez votre artisan<br />
-            <span style={{ color: '#2c6a53' }}>avant de vous engager.</span>
+            Vous êtes le chef de chantier.<br />
+            <span style={{ color: '#2c6a53' }}>On vous donne les outils pour ne rien laisser au hasard.</span>
           </h1>
 
           {/* Sous-titre */}
           <p style={{ margin: '0 auto 32px', maxWidth: '520px', fontSize: 'clamp(15px, 2.5vw, 17px)', lineHeight: 1.7, color: '#52615c' }}>
-            Statut légal, certifications, signaux BODACC — une lecture claire et honnête en moins de 30 secondes.
+            De la vérification de l'artisan à la réception du chantier — la plateforme en ligne pour les particuliers qui veulent garder le contrôle.
           </p>
 
           {/* Champ de recherche */}
@@ -802,7 +802,7 @@ export default function HomePage() {
               color: '#fff',
               boxShadow: '0 22px 48px rgba(21,59,46,0.14)',
             }}>
-              <SectionEyebrow icon={ShieldCheck} text="La promesse Verifio" />
+              <SectionEyebrow icon={ShieldCheck} text="La promesse Rien qui cloche" />
               <h2 style={{ margin: '18px 0 14px', color: '#fff', fontSize: 'clamp(30px, 4vw, 44px)' }}>
                 Une lecture rassurante,
                 <br />
@@ -1069,7 +1069,7 @@ export default function HomePage() {
           }}>
             <div>
               <div style={{ marginBottom: '12px', fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 800 }}>
-                Verifio
+                Rien qui cloche
               </div>
               <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.66)', fontSize: '15px', lineHeight: 1.75, maxWidth: '420px' }}>
                 Une plateforme pensée pour aider les particuliers à choisir un artisan avec plus de clarté, plus de confiance et moins d'angles morts.
@@ -1136,7 +1136,7 @@ export default function HomePage() {
             flexWrap: 'wrap',
           }}>
             <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.42)' }}>
-              © {CURRENT_YEAR} Verifio. Tous droits réservés.
+              © {CURRENT_YEAR} Rien qui cloche. Tous droits réservés.
             </p>
             <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.42)' }}>
               Vérification, accompagnement et lecture de confiance pour particuliers.

@@ -83,7 +83,7 @@ const NAV_MENUS: NavMenu[] = [
     label: 'Mon chantier',
     ctaHref: '/mes-chantiers',
     ctaLabel: 'Mon carnet de chantier',
-    stat: { value: '1 200+', label: 'chantiers suivis', tip: "Sur Verifio aujourd'hui" },
+    stat: { value: '1 200+', label: 'chantiers suivis', tip: "Sur Rien qui cloche aujourd'hui" },
     items: [
       { href: '/mes-chantiers', Icon: HardHat, label: 'Carnet de chantier', desc: 'Suivez vos travaux, paiements et checklist' },
       { href: '/mon-espace', Icon: Bell, label: 'Mon espace', desc: 'Surveillances et historique de recherches' },
@@ -1146,7 +1146,7 @@ function LogoContent() {
       </div>
       <div>
         <p className="font-display" style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#153b2e', letterSpacing: '-0.04em', lineHeight: 1.05, fontFamily: 'var(--font-display)' }}>
-          Verifio
+          Rien qui cloche
         </p>
         <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           Confiance chantier

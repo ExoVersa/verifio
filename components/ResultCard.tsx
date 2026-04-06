@@ -846,7 +846,7 @@ export default function ResultCard({ result, onSelect }: Props) {
 
         {/* DISCLAIMER */}
         <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6, padding: '12px', background: 'var(--color-bg)', borderRadius: '8px' }}>
-          Données issues de l'INSEE (Sirene), de l'ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l'assurance décennale en demandant l'attestation directement à l'artisan. ArtisanCheck n'est pas responsable des décisions prises sur la base de ces données.
+          Données issues de l'INSEE (Sirene), de l'ADEME, du Registre National des Entreprises et du BODACC. Vérifiez toujours l'assurance décennale en demandant l'attestation directement à l'artisan. Rien qui cloche n'est pas responsable des décisions prises sur la base de ces données.
         </p>
       </div>
 

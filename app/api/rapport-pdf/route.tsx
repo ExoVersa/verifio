@@ -144,19 +144,19 @@ function RapportPDF({
 }) {
   const sc = scoreColor(result.score)
   return (
-    <Document title={`Rapport Verifio — ${result.nom}`} author="Verifio">
+    <Document title={`Rapport Rien qui cloche — ${result.nom}`} author="Rien qui cloche">
       <Page size="A4" style={styles.page}>
 
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.logo}>Verifio</Text>
+            <Text style={styles.logo}>Rien qui cloche</Text>
             <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>Rapport officiel d&apos;analyse artisan</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.headerMeta}>Généré le {dateGeneration}</Text>
             <Text style={[styles.headerMeta, { marginTop: 2, fontFamily: 'Helvetica-Bold', color: '#2db96e' }]}>
-              verifio-eight.vercel.app
+              www.rienquicloche.fr
             </Text>
           </View>
         </View>
@@ -189,7 +189,7 @@ function RapportPDF({
         {/* Synthèse IA */}
         {synthese && (
           <View style={styles.synthBlock}>
-            <Text style={styles.synthTitle}>Synthèse Verifio</Text>
+            <Text style={styles.synthTitle}>Synthèse Rien qui cloche</Text>
             {synthese.verdict_titre && (
               <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#1a1a1a', marginBottom: 4 }}>{synthese.verdict_titre}</Text>
             )}
@@ -365,7 +365,7 @@ function RapportPDF({
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Données issues de l&apos;INSEE, ADEME et BODACC — verifio-eight.vercel.app
+            Données issues de l&apos;INSEE, ADEME et BODACC — www.rienquicloche.fr
           </Text>
           <Text style={styles.footerText}>
             Ce rapport ne garantit pas la qualité des travaux.
@@ -455,16 +455,16 @@ const contratStyles = StyleSheet.create({
 
 function ContratPDF({ lines, dateGeneration, nomEntreprise }: { lines: string[]; dateGeneration: string; nomEntreprise: string }) {
   return (
-    <Document title={`Contrat — ${nomEntreprise}`} author="Verifio">
+    <Document title={`Contrat — ${nomEntreprise}`} author="Rien qui cloche">
       <Page size="A4" style={contratStyles.page}>
         <View style={contratStyles.header}>
           <View>
-            <Text style={contratStyles.logo}>Verifio</Text>
+            <Text style={contratStyles.logo}>Rien qui cloche</Text>
             <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>Modèle de contrat de prestation</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={contratStyles.meta}>Généré le {dateGeneration}</Text>
-            <Text style={[contratStyles.meta, { color: '#2db96e', fontFamily: 'Helvetica-Bold', marginTop: 2 }]}>verifio-eight.vercel.app</Text>
+            <Text style={[contratStyles.meta, { color: '#2db96e', fontFamily: 'Helvetica-Bold', marginTop: 2 }]}>www.rienquicloche.fr</Text>
           </View>
         </View>
         {lines.map((line, i) => {
@@ -476,7 +476,7 @@ function ContratPDF({ lines, dateGeneration, nomEntreprise }: { lines: string[];
         })}
         <View style={contratStyles.footer} fixed>
           <Text style={contratStyles.footerText}>Modèle non contractuel — à adapter selon votre situation</Text>
-          <Text style={contratStyles.footerText}>Verifio · verifio-eight.vercel.app</Text>
+          <Text style={contratStyles.footerText}>Rien qui cloche · www.rienquicloche.fr</Text>
         </View>
       </Page>
     </Document>

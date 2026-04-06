@@ -1143,7 +1143,7 @@ function ChantierDetailPage({ params }: { params: Promise<{ id: string }> }) {
                 </h1>
                 {chantier.siret && (
                   <a href={`/?q=${chantier.siret}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none', padding: '3px 8px', borderRadius: '20px', background: 'var(--color-accent-light)' }}>
-                    Fiche Verifio <ExternalLink size={10} />
+                    Fiche Rien qui cloche <ExternalLink size={10} />
                   </a>
                 )}
               </div>
