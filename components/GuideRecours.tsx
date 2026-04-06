@@ -148,6 +148,9 @@ export default function GuideRecours() {
               border: '1px solid var(--color-border)',
               borderRadius: '12px',
               marginBottom: idx < ETAPES.length - 1 ? '8px' : '0',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+              overflow: 'hidden',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
                 <etape.Icon size={14} color="var(--color-accent)" strokeWidth={1.5} />

@@ -157,7 +157,7 @@ function BodaccSection({ titre, children }: { titre: string; children: React.Rea
   return (
     <div style={{ marginTop: '10px', padding: '10px', background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
       <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#6b7280' }}>{titre}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{children}</div>
+      <div className="bodacc-section-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{children}</div>
     </div>
   )
 }
@@ -599,7 +599,7 @@ export default function ArtisanFichePage() {
   const rgeVisibleDomaines = showAllRGE ? rgeDomainesUniques : rgeDomainesUniques.slice(0, RGE_MAX)
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)', overflowX: 'hidden', width: '100%', maxWidth: '100vw' }}>
       <SiteHeader />
 
       <style>{`
@@ -609,6 +609,9 @@ export default function ArtisanFichePage() {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+          .bodacc-section-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -1349,6 +1352,7 @@ export default function ArtisanFichePage() {
                                     borderRadius: '10px', marginBottom: '6px',
                                     background: '#f9fafb', border: '1px solid #e5e7eb',
                                     fontSize: '13px', color: '#374151', overflow: 'hidden',
+                                    wordBreak: 'break-word', overflowWrap: 'anywhere',
                                   }}>
                                     {/* Header cliquable */}
                                     <button
