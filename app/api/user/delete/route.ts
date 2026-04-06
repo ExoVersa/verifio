@@ -23,10 +23,28 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'session_invalide' }, { status: 401 })
   }
 
-  // Suppression — les cascades SQL nettoient le reste
-  const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
-  if (deleteError) {
-    console.error('[delete-user] erreur suppression:', deleteError)
+  const userId = user.id
+  const userEmail = user.email
+
+  try {
+    // Supprimer surveillances par user_id ET par email (double sécurité)
+    await supabaseAdmin.from('surveillances').delete().eq('user_id', userId)
+    if (userEmail) {
+      await supabaseAdmin.from('surveillances').delete().eq('email', userEmail)
+    }
+
+    // Supprimer le reste par user_id
+    await supabaseAdmin.from('rapports').delete().eq('user_id', userId)
+    await supabaseAdmin.from('user_plans').delete().eq('user_id', userId)
+    await supabaseAdmin.from('analyses_devis').delete().eq('user_id', userId)
+    await supabaseAdmin.from('devis_uploads').delete().eq('user_id', userId)
+    await supabaseAdmin.from('artisans').delete().eq('user_id', userId)
+
+    // Supprimer le compte Auth en dernier
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    if (deleteError) throw deleteError
+  } catch (err) {
+    console.error('[delete-user] erreur suppression:', err)
     return NextResponse.json({ error: 'erreur_suppression' }, { status: 500 })
   }
 
