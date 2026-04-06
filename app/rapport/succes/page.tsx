@@ -505,16 +505,15 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
               <div style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
                   <div style={{ maxWidth: '560px' }}>
-                    <SectionBadge text="Pack Serenite active" tone="light" />
-                    <h1 className="font-display" style={{ margin: '16px 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.02, letterSpacing: '-0.05em', color: '#ffffff', fontWeight: 800 }}>
-                      Votre lecture complete de {result.nom}
+                    <SectionBadge text="Pack Sérénité activé" tone="light" />
+                    <h1 className="font-display rapport-hero-title" style={{ margin: '16px 0 8px', fontSize: 'clamp(22px, 4vw, 40px)', lineHeight: 1.02, letterSpacing: '-0.05em', color: '#ffffff', fontWeight: 800, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                      Votre lecture complète de {result.nom}
                     </h1>
                     <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.7, color: 'rgba(240,248,243,0.78)' }}>
-                      Toutes les donnees utiles sont reunies ici pour vous aider a choisir, signer et suivre avec plus de confiance.
+                      Toutes les données utiles sont réunies ici pour vous aider à choisir, signer et suivre avec plus de confiance.
                     </p>
                   </div>
-                  <div style={{
-                    minWidth: '180px',
+                  <div className="rapport-status-card" style={{
                     padding: '14px 16px',
                     borderRadius: '18px',
                     background: 'rgba(255,255,255,0.10)',
@@ -522,9 +521,9 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                     color: '#eff8f3',
                   }}>
                     <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.78 }}>Statut du rapport</p>
-                    <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>Debloque</p>
+                    <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>Débloqué</p>
                     <p style={{ margin: '8px 0 0', fontSize: '12px', lineHeight: 1.5, opacity: 0.76 }}>
-                      Paiement verifie, surveillance activee et outils premium disponibles.
+                      Paiement vérifié, surveillance activée et outils premium disponibles.
                     </p>
                   </div>
                 </div>
@@ -569,7 +568,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             }}>
               <CheckCircle2 size={18} color="var(--color-safe)" />
               <div>
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Paiement confirme, rapport complet disponible</p>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--color-safe)' }}>Paiement confirmé, rapport complet disponible</p>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>Toutes les données sont débloquées ci-dessous</p>
               </div>
             </SurfaceCard>
@@ -578,7 +577,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             <SurfaceCard style={{ padding: '24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
                 <ScoreRing score={result.score} />
-                <div style={{ flex: 1, minWidth: '200px' }}>
+                <div className="rapport-score-info" style={{ flex: 1, minWidth: '200px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                     <h1 className="font-display" style={{ margin: 0, fontSize: '20px', fontWeight: 700, letterSpacing: '-0.01em' }}>
                       {result.nom}
@@ -822,7 +821,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                   { Icon: CreditCard, color: '#c2410c', title: 'Acompte limité à 30%', badge: '30% maximum', badgeBg: '#ffedd5', badgeColor: '#c2410c', text: 'Aucun artisan ne peut légalement exiger plus de 30% d\'acompte avant le début des travaux. Un acompte supérieur est un signal d\'alarme. Le solde se règle à la réception.' },
                   { Icon: ClipboardCheck, color: 'var(--color-safe)', title: 'Procès-verbal de réception', badge: 'Déclenche vos garanties', badgeBg: 'var(--color-safe-bg)', badgeColor: 'var(--color-safe)', text: 'À la fin du chantier, exigez un procès-verbal de réception signé par les deux parties. Ce document déclenche les garanties légales (parfait achèvement 1 an, biennale 2 ans, décennale 10 ans).' },
                 ].map(({ Icon, color, title, badge, badgeBg, badgeColor, text }, i) => (
-                  <div key={i} style={{ flex: '1 1 calc(50% - 6px)', minWidth: '200px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '14px', position: 'relative' }}>
+                  <div key={i} className="rapport-droits-item" style={{ flex: '1 1 calc(50% - 6px)', minWidth: '200px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '14px', position: 'relative' }}>
                     <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: badgeBg, color: badgeColor }}>
                       {badge}
                     </span>
@@ -852,7 +851,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                       }
                       const colors = badgeColors[droit.badgeType] || badgeColors.info
                       return (
-                        <div key={`custom-${i}`} style={{ flex: '1 1 calc(50% - 6px)', minWidth: '200px', background: 'var(--color-bg)', border: `1px solid ${colors.color}33`, borderRadius: '12px', padding: '14px', position: 'relative' }}>
+                        <div key={`custom-${i}`} className="rapport-droits-item" style={{ flex: '1 1 calc(50% - 6px)', minWidth: '200px', background: 'var(--color-bg)', border: `1px solid ${colors.color}33`, borderRadius: '12px', padding: '14px', position: 'relative' }}>
                           <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: colors.bg, color: colors.color }}>
                             {droit.badge}
                           </span>
@@ -1081,6 +1080,9 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
         @media (max-width: 768px) {
           .rapport-layout { padding: 16px 12px !important; }
           .rapport-sidebar { padding-bottom: 80px; }
+          .rapport-status-card { min-width: 0 !important; width: 100%; }
+          .rapport-droits-item { flex: 1 1 100% !important; min-width: 0 !important; }
+          .rapport-score-info { min-width: 0 !important; }
         }
       `}</style>
     </main>
