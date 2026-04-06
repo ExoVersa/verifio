@@ -566,17 +566,17 @@ function HeroSearch() {
             </div>
             <div style={{
               width: 44, height: 44, borderRadius: '50%',
-              background: 'var(--color-safe)', display: 'flex',
+              background: '#0F6E56', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 900, color: '#085041',
+              fontSize: 16, fontWeight: 900, color: '#fff',
             }}>94</div>
           </div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
             {['Actif', 'RGE · 8 domaines'].map(t => (
-              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: 'var(--color-safe)', color: '#085041' }}>{t}</span>
+              <span key={t} style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 6, background: '#0F6E56', color: '#fff' }}>{t}</span>
             ))}
           </div>
-          <div style={{ height: 4, background: 'var(--color-safe)', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: '#D3D1C7', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ width: '94%', height: '100%', background: 'var(--color-accent)', borderRadius: 2 }} />
           </div>
         </div>
@@ -628,7 +628,7 @@ function HeroSearch() {
             <div key={p.phase} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '0.5px solid var(--color-border)' }}>
               <div style={{
                 width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                background: p.done ? 'var(--color-accent)' : 'var(--color-border)',
+                background: p.done ? 'var(--color-accent)' : '#D3D1C7',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {p.done && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -637,7 +637,7 @@ function HeroSearch() {
                 {p.phase}
               </span>
               {p.phase === 'Finitions' && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#BA7517', background: '#FAEEDA', padding: '2px 7px', borderRadius: 5 }}>En cours</span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#633806', background: '#FAEEDA', padding: '2px 7px', borderRadius: 5 }}>En cours</span>
               )}
             </div>
           ))}
@@ -781,7 +781,7 @@ export default function HomePage() {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
           }}>
-            <span style={{ display: 'block', color: 'inherit' }}>
+            <span style={{ display: 'block', color: 'inherit', whiteSpace: 'nowrap' }}>
               Vous êtes le chef de chantier.
             </span>
             <span style={{ display: 'block', color: 'var(--color-accent)' }}>
