@@ -526,6 +526,11 @@ main {
   .dirigeants-grid { grid-template-columns: 1fr !important; }
 
   .marches-grid { grid-template-columns: 1fr !important; }
+
+  .rapport-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
 }
 
 /* ── Shimmer animation ── */

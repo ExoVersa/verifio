@@ -117,7 +117,7 @@ export default function ModeleContrat({
   }
 
   return (
-    <div style={{ marginTop: '28px' }}>
+    <div style={{ marginTop: '28px', width: '100%', boxSizing: 'border-box' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
         <FileSignature size={20} color="var(--color-accent)" strokeWidth={1.5} />
@@ -135,7 +135,8 @@ export default function ModeleContrat({
         background: '#fff',
         border: '1px solid var(--color-border)',
         borderRadius: '12px',
-        overflow: 'hidden',
+        width: '100%',
+        boxSizing: 'border-box',
       }}>
         <div style={{
           padding: '16px 20px',
@@ -173,6 +174,8 @@ export default function ModeleContrat({
           whiteSpace: 'pre',
           maxHeight: '480px',
           overflowY: 'auto',
+          width: '100%',
+          boxSizing: 'border-box',
         }}>
           {renderHighlighted(contratText, [nomEntreprise, siret, adresse, nomDirigeant])}
         </pre>

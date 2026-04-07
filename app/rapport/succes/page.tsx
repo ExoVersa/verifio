@@ -503,8 +503,8 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                 background: 'radial-gradient(circle at 14% 18%, rgba(255,255,255,0.10), transparent 24%), radial-gradient(circle at 82% 20%, rgba(123,242,193,0.16), transparent 20%)',
               }} />
               <div className="rapport-hero" style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
-                  <div style={{ maxWidth: '560px' }}>
+                <div className="rapport-hero-inner" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                  <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                     <SectionBadge text="Pack Sérénité activé" tone="light" />
                     <h1 className="font-display rapport-hero-title" style={{ margin: '16px 0 8px', fontSize: 'clamp(22px, 4vw, 40px)', lineHeight: 1.02, letterSpacing: '-0.05em', color: '#ffffff', fontWeight: 800, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       Votre lecture complète de {result.nom}
@@ -604,7 +604,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
               <div style={{ height: '1px', background: 'var(--color-border)', margin: '0 0 16px' }} />
 
               {/* Identité */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+              <div className="rapport-grid-2" style={{ display: 'grid', gap: '12px' }}>
                 {[
                   { icon: <Hash size={14} />, label: 'SIRET', value: result.siret },
                   { icon: <Building2 size={14} />, label: 'Forme juridique', value: result.formeJuridique },
@@ -873,7 +873,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 9. Modèle de contrat */}
-            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px', overflow: 'visible' }}>
               <ModeleContrat
                 nomEntreprise={result.nom}
                 siret={result.siret}
@@ -1080,13 +1080,14 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
         @media (max-width: 768px) {
           .rapport-layout { padding: 16px 12px !important; }
           .rapport-sidebar { padding-bottom: 80px; }
-          .rapport-status-card { min-width: 0 !important; width: 100%; }
+          .rapport-status-card { min-width: 0 !important; width: 100% !important; }
           .rapport-droits-item { flex: 1 1 100% !important; min-width: 0 !important; }
           .rapport-score-info { min-width: 0 !important; }
           .rapport-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-          .rapport-features-grid > div { padding: 10px 12px !important; }
-          .rapport-features-grid span { font-size: 11px !important; }
+          .rapport-features-grid > div { padding: 10px 12px !important; min-width: 0 !important; }
+          .rapport-features-grid span { font-size: 11px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
           .rapport-main p, .rapport-main div { word-break: break-word; overflow-wrap: anywhere; }
+          .rapport-hero-inner { flex-direction: column !important; gap: 12px !important; }
         }
       `}</style>
     </main>
