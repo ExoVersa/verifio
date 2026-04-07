@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { plan, siret, nom, chantierId, user_id } = body
+  const { plan, siret, nom, chantierId } = body
   const baseUrl = getBaseUrl(req)
 
   // ── Pack Sérénité — paiement unique 4,90€ ───────────────────────────────
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       cancel_url: siret
         ? `${baseUrl}/artisan/${siret}`
         : `${baseUrl}/pricing`,
-      metadata: { plan: 'serenite', siret: siret || '', nom: nom || '', chantierId: chantierId || '', user_id: user_id || '' },
+      metadata: { plan: 'serenite', siret: siret || '', nom: nom || '', chantierId: chantierId || '', user_id: user.id },
       custom_fields: [
         {
           key: 'retractation',
