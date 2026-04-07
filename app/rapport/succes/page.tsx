@@ -444,7 +444,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
   return (
     <>
     <SiteHeader />
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)', overflowX: 'hidden' }}>
+    <main className="rapport-container" style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)', overflowX: 'hidden' }}>
 
       {/* Sub-header rapport */}
       <header style={{
@@ -502,14 +502,14 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                 inset: 0,
                 background: 'radial-gradient(circle at 14% 18%, rgba(255,255,255,0.10), transparent 24%), radial-gradient(circle at 82% 20%, rgba(123,242,193,0.16), transparent 20%)',
               }} />
-              <div style={{ position: 'relative' }}>
+              <div className="rapport-hero" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
                   <div style={{ maxWidth: '560px' }}>
                     <SectionBadge text="Pack Sérénité activé" tone="light" />
                     <h1 className="font-display rapport-hero-title" style={{ margin: '16px 0 8px', fontSize: 'clamp(22px, 4vw, 40px)', lineHeight: 1.02, letterSpacing: '-0.05em', color: '#ffffff', fontWeight: 800, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       Votre lecture complète de {result.nom}
                     </h1>
-                    <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.7, color: 'rgba(240,248,243,0.78)' }}>
+                    <p className="rapport-hero-subtitle" style={{ margin: 0, fontSize: '15px', lineHeight: 1.7, color: 'rgba(240,248,243,0.78)' }}>
                       Toutes les données utiles sont réunies ici pour vous aider à choisir, signer et suivre avec plus de confiance.
                     </p>
                   </div>
@@ -574,7 +574,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 2. Score + statut + identité */}
-            <SurfaceCard style={{ padding: '24px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
                 <ScoreRing score={result.score} />
                 <div className="rapport-score-info" style={{ flex: 1, minWidth: '200px' }}>
@@ -626,7 +626,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
 
             {/* 3. Carte localisation */}
             {result.adresse && (
-              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+              <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
                 <SectionTitle icon={<MapPin size={18} />} title="Localisation du siège" />
                 <iframe
                   src={`https://maps.google.com/maps?q=${encodeURIComponent(result.adresse)}&output=embed`}
@@ -647,7 +647,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
 
             {/* 4. Établissements */}
             {etablissements.length > 0 && (
-              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+              <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
                 <SectionTitle icon={<Building2 size={18} />} title={`Établissements (${etablissements.length})`} />
                 {etablissements.length === 1 ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'var(--color-safe-bg)', border: '1px solid color-mix(in srgb, var(--color-safe) 30%, transparent)' }}>
@@ -676,7 +676,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             )}
 
             {/* 5. Certifications RGE */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Leaf size={18} />} title="Certifications RGE" />
               {!result.rge.certifie ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', background: 'var(--color-neutral-bg)' }}>
@@ -708,7 +708,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 6. Dirigeants */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Users size={18} />} title="Dirigeants" />
               {result.dirigeants.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-muted)', fontStyle: 'italic' }}>Aucun dirigeant trouvé</p>
@@ -749,7 +749,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 7. BODACC */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               {result.bodacc.procedureCollective && (
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px 14px', borderRadius: '10px', background: 'var(--color-danger-bg)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', marginBottom: '16px' }}>
                   <XCircle size={16} color="var(--color-danger)" style={{ flexShrink: 0, marginTop: 1 }} />
@@ -766,7 +766,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
 
             {/* 7b. Marchés publics BOAMP */}
             {result.boampMarches && result.boampMarches.length > 0 && (
-              <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+              <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '16px' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -811,7 +811,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             )}
 
             {/* 8. Vos droits avant de signer */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               <SectionTitle icon={<Scale size={18} />} title={<>Vos droits avant de signer<PackBadge /></>} />
               <p style={{ margin: '-8px 0 16px', fontSize: '13px', color: 'var(--color-muted)' }}>Ce que la loi vous garantit</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
@@ -873,7 +873,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 9. Modèle de contrat */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               <ModeleContrat
                 nomEntreprise={result.nom}
                 siret={result.siret}
@@ -884,7 +884,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
             </SurfaceCard>
 
             {/* 10. Guide si ça se passe mal */}
-            <SurfaceCard style={{ padding: '20px', marginBottom: '20px' }}>
+            <SurfaceCard className="rapport-card" style={{ padding: '20px', marginBottom: '20px' }}>
               <GuideRecours />
             </SurfaceCard>
 
