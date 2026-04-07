@@ -479,9 +479,11 @@ function ChantiersTab({ chantiers, router }: { chantiers: ChantierWithStats[]; r
 function SurveillancesTab({
   surveillances,
   onStop,
+  isMobile,
 }: {
   surveillances: Surveillance[]
   onStop: (id: string) => void
+  isMobile: boolean
 }) {
   const [stopping, setStopping] = useState<string | null>(null)
 
@@ -534,8 +536,10 @@ function SurveillancesTab({
               key={s.id}
               style={{
                 background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-card)', padding: '20px 24px',
-                display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
+                borderRadius: 'var(--radius-card)', padding: isMobile ? '16px' : '20px 24px',
+                display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                gap: '16px', flexWrap: 'wrap',
+                width: '100%', boxSizing: 'border-box', overflowX: 'hidden',
               }}
             >
               {/* Status dot */}
@@ -555,7 +559,7 @@ function SurveillancesTab({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
                   <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {s.nom_artisan || `SIRET ${s.siret}`}
+                    {s.nom_artisan || s.siret || 'Artisan surveillé'}
                   </p>
                   {/* Badge Active / Expirée */}
                   {s.expires_at ? (
@@ -574,25 +578,29 @@ function SurveillancesTab({
                     </span>
                   )}
                 </div>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-muted)' }}>
-                  SIRET {s.siret}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-muted)' }}>
+                  <span style={{ whiteSpace: 'nowrap' }}>SIRET {s.siret}</span>
                   {s.expires_at && (
-                    <> · Jusqu&apos;au {new Date(s.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</>
+                    <span style={{ whiteSpace: 'nowrap' }}>· Jusqu&apos;au {new Date(s.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   )}
-                </p>
+                </div>
               </div>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <div style={{
+                display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+                gap: '8px', width: isMobile ? '100%' : 'auto', marginTop: isMobile ? 4 : 0,
+              }}>
                 <Link
                   href={`/artisan/${s.siret}`}
                   style={{
-                    padding: '8px 14px', borderRadius: '8px',
+                    padding: '10px 16px', borderRadius: '8px',
                     border: '1px solid var(--color-border)',
                     background: 'var(--color-bg)',
                     color: 'var(--color-text)', textDecoration: 'none',
-                    fontSize: '12px', fontWeight: 600,
-                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '13px', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    width: isMobile ? '100%' : 'auto', boxSizing: 'border-box',
                   }}
                 >
                   <ExternalLink size={13} />Voir la fiche
@@ -601,14 +609,15 @@ function SurveillancesTab({
                   onClick={() => handleStop(s.id)}
                   disabled={stopping === s.id}
                   style={{
-                    padding: '8px 14px', borderRadius: '8px',
+                    padding: '10px 16px', borderRadius: '8px',
                     border: '1px solid #fecaca',
                     background: '#fef2f2',
-                    color: '#dc2626', fontSize: '12px', fontWeight: 600,
+                    color: '#dc2626', fontSize: '13px', fontWeight: 600,
                     cursor: stopping === s.id ? 'not-allowed' : 'pointer',
                     fontFamily: 'var(--font-body)',
-                    display: 'flex', alignItems: 'center', gap: '6px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                     opacity: stopping === s.id ? 0.6 : 1,
+                    width: isMobile ? '100%' : 'auto', boxSizing: 'border-box',
                   }}
                 >
                   <Bell size={13} />
@@ -1456,7 +1465,7 @@ function MonEspaceInner() {
           <ChantiersTab chantiers={chantiers} router={router} />
         )}
         {tab === 'surveillances' && (
-          <SurveillancesTab surveillances={surveillances} onStop={stopSurveillance} />
+          <SurveillancesTab surveillances={surveillances} onStop={stopSurveillance} isMobile={isMobile} />
         )}
         {tab === 'historique' && (
           <HistoriqueTab searches={searches} />
