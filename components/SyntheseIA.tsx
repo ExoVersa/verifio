@@ -55,31 +55,18 @@ function Skeleton() {
 export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
   const [synthese, setSynthese] = useState<SyntheseResult | null>(null)
   const [loading, setLoading] = useState(true)
-  const inputKey = JSON.stringify(input)
 
   useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setSynthese(null)
     fetch('/api/rapport-synthese', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     })
       .then(r => r.json())
-      .then((data: SyntheseResult) => {
-        if (!cancelled) setSynthese(data)
-      })
-      .catch(() => {
-        if (!cancelled) setSynthese(null)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [inputKey])
+      .then((data: SyntheseResult) => setSynthese(data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Skeleton />
   if (!synthese) return null
