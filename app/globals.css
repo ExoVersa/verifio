@@ -381,6 +381,27 @@ main {
   .rapport-sidebar { flex: none; width: 100%; position: static; max-height: none; }
 }
 
+/* ── Homepage grids — responsive mobile ── */
+@media (max-width: 768px) {
+  .story-grid {
+    grid-template-columns: 1fr !important;
+    align-items: start !important;
+    height: auto !important;
+  }
+  .proof-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .decision-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .cta-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .cta-grid > div:last-child {
+    justify-content: flex-start !important;
+  }
+}
+
 /* ── Shimmer animation ── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }

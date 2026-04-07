@@ -193,6 +193,13 @@ function VilleAutocomplete({
 /* ─── CandidateCard ─────────────────────────────────────────── */
 function CandidateCard({ c }: { c: CandidateResult }) {
   const router = useRouter()
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const statut = String(c.statut || '').toLowerCase().trim()
   const isActif = statut === 'actif' || statut === 'a'
   const age = c.dateCreation
@@ -324,14 +331,14 @@ function CandidateCard({ c }: { c: CandidateResult }) {
               <span style={{ fontSize: '13px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '5px' }}><MapPin size={13} strokeWidth={1.5} />{c.codePostal} {c.ville}</span>
             )}
             {age !== null && (
-              <span style={{ fontSize: '13px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '5px' }}><HardHat size={13} strokeWidth={1.5} />{age} an{age > 1 ? 's' : ''} d&apos;activité</span>
+              <span style={{ fontSize: '13px', color: cv('muted'), display: 'inline-flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><HardHat size={13} strokeWidth={1.5} />{age} an{age > 1 ? 's' : ''} d&apos;activité</span>
             )}
           </div>
         </div>
 
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', minWidth: '148px' }}>
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', minWidth: isMobile ? 0 : '148px' }}>
           <div style={{
-            minWidth: '132px',
+            minWidth: isMobile ? 0 : '132px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
@@ -342,7 +349,7 @@ function CandidateCard({ c }: { c: CandidateResult }) {
             padding: '14px 16px 12px',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
           }}>
-            <span style={{ fontSize: '10px', fontWeight: 800, color, opacity: 0.72, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Score Rien qui cloche</span>
+            <span style={{ fontSize: '10px', fontWeight: 800, color, opacity: 0.72, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>Score /100</span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
               <span style={{ fontSize: '30px', fontWeight: 800, color, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
                 {score}
