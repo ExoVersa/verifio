@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import SiteHeader from '@/components/SiteHeader'
 
@@ -34,9 +33,6 @@ interface RefusModal {
 }
 
 export default function AdminPage() {
-  const router = useRouter()
-  useEffect(() => { router.push('/') }, [])
-
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [authEmail, setAuthEmail] = useState<string | null>(null)
   const [loadingAuth, setLoadingAuth] = useState(true)
