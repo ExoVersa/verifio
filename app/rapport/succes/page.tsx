@@ -825,7 +825,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                     <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: badgeBg, color: badgeColor }}>
                       {badge}
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '120px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '80px' }}>
                       <Icon size={15} color={color} strokeWidth={1.5} />
                       <span style={{ fontSize: '12px', fontWeight: 700 }}>{title}</span>
                     </div>
@@ -855,7 +855,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                           <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: colors.bg, color: colors.color }}>
                             {droit.badge}
                           </span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '120px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingRight: '80px' }}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={colors.icon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10"/>
                               <line x1="12" y1="8" x2="12" y2="12"/>
@@ -1082,6 +1082,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
           .rapport-sidebar { padding-bottom: 80px; }
           .rapport-status-card { min-width: 0 !important; width: 100% !important; }
           .rapport-droits-item { flex: 1 1 100% !important; min-width: 0 !important; }
+          .rapport-droits-item > div:first-of-type { padding-right: 40px !important; }
           .rapport-score-info { min-width: 0 !important; }
           .rapport-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
           .rapport-features-grid > div { padding: 10px 12px !important; min-width: 0 !important; }
