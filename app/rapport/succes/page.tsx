@@ -527,7 +527,7 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                     </p>
                   </div>
                 </div>
-                <div style={{
+                <div className="rapport-features-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
                   gap: '10px',
@@ -1083,6 +1083,10 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
           .rapport-status-card { min-width: 0 !important; width: 100%; }
           .rapport-droits-item { flex: 1 1 100% !important; min-width: 0 !important; }
           .rapport-score-info { min-width: 0 !important; }
+          .rapport-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .rapport-features-grid > div { padding: 10px 12px !important; }
+          .rapport-features-grid span { font-size: 11px !important; }
+          .rapport-main p, .rapport-main div { word-break: break-word; overflow-wrap: anywhere; }
         }
       `}</style>
     </main>
