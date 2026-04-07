@@ -886,13 +886,9 @@ export default function ArtisanFichePage() {
               }}>
 
                 {/* ── Card 1 — Informations légales ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><Building2 size={20} strokeWidth={1.5} /> Informations légales</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-                    gap: '12px 20px',
-                  }}>
+                  <div className="rapport-grid-2" style={{ gap: '12px 20px' }}>
                     {/* SIRET */}
                     <div>
                       <p style={labelStyle}>SIRET</p>
@@ -990,7 +986,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card 2 — Santé financière ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><Banknote size={20} strokeWidth={1.5} /> Santé financière</h3>
 
                   {financialLoading ? (
@@ -1049,7 +1045,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card 3 — Établissements ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                     <h3 style={{ ...cardTitleStyle, margin: 0 }}><Store size={20} strokeWidth={1.5} /> Établissements</h3>
                     {etablissements.filter(e => e.statut === 'A').length > 1 && (
@@ -1126,7 +1122,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card 4 — Certifications RGE ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><Leaf size={20} strokeWidth={1.5} /> Certifications RGE</h3>
                   {rge.certifie ? (
                     <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '20px' }}>
@@ -1177,7 +1173,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card — Assurance décennale ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><HardHat size={20} strokeWidth={1.5} /> Assurance décennale</h3>
                   {isQualibat ? (
                     <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '16px' }}>
@@ -1221,7 +1217,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card 3 — Dirigeants ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><User size={20} strokeWidth={1.5} /> Dirigeants</h3>
                   {dirigeants.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1405,7 +1401,7 @@ export default function ArtisanFichePage() {
                                     {isOpen && (
                                       <div style={{ padding: '0 14px 14px', borderTop: '1px solid #e5e7eb' }}>
                                         {/* Infos de base */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px', marginTop: '12px', marginBottom: '10px' }}>
+                                        <div className="rapport-grid-2" style={{ gap: '8px', marginTop: '12px', marginBottom: '10px' }}>
                                           {a.numeroAnnonce && <BodaccField label="N° annonce" value={String(a.numeroAnnonce)} />}
                                           {a.numeroBodacc && <BodaccField label="N° BODACC" value={a.numeroBodacc} />}
                                           {a.registre && <BodaccField label="RCS" value={a.registre} />}
@@ -1596,7 +1592,7 @@ export default function ArtisanFichePage() {
                 </div>
 
                 {/* ── Card 6 — Partage ── */}
-                <div style={cardStyle}>
+                <div className="rapport-card" style={cardStyle}>
                   <h3 style={cardTitleStyle}><Share2 size={20} strokeWidth={1.5} /> Partager cette fiche</h3>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <a
