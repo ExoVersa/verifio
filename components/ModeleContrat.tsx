@@ -139,15 +139,18 @@ export default function ModeleContrat({
         boxSizing: 'border-box',
       }}>
         <div style={{
-          padding: '16px 20px',
+          padding: '12px 16px',
           background: 'var(--color-neutral-bg)',
           borderBottom: '1px solid var(--color-border)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
+          flexWrap: 'wrap',
+          minWidth: 0,
+          overflow: 'hidden',
         }}>
-          <FileSignature size={14} color="var(--color-muted)" strokeWidth={1.5} />
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <FileSignature size={14} color="var(--color-muted)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
             Contrat pré-rempli
           </span>
           <span style={{
@@ -158,6 +161,7 @@ export default function ModeleContrat({
             background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
             color: 'var(--color-accent)',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
           }}>
             Données en bleu = pré-remplies
           </span>

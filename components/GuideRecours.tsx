@@ -107,7 +107,7 @@ export default function GuideRecours() {
       {/* Timeline */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
         {ETAPES.map((etape, idx) => (
-          <div key={etape.numero} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+          <div key={etape.numero} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', minWidth: 0, width: '100%' }}>
 
             {/* Ligne verticale + cercle */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
@@ -143,6 +143,9 @@ export default function GuideRecours() {
             {/* Contenu de l'étape */}
             <div style={{
               flex: 1,
+              minWidth: 0,
+              width: '100%',
+              boxSizing: 'border-box',
               padding: '12px 16px 20px',
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',

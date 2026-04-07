@@ -520,9 +520,9 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                     border: '1px solid rgba(255,255,255,0.14)',
                     color: '#eff8f3',
                   }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.78 }}>Statut du rapport</p>
+                    <p style={{ margin: '0 0 6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.78, wordBreak: 'break-word' }}>Statut du rapport</p>
                     <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em' }}>Débloqué</p>
-                    <p style={{ margin: '8px 0 0', fontSize: '12px', lineHeight: 1.5, opacity: 0.76 }}>
+                    <p style={{ margin: '8px 0 0', fontSize: '12px', lineHeight: 1.5, opacity: 0.76, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       Paiement vérifié, surveillance activée et outils premium disponibles.
                     </p>
                   </div>
@@ -613,11 +613,11 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
                   ...(result.capitalSocial !== undefined ? [{ icon: <Building2 size={14} />, label: 'Capital social', value: `${result.capitalSocial.toLocaleString('fr-FR')} €` }] : []),
                   ...(result.effectif ? [{ icon: <Users size={14} />, label: 'Effectif', value: result.effectif }] : []),
                 ].filter(r => r.value).map((row, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(248,243,236,0.8)', border: '1px solid rgba(226,217,204,0.76)', borderRadius: '16px', padding: '14px 15px' }}>
+                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(248,243,236,0.8)', border: '1px solid rgba(226,217,204,0.76)', borderRadius: '16px', padding: '14px 15px', minWidth: 0, overflow: 'hidden' }}>
                     <span style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '1px', width: '30px', height: '30px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(21,59,46,0.06)' }}>{row.icon}</span>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)' }}>{row.label}</p>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 500 }}>{row.value}</p>
+                    <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-muted)', wordBreak: 'break-word' }}>{row.label}</p>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{row.value}</p>
                     </div>
                   </div>
                 ))}
@@ -1080,14 +1080,15 @@ Réponds UNIQUEMENT en JSON strict, sans markdown, sans backticks :
         @media (max-width: 768px) {
           .rapport-layout { padding: 16px 12px !important; }
           .rapport-sidebar { padding-bottom: 80px; }
-          .rapport-status-card { min-width: 0 !important; width: 100% !important; }
+          .rapport-status-card { min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; }
           .rapport-droits-item { flex: 1 1 100% !important; min-width: 0 !important; }
           .rapport-droits-item > div:first-of-type { padding-right: 40px !important; }
           .rapport-score-info { min-width: 0 !important; }
-          .rapport-features-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-          .rapport-features-grid > div { padding: 10px 12px !important; min-width: 0 !important; }
+          .rapport-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+          .rapport-features-grid > div { padding: 10px 8px !important; min-width: 0 !important; overflow: hidden !important; }
           .rapport-features-grid span { font-size: 11px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-          .rapport-main p, .rapport-main div { word-break: break-word; overflow-wrap: anywhere; }
+          .rapport-main p { word-break: break-word !important; overflow-wrap: anywhere !important; }
+          .rapport-main div { min-width: 0; }
           .rapport-hero-inner { flex-direction: column !important; gap: 12px !important; }
         }
       `}</style>

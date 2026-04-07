@@ -74,6 +74,8 @@ html {
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -87,6 +89,8 @@ body {
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* ── Typography scale ────────────────────────────── */
@@ -452,12 +456,16 @@ main {
 
 .rapport-grid-2 {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .rapport-card {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
   word-break: break-word;
