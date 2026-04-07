@@ -77,7 +77,7 @@ export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
   const verdictTitre = synthese.verdict_titre ?? verdictStyle.label
 
   return (
-    <div style={{
+    <div className="rapport-card" style={{
       background: 'var(--color-surface)',
       border: '1px solid var(--color-border)',
       borderRadius: '12px',

@@ -127,7 +127,7 @@ export default function BodaccSection({ annonces }: { annonces: BodaccAnnonce[] 
   const remaining = annonces.length - limit
 
   return (
-    <div>
+    <div className="rapport-card">
       {/* Titre */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Scale size={20} color="var(--color-accent)" strokeWidth={1.5} />

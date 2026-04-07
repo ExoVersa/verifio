@@ -91,7 +91,7 @@ export default function GuideRecours() {
   }
 
   return (
-    <div style={{ marginTop: '28px' }}>
+    <div className="rapport-card" style={{ marginTop: '28px' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
         <LifeBuoy size={20} color="var(--color-danger)" strokeWidth={1.5} />
