@@ -598,8 +598,30 @@ export default function ArtisanFichePage() {
   const RGE_MAX = 5
   const rgeVisibleDomaines = showAllRGE ? rgeDomainesUniques : rgeDomainesUniques.slice(0, RGE_MAX)
 
+  const jsonLd = result ? {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": result.nom,
+    "identifier": siret,
+    "foundingDate": result.dateCreation?.substring(0, 4),
+    "address": result.adresse ? {
+      "@type": "PostalAddress",
+      "streetAddress": result.adresse,
+      "addressCountry": "FR"
+    } : undefined,
+    "legalName": result.nom,
+    "description": `Vérification de fiabilité de ${result.nom} — Score Rien qui cloche, certifications RGE, historique légal BODACC.`,
+    "url": `https://www.rienquicloche.fr/artisan/${siret}`,
+  } : null
+
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)', fontFamily: 'var(--font-body)', overflowX: 'hidden', width: '100%', maxWidth: '100vw' }}>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <SiteHeader />
 
       <style>{`
