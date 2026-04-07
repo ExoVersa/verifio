@@ -2,8 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "ArtisanCheck Dev",
-      "runtimeExecutable": "npm",
+      "name": "verifio-dev",
+      "runtimeExecutable": "/usr/local/bin/npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
     }
