@@ -745,6 +745,40 @@ function CompteSupprimeMessage() {
 export default function HomePage() {
   return (
     <main style={{ minHeight: '100vh', background: 'transparent', overflowX: 'hidden', width: '100%' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": "https://www.rienquicloche.fr/#website",
+              "url": "https://www.rienquicloche.fr",
+              "name": "Rien qui cloche",
+              "description": "La plateforme en ligne pour vérifier un artisan et suivre son chantier de A à Z",
+              "inLanguage": "fr-FR",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://www.rienquicloche.fr/recherche?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@type": "Organization",
+              "@id": "https://www.rienquicloche.fr/#organization",
+              "name": "Rien qui cloche",
+              "url": "https://www.rienquicloche.fr",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.rienquicloche.fr/og-image.png"
+              }
+            }
+          ]
+        })}}
+      />
       <SiteHeader />
 
       <section style={{
