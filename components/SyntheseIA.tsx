@@ -3,11 +3,22 @@
 import { useEffect, useState } from 'react'
 import { Sparkles, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react'
 import type { SyntheseInput, SyntheseResult } from '@/app/api/rapport-synthese/route'
+import { supabase } from '@/lib/supabase'
 import PackBadge from '@/components/PackBadge'
 
 interface SyntheseIAProps {
   input: SyntheseInput
   compact?: boolean
+  /** Page partage : autorise la synthèse sans session (token vérifié côté API). */
+  shareToken?: string
+}
+
+const SYNTHESE_REFUS_FALLBACK: SyntheseResult = {
+  resume: 'Analyse indisponible momentanément. Consultez les données ci-dessous pour évaluer cet artisan.',
+  points_forts: [],
+  points_attention: [],
+  recommandation: 'VIGILANCE',
+  recommandation_texte: 'Vérifiez manuellement les informations disponibles avant de vous engager.',
 }
 
 const VERDICT_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -52,30 +63,47 @@ function Skeleton() {
   )
 }
 
-export default function SyntheseIA({ input, compact }: SyntheseIAProps) {
+export default function SyntheseIA({ input, compact, shareToken }: SyntheseIAProps) {
   const [synthese, setSynthese] = useState<SyntheseResult | null>(null)
   const [loading, setLoading] = useState(true)
-  const inputKey = JSON.stringify(input)
+  const inputKey = JSON.stringify({ input, shareToken: shareToken ?? null })
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setSynthese(null)
-    fetch('/api/rapport-synthese', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
-    })
-      .then(r => r.json())
-      .then((data: SyntheseResult) => {
-        if (!cancelled) setSynthese(data)
-      })
-      .catch(() => {
+    ;(async () => {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (!shareToken) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`
+        }
+      }
+      const body = shareToken ? { ...input, share_token: shareToken } : { ...input }
+      try {
+        const res = await fetch('/api/rapport-synthese', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+        })
+        const data: SyntheseResult & { error?: string } = await res.json()
+        if (cancelled) return
+        if (!res.ok && data?.error) {
+          setSynthese(SYNTHESE_REFUS_FALLBACK)
+          return
+        }
+        if (res.ok && !data?.error) {
+          setSynthese(data as SyntheseResult)
+          return
+        }
+        setSynthese(null)
+      } catch {
         if (!cancelled) setSynthese(null)
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    })()
     return () => {
       cancelled = true
     }

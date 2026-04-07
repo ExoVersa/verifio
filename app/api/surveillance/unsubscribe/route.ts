@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { unsubscribeSecret, verifyUnsubscribeSig } from '@/lib/unsubscribeSig'
 
 export async function GET(req: NextRequest) {
   const supabase = createClient(
@@ -8,11 +9,33 @@ export async function GET(req: NextRequest) {
   )
   const email = req.nextUrl.searchParams.get('email')
   const siret = req.nextUrl.searchParams.get('siret')
+  const sig = req.nextUrl.searchParams.get('sig')
+  const secret = unsubscribeSecret()
+  const requireSig = process.env.UNSUBSCRIBE_REQUIRE_SIGNATURE === 'true'
 
   if (!email || !siret) {
     return new NextResponse(html('Lien invalide', 'Le lien de désabonnement est invalide ou expiré.', false), {
       status: 400, headers: { 'Content-Type': 'text/html' },
     })
+  }
+
+  if (requireSig) {
+    if (!secret) {
+      return new NextResponse(html('Configuration', 'Le service de désabonnement est temporairement indisponible.', false), {
+        status: 503, headers: { 'Content-Type': 'text/html' },
+      })
+    }
+    if (!sig || !verifyUnsubscribeSig(email, siret, sig, secret)) {
+      return new NextResponse(html('Lien invalide', 'Ce lien de désabonnement n’est pas valide ou a été modifié.', false), {
+        status: 403, headers: { 'Content-Type': 'text/html' },
+      })
+    }
+  } else if (sig && secret) {
+    if (!verifyUnsubscribeSig(email, siret, sig, secret)) {
+      return new NextResponse(html('Lien invalide', 'La signature du lien est incorrecte.', false), {
+        status: 400, headers: { 'Content-Type': 'text/html' },
+      })
+    }
   }
 
   const { error } = await supabase

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { signUnsubscribe, unsubscribeSecret } from '@/lib/unsubscribeSig'
 
 // ── Vérification Vercel Cron signature ─────────────────────────────────────────
 function isCronRequest(req: NextRequest): boolean {
@@ -44,7 +45,11 @@ async function sendAlertEmail(
     statutApres: string
   },
 ) {
-  const unsubLink = `${BASE_URL}/api/surveillance/unsubscribe?email=${encodeURIComponent(opts.email)}&siret=${encodeURIComponent(opts.siret)}`
+  const unsubBase = `${BASE_URL}/api/surveillance/unsubscribe?email=${encodeURIComponent(opts.email)}&siret=${encodeURIComponent(opts.siret)}`
+  const secret = unsubscribeSecret()
+  const unsubLink = secret
+    ? `${unsubBase}&sig=${encodeURIComponent(signUnsubscribe(opts.email, opts.siret, secret))}`
+    : unsubBase
   const ficheLink = `${BASE_URL}/artisan/${opts.siret}`
 
   await resend.emails.send({

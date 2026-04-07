@@ -223,7 +223,7 @@ export default async function PartageRapportPage({
         {result && (
           <div className="result-card fade-up">
             {/* Synthèse IA */}
-            {syntheseInput && <SyntheseIA input={syntheseInput} />}
+            {syntheseInput && <SyntheseIA input={syntheseInput} shareToken={token} />}
 
             {/* Score + statut */}
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' }}>

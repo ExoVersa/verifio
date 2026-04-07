@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       mode: 'subscription',
       success_url: `${baseUrl}/mon-espace?plan=tranquillite&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing`,
-      metadata: { plan: 'tranquillite' },
+      metadata: { plan: 'tranquillite', user_id: user.id },
       custom_fields: [
         {
           key: 'retractation',

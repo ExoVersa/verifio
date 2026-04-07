@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export interface SyntheseInput {
   nom: string
@@ -36,16 +37,90 @@ const FALLBACK: SyntheseResult = {
   recommandation_texte: 'Vérifiez manuellement les informations disponibles avant de vous engager.',
 }
 
-export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(FALLBACK)
+function normalizeSiret(s: string): string {
+  return s.replace(/\s/g, '')
+}
+
+/** null = autorisé ; sinon réponse d’erreur à retourner */
+async function assertCanGenerateSynthese(opts: {
+  siretNorm: string
+  shareToken?: string
+  authHeader: string | null
+}): Promise<NextResponse | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    return NextResponse.json({ error: 'configuration_serveur' }, { status: 503 })
+  }
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  if (opts.shareToken) {
+    const admin = createClient(url, serviceKey)
+    const { data } = await admin
+      .from('rapports')
+      .select('siret, share_expires_at')
+      .eq('share_token', opts.shareToken)
+      .maybeSingle()
+    if (!data) {
+      return NextResponse.json({ error: 'acces_refuse' }, { status: 403 })
+    }
+    const rowSiret = normalizeSiret(String(data.siret || ''))
+    if (rowSiret !== opts.siretNorm) {
+      return NextResponse.json({ error: 'acces_refuse' }, { status: 403 })
+    }
+    if (!data.share_expires_at || new Date(data.share_expires_at) <= new Date()) {
+      return NextResponse.json({ error: 'lien_expire' }, { status: 403 })
+    }
+    return null
   }
 
-  let input: SyntheseInput
+  const bearer = opts.authHeader?.replace(/^Bearer\s+/i, '')?.trim()
+  if (!bearer) {
+    return NextResponse.json({ error: 'non_connecte' }, { status: 401 })
+  }
+  const userClient = createClient(url, anonKey)
+  const { data: { user }, error } = await userClient.auth.getUser(bearer)
+  if (error || !user) {
+    return NextResponse.json({ error: 'session_invalide' }, { status: 401 })
+  }
+  const admin = createClient(url, serviceKey)
+  const { data: rapport } = await admin
+    .from('rapports')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('siret', opts.siretNorm)
+    .maybeSingle()
+  if (!rapport) {
+    return NextResponse.json({ error: 'rapport_non_autorise' }, { status: 403 })
+  }
+  return null
+}
+
+export async function POST(req: NextRequest) {
+  let raw: Record<string, unknown>
   try {
-    input = await req.json()
+    raw = await req.json()
   } catch {
     return NextResponse.json({ error: 'Corps JSON invalide' }, { status: 400 })
+  }
+
+  const share_token = typeof raw.share_token === 'string' ? raw.share_token.trim() : undefined
+  const { share_token: _drop, ...rawRest } = raw
+  const input = rawRest as unknown as SyntheseInput
+  const siretNorm = typeof input?.siret === 'string' ? normalizeSiret(input.siret) : ''
+  if (!siretNorm || siretNorm.length < 9) {
+    return NextResponse.json({ error: 'siret_invalide' }, { status: 400 })
+  }
+
+  const authBlock = await assertCanGenerateSynthese({
+    siretNorm,
+    shareToken: share_token || undefined,
+    authHeader: req.headers.get('authorization'),
+  })
+  if (authBlock) return authBlock
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(FALLBACK)
   }
 
   try {
