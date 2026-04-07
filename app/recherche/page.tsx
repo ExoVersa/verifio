@@ -615,6 +615,17 @@ function RechercheInner() {
 
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f7f2ea 0%, #fcfaf7 18%, #f6f8f5 100%)' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SearchResultsPage",
+          "name": "Recherche d'artisans — Rien qui cloche",
+          "description": "Recherchez et vérifiez la fiabilité d'un artisan ou d'une entreprise du bâtiment en France.",
+          "url": "https://www.rienquicloche.fr/recherche",
+          "inLanguage": "fr-FR"
+        })}}
+      />
       <SiteHeader />
 
       <section style={{ position: 'relative', padding: hasQuery ? '34px 24px 18px' : '40px 24px 18px' }}>

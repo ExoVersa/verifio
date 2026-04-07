@@ -78,6 +78,32 @@ export default function PricingPage() {
 
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f8f4ee 0%, #f5efe7 34%, #fcfaf7 100%)' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Tarifs — Rien qui cloche",
+          "description": "Vérification gratuite, Pack Sérénité à 4,90€ et abonnement Tranquillité.",
+          "url": "https://www.rienquicloche.fr/pricing",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Essentiel",
+              "price": "0",
+              "priceCurrency": "EUR",
+              "description": "Vérification gratuite de l'artisan"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pack Sérénité",
+              "price": "4.90",
+              "priceCurrency": "EUR",
+              "description": "Rapport complet + analyse de devis + suivi chantier"
+            }
+          ]
+        })}}
+      />
       <SiteHeader />
 
       {/* ── Cartes pricing ── */}
