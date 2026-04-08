@@ -236,7 +236,7 @@ const FORMES_JURIDIQUES: Record<string, string> = {
   '9260': 'Autre groupement de droit privé',
 }
 
-function libelleFormeJuridique(code: string): string {
+export function libelleFormeJuridique(code: string): string {
   return FORMES_JURIDIQUES[code] || code
 }
 
@@ -511,7 +511,9 @@ export async function fetchCompany(query: string): Promise<SearchResult> {
   const dirigeants = parseDirigeants(e.dirigeants || [])
 
   // Compte les procédures collectives distinctes pour le score (famille === 'collective')
-  const nbProceduresCollectives = bodacc.annonces.filter(a => a.famille === 'collective').length
+  const nbProceduresCollectives = bodacc.annonces.filter(
+    a => String(a.famille || '').toLowerCase().trim() === 'collective'
+  ).length
 
   // Score via fonction canonique (même logique que /api/recherche)
   const { score } = calculateScore({

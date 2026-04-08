@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateScore } from '@/lib/score'
+import { libelleFormeJuridique } from '@/lib/fetchCompany'
 import type { SearchCandidate } from '@/types'
-
-const FORMES_JURIDIQUES: Record<string, string> = {
-  '1000': 'EI', '1100': 'Artisan-commerçant', '1200': 'Commerçant', '1300': 'Artisan',
-  '5308': 'EURL', '5499': 'SARL', '5520': 'SAS', '5710': 'SAS', '5720': 'SASU',
-  '5522': 'SA', '5410': 'SA', '5415': 'SA', '5485': 'SELAS', '5570': 'SELAS',
-  '1400': 'Officier public', '2110': 'Indivision',
-}
-
-function fj(code: string): string {
-  return FORMES_JURIDIQUES[code] || code
-}
 
 async function checkRge(siret: string): Promise<boolean> {
   try {
@@ -33,20 +23,17 @@ async function checkBodacc(siren: string): Promise<{
   collectives: number
 }> {
   try {
-    const url = `https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%22&limit=20&fields=familleavis_lib`
+    const url = `https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%22&limit=20&fields=familleavis`
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
       next: { revalidate: 86400 },
     })
     if (!res.ok) return { disponible: true, collectives: 0 }
     const data = await res.json()
-    const records: Array<{ familleavis_lib: string }> = data.results || []
-    const isCollective = (lib: string) =>
-      lib?.toLowerCase().includes('procédure') &&
-      (lib?.toLowerCase().includes('collective') || lib?.toLowerCase().includes('rétablissement'))
+    const records: Array<{ familleavis: string | null }> = data.results || []
     return {
       disponible: true,
-      collectives: records.filter(r => isCollective(r.familleavis_lib)).length,
+      collectives: records.filter(r => String(r.familleavis || '').toLowerCase().trim() === 'collective').length,
     }
   } catch {
     return { disponible: true, collectives: 0 }
@@ -133,7 +120,7 @@ export async function GET(req: NextRequest) {
         siren: e.siren || '',
         nom: e.nom_complet || e.nom_raison_sociale || '',
         statut: (siege.etat_administratif === 'A' ? 'actif' : 'fermé') as 'actif' | 'fermé',
-        formeJuridique: fj(e.nature_juridique || ''),
+        formeJuridique: libelleFormeJuridique(e.nature_juridique || ''),
         formeJuridiqueCode: e.nature_juridique || '',
         ville: siege.libelle_commune || '',
         codePostal: siege.code_postal || '',
