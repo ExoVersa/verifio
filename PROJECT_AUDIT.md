@@ -1,6 +1,6 @@
 # PROJECT_AUDIT.md — Verifio
-> Audit technique complet — état réel du code au 5 avril 2026.
-> Inclut toutes les modifications effectuées du 24 mars au 5 avril 2026.
+> Audit technique complet — état réel du code au 10 avril 2026.
+> Inclut toutes les modifications effectuées du 24 mars au 10 avril 2026.
 > Ne pas modifier ce fichier manuellement — il est regénéré par inspection du code.
 
 ## Utilisation par les agents
@@ -143,9 +143,20 @@ Input JSON :
   plan: 'serenite',
   siret?: string,
   nom?: string,
-  user_id: string  // id Supabase auth, stocké en metadata Stripe
+  user_id: string  // IGNORÉ — le serveur utilise user.id extrait du JWT, pas la valeur du body
 }
 ```
+
+**Phase 0 (7 avril 2026) — `user_id` désormais côté serveur :**
+
+Le `user_id` injecté dans les metadata Stripe est maintenant **exclusivement** `user.id` provenant du JWT vérifié côté serveur :
+```typescript
+// Dans /api/checkout/route.ts
+const { data: { user } } = await supabaseAuth.auth.getUser(token)
+// ...
+metadata: { plan: 'serenite', siret, nom, user_id: user.id }
+```
+La valeur éventuellement transmise dans le body est ignorée. Cela empêche l'usurpation d'identité via `user_id` falsifié.
 
 **Pack Sérénité :**
 - Mode : `'payment'` (one-time)
@@ -844,6 +855,57 @@ Contenu : icône loupe SVG, "Erreur 404", titre, sous-titre, deux CTAs ("Accueil
 
 ---
 
+## 9e. Synthèse IA — Auth Guard `/api/rapport-synthese`
+
+**(Ajouté Phase 1 — 7 avril 2026)**
+
+**Fichier :** `app/api/rapport-synthese/route.ts`
+
+Fonction `assertCanGenerateSynthese()` vérifie l'accès avant de lancer l'appel Anthropic :
+
+```typescript
+async function assertCanGenerateSynthese(req: Request, siret: string) {
+  const body = await req.json()
+  const shareToken = body?.share_token
+
+  if (shareToken) {
+    // Vérifie le share_token dans la table rapports
+    const { data } = await supabaseAdmin.from('rapports')
+      .select('id').eq('share_token', shareToken).eq('siret', siret)
+      .gt('share_expires_at', new Date().toISOString()).maybeSingle()
+    if (!data) throw { status: 403, error: 'token_invalide' }
+    return
+  }
+
+  // JWT obligatoire si pas de share_token
+  const token = req.headers.get('authorization')?.replace('Bearer ', '')
+  if (!token) throw { status: 401, error: 'non_connecte' }
+  const { data: { user } } = await supabaseAuth.auth.getUser(token)
+  if (!user) throw { status: 401, error: 'session_invalide' }
+
+  // Vérifie que l'utilisateur a bien acheté un rapport pour ce SIRET
+  const { data: rapport } = await supabaseAdmin.from('rapports')
+    .select('id').eq('user_id', user.id).eq('siret', siret).maybeSingle()
+  if (!rapport) throw { status: 403, error: 'pack_requis' }
+}
+```
+
+Retourne 401 (non connecté / session invalide) ou 403 (pack non acheté / token invalide) si unauthorized.
+
+**Composant `SyntheseIA` (Phase 0 + Phase 1) :**
+
+Fichier `components/SyntheseIA.tsx`
+
+Nouvelles props :
+- `shareToken?: string` — pour les pages de rapport partagées
+
+Comportement :
+- Si `shareToken` fourni → envoie `{ share_token }` dans le body, sans header Authorization
+- Si pas de `shareToken` → récupère le JWT via `supabase.auth.getSession()` et envoie `Authorization: Bearer ${access_token}`
+- Gestion d'annulation : flag `cancelled` pour éviter setState sur composant démonté
+
+---
+
 ## 10. Recherche & API INSEE
 
 ### `lib/fetchCompany.ts`
@@ -891,6 +953,15 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
 
 - `export const maxDuration = 30` ajouté
 - **SIRET exact (31 mars 2026)** : recherche `exactMatch` sur les champs `siret`, `siege.siret`, `siren` des résultats bruts. Si trouvé → retourne ce résultat en premier. Remplace l'ancienne logique `rawResults.length === 1` qui pouvait échouer si l'API retournait plusieurs résultats pour un SIRET.
+- **Phase 2 (8 avril 2026) — Unification forme juridique et BODACC :**
+  - Supprime la table `FORMES_JURIDIQUES` dupliquée → importe désormais `libelleFormeJuridique` depuis `lib/fetchCompany.ts`
+  - Filtre BODACC corrigé : utilise le champ `familleavis` (l'API BODACC utilise ce nom, pas `familleavis_lib`)
+  - Comparaison : `String(a.familleavis || '').toLowerCase().trim() === 'collective'` (robuste aux variations de casse)
+
+**`lib/fetchCompany.ts` — Phase 2 :**
+- `libelleFormeJuridique` devient une export nommée (était privée)
+- `fetchBODACC` : filtre `a.famille === 'collective'` → `String(a.famille || '').toLowerCase().trim() === 'collective'`
+- Ces changements unifient le score BODACC entre la page de recherche et la fiche rapport (évite l'écart de score observé entre les deux)
 
 ### Page d'accueil `/` — Détection SIRET (31 mars 2026)
 
@@ -933,7 +1004,34 @@ function normalizeStatut(s?: string | null): string {
 }
 ```
 
-Email d'alerte : design HTML avec avant/après du statut en badges colorés, lien vers fiche, guide "Que faire ?", lien désinscription.
+Email d'alerte : design HTML avec avant/après du statut en badges colorés, lien vers fiche, guide "Que faire ?", lien désinscription HMAC-signé.
+
+**Phase 1 (7 avril 2026) — Liens désinscription HMAC-signés :**
+
+Fichier `lib/unsubscribeSig.ts` (nouveau) :
+```typescript
+export function signUnsubscribe(email: string, siret: string, secret: string): string {
+  return createHmac('sha256', secret).update(`${email}|${siret}`).digest('hex')
+}
+export function verifyUnsubscribeSig(email: string, siret: string, sig: string, secret: string): boolean {
+  const expected = signUnsubscribe(email, siret, secret)
+  const a = Buffer.from(sig, 'hex')
+  const b = Buffer.from(expected, 'hex')
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
+export function unsubscribeSecret(): string | undefined {
+  return process.env.CRON_SECRET || process.env.UNSUBSCRIBE_SECRET
+}
+```
+
+Le cron génère des liens signés quand `CRON_SECRET` est disponible :
+```typescript
+const sig = signUnsubscribe(email, siret, cronSecret)
+const unsubLink = `${baseUrl}/api/surveillance/unsubscribe?email=...&siret=...&sig=${sig}`
+```
+
+La route `GET /api/surveillance/unsubscribe` vérifie la signature quand `UNSUBSCRIBE_REQUIRE_SIGNATURE=true`. En l'absence de cette variable d'env, la signature est ignorée (mode dev).
 
 ⚠️ **Migration requise** : `ALTER TABLE surveillances ADD COLUMN IF NOT EXISTS statut_initial text;` dans Supabase Dashboard
 
@@ -1014,6 +1112,11 @@ Email d'alerte : design HTML avec avant/après du statut en badges colorés, lie
 | Haiku renvoyait du JSON avec backticks markdown | 5 avril | Strip ```` ```json ```` avant `JSON.parse()` |
 | Page 404 absente | 5 avril | `app/not-found.tsx` créé — détecté automatiquement par Next.js |
 | Marchés publics non affichés | 5 avril | `fetchBOAMP()` dans `fetchCompany` + section dans fiche et rapport |
+| `user_id` Stripe pouvait être falsifié depuis le body | 7 avril | Phase 0 : `user_id` désormais `user.id` extrait du JWT côté serveur uniquement |
+| SyntheseIA accessible sans authentification | 7 avril | Phase 1 : `assertCanGenerateSynthese()` dans `/api/rapport-synthese` — vérifie JWT ou `share_token` |
+| Liens désinscription surveillance non sécurisés | 7 avril | Phase 1 : HMAC-SHA256 via `lib/unsubscribeSig.ts` ; `UNSUBSCRIBE_REQUIRE_SIGNATURE=true` active la vérif |
+| Score BODACC différent entre recherche et fiche | 8 avril | Phase 2 : `familleavis_lib` → `familleavis` + unification `libelleFormeJuridique` entre `/api/recherche` et `lib/fetchCompany.ts` |
+| Overflow mobile sur page rapport (texte coupé, cards trop larges) | 8-9 avril | `html`/`body` `overflow-x:hidden`, grilles CSS `minmax(0,1fr)`, `word-break:break-word` sur `<p>`, `GuideRecours`/`ModeleContrat` responsive |
 
 ---
 
@@ -1093,7 +1196,7 @@ Formulaire 2 étapes. Le SIRET est pré-rempli si passé en `?siret=...`.
 | Composant | Fichier | Rôle |
 |-----------|---------|------|
 | `ScoreRing` | `components/ScoreRing.tsx` | Anneau SVG animé, gris si score=-1 |
-| `SyntheseIA` | `components/SyntheseIA.tsx` | Bloc synthèse IA avec skeleton |
+| `SyntheseIA` | `components/SyntheseIA.tsx` | Bloc synthèse IA avec skeleton ; envoie JWT Bearer ou `share_token` (Phase 1) |
 | `BodaccSection` | `components/BodaccSection.tsx` | Cards colorées par type + pagination |
 | `PackBadge` | `components/PackBadge.tsx` | Badge "Pack Sérénité" inline, server-compatible |
 | `AnalyserDevisButton` | `components/AnalyserDevisButton.tsx` | Bouton client avec hover state |
