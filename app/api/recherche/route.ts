@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateScore } from '@/lib/score'
 import { libelleFormeJuridique } from '@/lib/fetchCompany'
+import { isEntrepriseBatiment } from '@/lib/batiment'
 import type { SearchCandidate } from '@/types'
 
 async function checkRge(siret: string): Promise<boolean> {
@@ -152,6 +153,15 @@ export async function GET(req: NextRequest) {
       })
       return { siret: c.siret, siren: c.siren, nom: c.nom, statut: c.statut, formeJuridique: c.formeJuridique, formeJuridiqueCode: c.formeJuridiqueCode, ville: c.ville, codePostal: c.codePostal, codeNaf: c.codeNaf, activite: c.activite, dateCreation: c.dateCreation, rge: isRge, score }
     })
+
+    // Bâtiment filter: keep only building sector companies (skip for SIRET/SIREN direct queries)
+    if (!isSiretLike) {
+      candidates = candidates.filter((c) => isEntrepriseBatiment(c.codeNaf))
+    } else if (candidates.length > 0) {
+      // For SIRET queries, add a flag if outside building sector (used by fiche artisan)
+      ;(candidates[0] as SearchCandidate & { horsBatiment?: boolean }).horsBatiment =
+        !isEntrepriseBatiment(candidates[0].codeNaf)
+    }
 
     // RGE filter: keep only certified companies
     if (rge) {

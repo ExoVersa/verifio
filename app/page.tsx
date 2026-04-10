@@ -323,7 +323,7 @@ function HeroSearch() {
               value={query}
               onChange={(e) => handleChange(e.target.value)}
               onFocus={() => results.length > 0 && setShowDropdown(true)}
-              placeholder="Nom de l'artisan, SIRET, entreprise..."
+              placeholder="Plombier, électricien, maçon, SIRET..."
               style={{
                 flex: 1,
                 border: 'none',

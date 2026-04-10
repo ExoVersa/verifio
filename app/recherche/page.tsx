@@ -1041,7 +1041,7 @@ function RechercheInner() {
           <div style={{ textAlign: 'center', padding: '56px 16px' }}>
             <div style={{ fontSize: '40px', marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Search size={40} strokeWidth={1} /></div>
             <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: cv('text') }}>
-              Aucun artisan trouvé pour cette recherche
+              Aucun artisan du bâtiment trouvé pour cette recherche
             </p>
             <p style={{ margin: '0 0 24px', fontSize: '14px', color: cv('muted') }}>
               Essayez avec le SIRET directement ou élargissez votre zone de recherche.

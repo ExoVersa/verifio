@@ -13,6 +13,7 @@ import { SectionBadge, SurfaceCard } from '@/components/ExperiencePrimitives'
 import { supabase } from '@/lib/supabase'
 import { dirigeantSlug } from '@/lib/dirigeant'
 import { calculateScore, getYears as getYearsUtil, scoreColor } from '@/lib/score'
+import { isEntrepriseBatiment, getCategorieBatiment } from '@/lib/batiment'
 import type { SearchResult } from '@/types'
 
 /* ─── Interfaces ──────────────────────────────────────────── */
@@ -869,6 +870,36 @@ export default function ArtisanFichePage() {
               </div>
             )}
 
+            {/* Bandeau hors bâtiment */}
+            {result && !isEntrepriseBatiment(result.codeNaf) && (
+              <div style={{
+                background: '#FAEEDA',
+                border: '1px solid #FAC775',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                marginBottom: '1rem',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="#854F0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#633806', marginBottom: 2 }}>
+                    Cette entreprise n&apos;est pas dans le secteur du bâtiment
+                  </div>
+                  <div style={{ fontSize: 12, color: '#854F0B', lineHeight: 1.5 }}>
+                    Verifio est spécialisé dans la vérification d&apos;artisans du bâtiment. Le rapport généré peut être moins pertinent pour cette activité (code NAF : {result.codeNaf || 'non renseigné'}).
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── 2-COLUMN LAYOUT ── */}
             <div style={{
               display: 'flex',
@@ -948,6 +979,16 @@ export default function ArtisanFichePage() {
                         {result.codeNaf
                           ? `${result.codeNaf}${result.activite ? ` — ${result.activite}` : ''}`
                           : result.activite || 'Non renseigné'}
+                        {getCategorieBatiment(result.codeNaf) && (
+                          <span style={{
+                            fontSize: 11, fontWeight: 500,
+                            padding: '2px 8px', borderRadius: 99,
+                            background: '#EAF3DE', color: '#27500A',
+                            marginLeft: 6, display: 'inline-block',
+                          }}>
+                            {getCategorieBatiment(result.codeNaf)}
+                          </span>
+                        )}
                       </p>
                     </div>
 
